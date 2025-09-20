@@ -2,11 +2,9 @@ package com.example.gestor_inversores.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,6 +15,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Project {
 
     @Id
@@ -33,11 +32,11 @@ public class Project {
 
     @NotNull(message = "El presupuesto objetivo es obligatorio")
     @PositiveOrZero(message = "El presupuesto objetivo debe ser mayor o igual a cero")
-    private Double budgetGoal;
+    private BigDecimal budgetGoal;
 
     @NotNull(message = "El presupuesto actual es obligatorio")
     @PositiveOrZero(message = "El presupuesto actual debe ser mayor o igual a cero")
-    private Double currentGoal;
+    private BigDecimal currentGoal;
 
     @NotBlank(message = "El estado del proyecto es obligatorio")
     private String status;
