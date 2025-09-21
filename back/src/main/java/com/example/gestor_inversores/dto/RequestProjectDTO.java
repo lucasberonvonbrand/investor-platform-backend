@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -32,8 +30,6 @@ public class RequestProjectDTO {
     @NotNull(message = "It cannot be null")
     @FutureOrPresent(message = "The date must be current or future")
     private LocalDate estimatedEndDate;
-    //@NotNull
-    //private Long ownerId;
-    //@NotNull
-    //private Set<Long> studentsIds = new HashSet<>();
+    @NotNull(message = "It cannot be null")
+    private Long ownerId;
 }

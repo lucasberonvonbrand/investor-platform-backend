@@ -27,13 +27,6 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(apiError, httpStatus);
     }
 
-    @ExceptionHandler(value = {CreateException.class})
-    public ResponseEntity<ApiError> handleCreateException(CreateException ex) {
-        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
-        return new ResponseEntity<>(apiError, httpStatus);
-    }
-
     @ExceptionHandler(value = {ProjectNotFoundException.class})
     public ResponseEntity<ApiError> handleProjectNotFoundException(ProjectNotFoundException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
@@ -41,9 +34,30 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(apiError, httpStatus);
     }
 
+    @ExceptionHandler(value = {InvalidProjectException.class})
+    public ResponseEntity<ApiError> handleInvalidProjectException(InvalidProjectException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {CreateException.class})
+    public ResponseEntity<ApiError> handleCreateException(CreateException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
     @ExceptionHandler(value = {UpdateException.class})
     public ResponseEntity<ApiError> handleUpdateException(UpdateException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {Exception.class})
+    public ResponseEntity<ApiError> handleException(Exception ex) {
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
         return new ResponseEntity<>(apiError, httpStatus);
     }

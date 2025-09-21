@@ -3,9 +3,14 @@ package com.example.gestor_inversores.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,9 +56,11 @@ public class Project {
     private LocalDate endDate;
 
     @ManyToMany(mappedBy = "projectsList", fetch = FetchType.EAGER)
+    @Builder.Default
     private Set<Student> students = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @Builder.Default
     private Set<ProjectDocument> documents = new HashSet<>();
 
     @ManyToOne
@@ -61,9 +68,17 @@ public class Project {
     private ProjectTag projectTag;
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Investment> investments = new HashSet<>();
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Earning> earnings = new HashSet<>();
+    private LocalDateTime createdAt;
+    private LocalDateTime modifiedAt;
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean deleted = false;
+    private LocalDateTime deletedAt;
 
 }
