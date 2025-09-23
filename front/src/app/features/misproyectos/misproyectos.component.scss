@@ -1,0 +1,221 @@
+/* Variables de color */
+$primary-color: #007bff;
+$green-success: #28a745;
+$light-bg: #f8f9fa;
+$white-bg: #fff;
+$text-color: #333;
+$border-color: #ccc;
+$shadow: rgba(0, 0, 0, 0.1);
+$blue-hover: #0056b3;
+$red-danger: #dc3545;
+$gray-light: #6c757d;
+
+.container {
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+  color: $text-color;
+  background-color: $light-bg;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .search-container {
+      position: relative;
+
+      .search-input {
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid $border-color;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+        &:focus {
+          border-color: $primary-color;
+          outline: none;
+        }
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: $gray-light;
+      }
+    }
+
+    .new-project-button {
+      background-color: $green-success;
+      color: $white-bg;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background-color: darken($green-success, 10%);
+      }
+    }
+  }
+}
+
+.table-container {
+  background-color: $white-bg;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px $shadow;
+  overflow-x: auto;
+}
+
+.projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead {
+    th {
+      padding: 1rem;
+      border-bottom: 2px solid $border-color;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      
+      i {
+        margin-left: 0.5rem;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #eee;
+
+      &:hover {
+        background-color: #f1f1f1;
+      }
+    }
+
+    td {
+      padding: 1rem;
+    }
+  }
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: $white-bg;
+  text-align: center;
+}
+
+.status-badge-Habilitado {
+  background-color: $green-success;
+}
+.status-badge-EnProgreso {
+  background-color: #ffc107;
+}
+.status-badge-Completado {
+  background-color: #17a2b8;
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
+  transition: color 0.3s ease;
+
+  .pi {
+    font-weight: bold;
+  }
+}
+
+.edit-button {
+  color: $primary-color;
+  &:hover {
+    color: $blue-hover;
+  }
+}
+
+.delete-button {
+  color: $red-danger;
+  &:hover {
+    color: darken($red-danger, 10%);
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.pagination-arrow, .page-number {
+  border: 1px solid $border-color;
+  background-color: $white-bg;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  user-select: none;
+  font-weight: bold;
+
+  &:hover {
+    background-color: #e9ecef;
+  }
+}
+
+.page-number {
+  background-color: $primary-color;
+  color: $white-bg;
+  border-color: $primary-color;
+  cursor: default;
+  &:hover {
+    background-color: $primary-color;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .controls {
+    flex-direction: column;
+    width: 100%;
+  }
+  .search-container, .new-project-button {
+    width: 100%;
+  }
+}

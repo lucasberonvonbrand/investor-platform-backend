@@ -53,7 +53,8 @@ toggleDarkMode() {
       label: 'Gestión',
       icon: 'pi pi-database',
       items: [
-        { label: 'Proyectos', icon: 'pi pi-plus', routerLink: '/proyectos' }
+        { label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' },
+        { label: 'Mis Proyectos', icon:'pi pi-pencil',routerLink:'/misproyectos'}
       ]
     },
     {
