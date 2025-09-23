@@ -18,6 +18,38 @@
       </div>
 
       <div class="form-group">
+      <label for="projectStatus">Estado</label>
+      <select id="projectStatus" formControlName="status">
+      <option value="" disabled selected>Seleccione un estado</option>
+      <option value="IN_PROGRESS">En progreso</option>
+      <option value="PENDING_FUNDING">Financiamiento pendiente</option>
+      <option value="COMPLETED">Completado</option>
+      </select>
+      </div>
+
+      <div class="form-group">
+        <label for="projectObjective">**Objetivo**</label>
+        <textarea id="projectObjective" placeholder="Define el objetivo del proyecto" formControlName="objective"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="startDate">**Fecha de Inicio Estimada**</label>
+        <input type="date" id="startDate" formControlName="startDate">
+      </div>
+
+      <div class="form-group">
+        <label for="endDate">**Fecha de Finalización Estimada**</label>
+        <input type="date" id="endDate" formControlName="endDate">
+      </div>
+      
+      <div class="form-group">
+        <label for="creatorName">**Creador**</label>
+        <input type="text" id="creatorName" placeholder="Nombre del creador" formControlName="creator">
+      </div>
+      
+
+
+      <div class="form-group">
         <label>Subir archivos & Fotos</label>
         <div class="upload-section">
           <div class="drop-zone" (click)="fileInput.click()" (drop)="onFileDrop($event)" (dragover)="onDragOver($event)">
