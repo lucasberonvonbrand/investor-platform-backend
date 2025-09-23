@@ -1,0 +1,162 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f7f6;
+  font-family: Arial, sans-serif;
+}
+
+.form-card {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  height: 30px;
+}
+
+.user-icon {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+input[type="text"],
+textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+input[type="text"]::placeholder,
+textarea::placeholder {
+  color: #aaa;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.upload-section {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.drop-zone {
+  flex: 1;
+  border: 2px dashed #d1d9e6;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  transition: border-color 0.3s;
+}
+
+.drop-zone:hover {
+  border-color: #3498db;
+}
+
+.drop-zone-content .icon {
+  height: 40px;
+  width: 40px;
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.drop-zone-content p {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.file-preview {
+  flex: 1;
+  height: 150px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  background-color: #f0f2f5;
+}
+
+.file-preview p {
+  color: #999;
+  font-style: italic;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.cancel-button,
+.create-button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cancel-button {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.create-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.create-button:disabled {
+  background-color: #a0cbe4;
+  cursor: not-allowed;
+}

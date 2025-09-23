@@ -16,6 +16,7 @@ export const routes: Routes = [
       { path: 'usuarios',    loadComponent: () => import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'roles',       loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       { path: 'configuracion', loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
+      { path: 'proyectos', loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
     ],
   },
 

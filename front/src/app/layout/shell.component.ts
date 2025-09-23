@@ -53,7 +53,7 @@ toggleDarkMode() {
       label: 'Gestión',
       icon: 'pi pi-database',
       items: [
-        // submenús aquí
+        { label: 'Proyectos', icon: 'pi pi-plus', routerLink: '/proyectos' }
       ]
     },
     {
@@ -69,6 +69,14 @@ toggleDarkMode() {
         { label: 'Roles', icon: 'pi pi-id-card', routerLink: '/roles' }
       ]
     }
+    /*{
+    label: 'Proyectos',
+    icon: 'pi pi-database',
+    routerLink: '/proyectos', // ✅ Este elemento es un enlace de navegación
+    }
+    **/
+
+
   ];
 
   toggleSidebar() { 
