@@ -63,6 +63,11 @@ export class ProyectosComponent implements OnInit {
       const formData = new FormData();
       formData.append('title', this.projectForm.value.title);
       formData.append('description', this.projectForm.value.description);
+      formData.append('status', this.projectForm.value.status);
+      formData.append('objective', this.projectForm.value.objective);
+      formData.append('startDate', this.projectForm.value.startDate);
+      formData.append('endDate', this.projectForm.value.endDate);
+      formData.append('creator', this.projectForm.value.creator);
       if (this.selectedFile) {
         formData.append('file', this.selectedFile.file, this.selectedFile.file.name);
       }
