@@ -1,7 +1,7 @@
-const target = "http://gestor-usuarios:8080"; // 👈 nombre del servicio del back
+const target = "http://72.60.11.35:8080";
 
 module.exports = {
-  // Login: /api/auth/* -> /auth/*
+  // Auth: /api/auth/* -> /auth/*
   "/api/auth": {
     target,
     secure: false,
@@ -9,12 +9,12 @@ module.exports = {
     logLevel: "debug",
     pathRewrite: { "^/api/auth": "/auth" },
     onProxyReq: (proxyReq) => {
-      // Evitar que pase Authorization (Basic/Bearer) al login
+      // No mandar Authorization en /auth/*
       proxyReq.removeHeader("authorization");
     },
   },
 
-  // Resto: mantener /api/* tal cual (pasa Bearer)
+  // Resto: mantener /api (SIN rewrite)
   "/api": {
     target,
     secure: false,
