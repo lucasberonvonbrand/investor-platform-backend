@@ -66,7 +66,7 @@ public class InvestorController {
 
     // DAR DE BAJA (disable)
     @PatchMapping("/desactivate/{id}")
-    public ResponseEntity<ResponseInvestorDTO> deactivateInvestor(@PathVariable Long id) {
+    public ResponseEntity<ResponseInvestorDTO> desactivateInvestor(@PathVariable Long id) {
         Investor investor = investorService.desactivateInvestor(id);
         return ResponseEntity.ok(mapper.investorToResponseInvestorDTO(investor));
     }

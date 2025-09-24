@@ -2,11 +2,16 @@ package com.example.gestor_inversores.service.student;
 
 import com.example.gestor_inversores.dto.PatchStudentDTO;
 import com.example.gestor_inversores.dto.CreateStudentDTO;
+import com.example.gestor_inversores.exception.DniAlreadyExistsException;
+import com.example.gestor_inversores.exception.EmailAlreadyExistsException;
+import com.example.gestor_inversores.exception.UsernameAlreadyExistsException;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IStudentRepository;
+import com.example.gestor_inversores.repository.IUserRepository;
 import com.example.gestor_inversores.service.role.RoleService;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +25,9 @@ public class StudentService implements IStudentService {
 
     @Autowired
     private IStudentRepository studentRepository;
+
+    @Autowired
+    private IUserRepository userRepository;
 
     @Autowired
     private RoleService roleService;
@@ -42,6 +50,18 @@ public class StudentService implements IStudentService {
 
     @Override
     public Student save(CreateStudentDTO dto) {
+
+        // Validar username existente
+        userRepository.findUserEntityByUsername(dto.getUsername())
+                .ifPresent(u -> { throw new UsernameAlreadyExistsException("Username ya existe"); });
+
+        // Validar email existente
+        userRepository.findByEmail(dto.getEmail())
+                .ifPresent(u -> { throw new EmailAlreadyExistsException("Email ya existe"); });
+
+        studentRepository.findByDni(dto.getDni())
+                .ifPresent(s -> { throw new DniAlreadyExistsException("El dni ya existe."); });
+
         // Convertir DTO a Entity usando el Mapper inyectado
         Student student = mapper.requestStudentDTOToStudent(dto);
 

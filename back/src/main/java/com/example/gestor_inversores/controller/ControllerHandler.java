@@ -5,6 +5,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -19,6 +21,59 @@ import java.util.List;
 
 @RestControllerAdvice
 public class ControllerHandler extends ResponseEntityExceptionHandler {
+
+    @ExceptionHandler(value = {BadCredentialsException.class})
+    public ResponseEntity<ApiError> handleBadCredentialsException(BadCredentialsException ex) {
+        HttpStatus httpStatus = HttpStatus.UNAUTHORIZED; // 401
+        ApiError apiError = new ApiError("Credenciales inválidas: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {EmailNotFoundException.class})
+    public ResponseEntity<ApiError> handleEmailNotFoundException(EmailNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Email no encontrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {InvalidTokenException.class, ExpiredTokenException.class})
+    public ResponseEntity<ApiError> handleTokenExceptions(RuntimeException ex) {
+        HttpStatus httpStatus = HttpStatus.UNAUTHORIZED;
+        ApiError apiError = new ApiError("Token inválido: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {InvalidPasswordException.class})
+    public ResponseEntity<ApiError> handleInvalidPasswordException(InvalidPasswordException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Contraseña inválida: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {MailException.class})
+    public ResponseEntity<ApiError> handleMailException(MailException ex) {
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        ApiError apiError = new ApiError("Error al enviar el correo: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler({UsernameAlreadyExistsException.class, EmailAlreadyExistsException.class,})
+    public ResponseEntity<ApiError> handleDuplicateUser(RuntimeException ex) {
+        ApiError apiError = new ApiError(ex.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, apiError.getHttpStatus());
+    }
+
+    @ExceptionHandler(DniAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleDniAlreadyExistsException(RuntimeException ex) {
+        ApiError apiError = new ApiError(ex.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, apiError.getHttpStatus());
+    }
+
+    @ExceptionHandler(CuitAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleCuitAlreadyExistsException(RuntimeException ex) {
+        ApiError apiError = new ApiError(ex.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, apiError.getHttpStatus());
+    }
 
     @ExceptionHandler(value = {ExistingProjectException.class})
     public ResponseEntity<ApiError> handleExistingProjectException(ExistingProjectException ex) {
