@@ -1,6 +1,9 @@
 package com.example.gestor_inversores.service.user;
 
 import com.example.gestor_inversores.dto.PatchUserDTO;
+import com.example.gestor_inversores.exception.DniAlreadyExistsException;
+import com.example.gestor_inversores.exception.EmailAlreadyExistsException;
+import com.example.gestor_inversores.exception.UsernameAlreadyExistsException;
 import com.example.gestor_inversores.mapper.UserMapper;
 import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.model.User;
@@ -42,6 +45,14 @@ public class UserService implements IUserService {
 
     @Override
     public User save(User user) {
+
+        // Validar duplicados
+        userRepository.findUserEntityByUsername(user.getUsername())
+                .ifPresent(u -> { throw new UsernameAlreadyExistsException("El username ya existe."); });
+
+        userRepository.findByEmail(user.getEmail())
+                .ifPresent(u -> { throw new EmailAlreadyExistsException("El email ya existe."); });
+
         // encriptar password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 

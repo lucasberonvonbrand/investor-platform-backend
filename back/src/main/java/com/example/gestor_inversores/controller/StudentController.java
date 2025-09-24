@@ -64,7 +64,7 @@ public class StudentController {
 
     // DAR DE BAJA (disable)
     @PatchMapping("/desactivate/{id}")
-    public ResponseEntity<ResponseStudentDTO> deactivateStudent(@PathVariable Long id) {
+    public ResponseEntity<ResponseStudentDTO> desactivateStudent(@PathVariable Long id) {
         Student student = studentService.desactivateStudent(id);
         return ResponseEntity.ok(StudentMapper.studentToResponseStudentDTO(student));
     }
