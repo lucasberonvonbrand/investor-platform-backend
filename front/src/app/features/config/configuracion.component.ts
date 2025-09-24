@@ -4,6 +4,7 @@ import { InputText } from 'primeng/inputtext';
 import { Button } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 
+
 @Component({
   standalone: true,
   selector: 'app-configuracion',
