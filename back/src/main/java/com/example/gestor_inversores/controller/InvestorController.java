@@ -1,7 +1,7 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.CreateInvestorDTO;
-import com.example.gestor_inversores.dto.PatchInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
 import com.example.gestor_inversores.mapper.InvestorMapper;
 import com.example.gestor_inversores.model.Investor;
@@ -41,7 +41,7 @@ public class InvestorController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseInvestorDTO> createInvestor(@Valid @RequestBody CreateInvestorDTO requestDTO) {
+    public ResponseEntity<ResponseInvestorDTO> createInvestor(@Valid @RequestBody RequestInvestorDTO requestDTO) {
         ResponseInvestorDTO savedInvestor = investorService.save(requestDTO);
         return ResponseEntity.ok(savedInvestor);
     }
@@ -49,7 +49,7 @@ public class InvestorController {
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseInvestorDTO> patchInvestor(
             @PathVariable Long id,
-            @Valid @RequestBody PatchInvestorDTO patchDto) {
+            @Valid @RequestBody RequestInvestorUpdateDTO patchDto) {
 
         return investorService.patchInvestor(id, patchDto)
                 .map(mapper::investorToResponseInvestorDTO)

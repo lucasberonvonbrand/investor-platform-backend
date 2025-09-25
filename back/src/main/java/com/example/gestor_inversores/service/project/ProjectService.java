@@ -34,21 +34,44 @@ public class ProjectService implements IProjectService {
     @Transactional
     @Override
     public ResponseProjectDTO save(RequestProjectDTO projectDTO) {
-        if(projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
+
+        // Validar nombre duplicado
+        if (projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
             throw new ExistingProjectException("There is already a project with that name");
         }
 
-        if(projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
+        // Validar fechas
+        if (projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
+        // Obtener estudiante dueño del proyecto
         Student owner = studentService.findById(projectDTO.getOwnerId())
                 .orElseThrow(() -> new StudentNotFoundException("The student was not found"));
 
+        // Mapear DTO a entidad
         Project project = ProjectMapper.requestProjectToProject(projectDTO);
         project.setCurrentGoal(BigDecimal.ZERO);
-        project.getStudents().add(owner);
         project.setCreatedAt(LocalDateTime.now());
+
+        // Agregar dueño y relación bidireccional
+        project.getStudents().add(owner);
+        owner.getProjectsList().add(project);
+
+        // Agregar estudiantes adicionales (si los hay)
+        if (projectDTO.getStudentIds() != null) {
+            for (Long studentId : projectDTO.getStudentIds()) {
+                // Evitar agregar al dueño dos veces
+                if (studentId.equals(owner.getId())) continue;
+
+                Student student = studentService.findById(studentId)
+                        .orElseThrow(() -> new StudentNotFoundException(
+                                "Student with ID " + studentId + " not found"));
+
+                project.getStudents().add(student);
+                student.getProjectsList().add(project);
+            }
+        }
 
         Project savedProject;
 
@@ -60,6 +83,7 @@ public class ProjectService implements IProjectService {
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
     }
+
 
     @Transactional
     @Override

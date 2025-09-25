@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.model;
 
+import com.example.gestor_inversores.model.enums.ProjectStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -43,8 +44,9 @@ public class Project {
     @PositiveOrZero(message = "El presupuesto actual debe ser mayor o igual a cero")
     private BigDecimal currentGoal;
 
-    @NotBlank(message = "El estado del proyecto es obligatorio")
-    private String status;
+    @NotNull(message = "El estado del proyecto es obligatorio")
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status;
 
     @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate startDate;

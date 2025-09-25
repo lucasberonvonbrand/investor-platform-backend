@@ -1,25 +1,21 @@
 package com.example.gestor_inversores.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateInvestorDTO {
+public class RequestInvestorUpdateDTO {
 
-    // ----- Campos de User -----
     @NotBlank(message = "El username es obligatorio")
     @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
     private String username;
-
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 4, message = "La contraseña debe tener al menos 4 caracteres")
-    private String password;
 
     @NotBlank(message = "El email es obligatorio")
     @Email(message = "Email no válido")
@@ -27,7 +23,6 @@ public class CreateInvestorDTO {
 
     private String photoUrl;
 
-    // ----- Campos de Investor -----
     @NotBlank(message = "CUIT es obligatorio")
     @Size(min = 11, max = 11, message = "CUIT debe tener 11 caracteres")
     private String cuit;
@@ -43,5 +38,4 @@ public class CreateInvestorDTO {
     private String webSite;
 
     private AddressDTO address;
-
 }

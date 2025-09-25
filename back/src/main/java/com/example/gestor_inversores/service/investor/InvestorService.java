@@ -1,18 +1,15 @@
 package com.example.gestor_inversores.service.investor;
 
-import com.example.gestor_inversores.dto.CreateInvestorDTO;
-import com.example.gestor_inversores.dto.PatchInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
 import com.example.gestor_inversores.exception.CuitAlreadyExistsException;
 import com.example.gestor_inversores.exception.EmailAlreadyExistsException;
 import com.example.gestor_inversores.exception.UsernameAlreadyExistsException;
 import com.example.gestor_inversores.mapper.InvestorMapper;
-import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Investor;
 import com.example.gestor_inversores.model.Role;
-import com.example.gestor_inversores.model.User;
 import com.example.gestor_inversores.repository.IInvestorRepository;
-import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
 import com.example.gestor_inversores.service.role.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +39,7 @@ public class InvestorService implements IInvestorService{
     private IUserRepository userRepository;
 
     @Override
-    public ResponseInvestorDTO save(CreateInvestorDTO dto) {
+    public ResponseInvestorDTO save(RequestInvestorDTO dto) {
 
         // Validar username existente
         userRepository.findUserEntityByUsername(dto.getUsername())
@@ -92,7 +89,7 @@ public class InvestorService implements IInvestorService{
     }
 
     @Override
-    public Optional<Investor> patchInvestor(Long id, PatchInvestorDTO patchDto) {
+    public Optional<Investor> patchInvestor(Long id, RequestInvestorUpdateDTO patchDto) {
         return investorRepository.findById(id).map(investor -> {
             // Usamos el mapper para actualizar solo los campos que vienen en el DTO
             mapper.patchInvestorFromDto(patchDto, investor);
