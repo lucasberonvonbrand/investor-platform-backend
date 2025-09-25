@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateStudentDTO {
+public class RequestStudentDTO {
 
     // ----- Campos de UserSec -----
     @NotBlank(message = "El username es obligatorio")

@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.dto;
 
+import com.example.gestor_inversores.model.enums.ProjectStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -23,8 +25,8 @@ public class RequestProjectDTO {
     @PositiveOrZero(message = "The amount must be greater than or equal to zero")
     @Digits(integer = 12, fraction = 2, message = "The amount must have up to 12 whole digits and 2 decimal places")
     private BigDecimal budgetGoal;
-    @NotBlank(message = "Must contain a value")
-    private String status;
+    @NotNull(message = "Must contain a value")
+    private ProjectStatus status;
     @NotNull(message = "It cannot be null")
     private LocalDate startDate;
     @NotNull(message = "It cannot be null")
@@ -32,4 +34,7 @@ public class RequestProjectDTO {
     private LocalDate estimatedEndDate;
     @NotNull(message = "It cannot be null")
     private Long ownerId;
+    // IDs de los estudiantes adicionales que participan en el proyecto
+    private Set<Long> studentIds;
+
 }

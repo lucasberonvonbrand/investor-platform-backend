@@ -10,14 +10,14 @@ import java.util.Set;
 
 @Getter
 @Setter
-public class CreateUserDTO {
+public class RequestUserDTO {
 
     @NotBlank(message = "El username es obligatorio")
     @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
     private String username;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 4, message = "La contraseña debe tener al menos 4 caracteres")
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
     private String password;
 
     @NotBlank(message = "El email es obligatorio")
