@@ -3,6 +3,7 @@ package com.example.gestor_inversores.controller;
 import com.example.gestor_inversores.dto.RequestProjectDTO;
 import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseProjectDTO;
+import com.example.gestor_inversores.dto.ResponseStudentDTO;
 import com.example.gestor_inversores.service.project.IProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,12 @@ public class ProjectController {
     public ResponseEntity<ResponseProjectDTO> getById(@PathVariable Long id) {
         ResponseProjectDTO responseProjectDTO = projectService.findById(id);
         return ResponseEntity.status(HttpStatus.OK).body(responseProjectDTO);
+    }
+
+    @GetMapping("/{id}/students")
+    public ResponseEntity<List<ResponseStudentDTO>> getStudentsByProject(@PathVariable Long id) {
+        List<ResponseStudentDTO> listResponseStudentDTO = projectService.getStudentsByProject(id);
+        return ResponseEntity.status(HttpStatus.OK).body(listResponseStudentDTO);
     }
 
     @GetMapping

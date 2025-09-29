@@ -3,8 +3,10 @@ package com.example.gestor_inversores.service.project;
 import com.example.gestor_inversores.dto.RequestProjectDTO;
 import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseProjectDTO;
+import com.example.gestor_inversores.dto.ResponseStudentDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
+import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
@@ -18,17 +20,22 @@ import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
+    private final StudentMapper studentMapper;
 
     @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService) {
+    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, StudentMapper studentMapper) {
         this.projectRepository = projectRepository;
         this.studentService = studentService;
+        this.studentMapper = studentMapper;
     }
 
     @Transactional
@@ -103,8 +110,40 @@ public class ProjectService implements IProjectService {
         Project updatedProject = ProjectMapper.requestProjectUpdateToProject(projectDTO, searchedProject);
         updatedProject.setModifiedAt(LocalDateTime.now());
 
+        Set<Long> studentIds = projectDTO.getStudentIds();
+
+        if (Objects.nonNull(studentIds)) {
+
+            Set<Student> studentsFromDTO = studentIds.stream()
+                    .map(studentId -> studentService.findById(studentId)
+                            .orElseThrow(() -> new StudentNotFoundException(
+                                    "Student with ID " + studentId + " not found"))
+                    )
+                    .collect(Collectors.toSet());
+
+            Set<Student> currentStudents = updatedProject.getStudents();
+
+            Set<Student> studentsToRemove = currentStudents.stream()
+                    .filter(current -> !studentsFromDTO.contains(current))
+                    .collect(Collectors.toSet());
+
+            Set<Student> studentsToAdd = studentsFromDTO.stream()
+                    .filter(newStudent -> !currentStudents.contains(newStudent))
+                    .collect(Collectors.toSet());
+
+            studentsToRemove.forEach(student -> {
+                student.getProjectsList().remove(updatedProject);
+                updatedProject.getStudents().remove(student);
+            });
+
+            studentsToAdd.forEach(student -> {
+                student.getProjectsList().add(updatedProject);
+                updatedProject.getStudents().add(student);
+            });
+        }
+
         try {
-            updatedProject = projectRepository.save(updatedProject);
+            projectRepository.save(updatedProject);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             throw new UpdateException("The project could not be updated");
         }
@@ -132,13 +171,14 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getAllProjectsByStudent() {
-        return List.of();
-    }
+    public List<ResponseStudentDTO> getStudentsByProject(Long projectId) {
+        Project project = projectRepository.findByIdProjectAndDeletedFalse(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-    @Override
-    public List<ResponseProjectDTO> getAllProjectsByInvestor() {
-        return List.of();
+        return project.getStudents()
+                .stream()
+                .map(StudentMapper::studentToResponseStudentDTO)
+                .toList();
     }
 
     @Override
