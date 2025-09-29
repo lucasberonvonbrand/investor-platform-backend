@@ -21,6 +21,10 @@ export const routes: Routes = [
       { path: 'configuracion', loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
       { path: 'proyectos', loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'misproyectos', loadComponent: () => import('./features/misproyectos/misproyectos.component').then(m => m.MisProyectosComponent) },
+      { path: 'estudiantes', loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
+      { path: 'inversores', loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },
+
+
     ],
   },
 
