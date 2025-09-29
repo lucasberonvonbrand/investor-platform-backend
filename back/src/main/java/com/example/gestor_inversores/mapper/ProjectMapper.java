@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.mapper;
 
+import com.example.gestor_inversores.dto.RequestProjectCurrentGoalUpdateDTO;
 import com.example.gestor_inversores.dto.RequestProjectDTO;
 import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseProjectDTO;
@@ -44,5 +45,10 @@ public class ProjectMapper {
                 .estimatedEndDate(project.getEstimatedEndDate())
                 .endDate(project.getEndDate())
                 .build();
+    }
+
+    public static Project requestProjectCurrentGoalUpdateToProject(RequestProjectCurrentGoalUpdateDTO dto, Project project) {
+        project.setCurrentGoal(dto.getCurrentGoal());
+        return project;
     }
 }
