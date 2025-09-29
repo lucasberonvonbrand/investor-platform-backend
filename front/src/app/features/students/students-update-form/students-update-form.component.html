@@ -1,0 +1,197 @@
+<div class="container">
+  <div class="form-card">
+    <div class="header">
+      <img src="https://www.svgrepo.com/show/436186/edit-tool-pencil.svg" alt="Perfil Logo" class="logo">
+      <div class="user-icon">👤</div>
+    </div>
+    <h2>Perfil</h2>
+
+    <form [formGroup]="studentsUpdateForm" (ngSubmit)="guardar()">
+      <div class="form-group">
+        <label for="configuracionUsername">Username</label>
+        <input type="text" id="configuracionUsername" placeholder="Enter project title" formControlName="Username">
+        <div *ngIf="studentsUpdateForm.get('nombre')?.invalid && studentsUpdateForm.get('nombre')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['required']">
+          El nombre es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['maxlength']">
+          Máximo 15 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionEmail">E-mail</label>
+        <input type="text" id="configuracionEmail" placeholder="Enter project title" formControlName="Email">
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.invalid && studentsUpdateForm.get('Nombre')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['required']">
+          El nombre es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['maxlength']">
+          Máximo 15 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </div>
+      </div>
+      </div>
+
+      <div class="form-group">
+        <label for="configuracionNombre">Nombre</label>
+        <input type="text" id="configuracionNombre" placeholder="Ingrese nombre" formControlName="nombre">
+        <div *ngIf="studentsUpdateForm.get('nombre')?.invalid && studentsUpdateForm.get('nombre')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['required']">
+          El nombre es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['maxlength']">
+          Máximo 15 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('nombre')?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionApellido">Apellido</label>
+        <input type="text" id="configuracionApellido" placeholder="Enter project title" formControlName="apellido">
+        <div *ngIf="studentsUpdateForm.get('apellido')?.invalid && studentsUpdateForm.get('apellido')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('apellido')?.errors?.['required']">
+          El apellido es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('apellido')?.errors?.['maxlength']">
+          Máximo 20 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('apellido')?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionDni">DNI</label>
+        <input type="number" id="configuracionDni" placeholder="Enter project title" formControlName="dni">
+        <div *ngIf="studentsUpdateForm.get('dni')?.invalid && studentsUpdateForm.get('dni')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('dni')?.errors?.['required']">
+          El dni es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('dni')?.errors?.['maxlength']">
+          Máximo 8 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('dni')?.errors?.['pattern']">
+          Solo se permiten numeros.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionTelefono">Telefono</label>
+        <input type="number" id="configuracionTelefono" placeholder="Enter project title" formControlName="telefono">
+        <div *ngIf="studentsUpdateForm.get('telefono')?.invalid && studentsUpdateForm.get('telefono')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('telefono')?.errors?.['required']">
+          El telefono es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('telefono')?.errors?.['maxlength']">
+          Máximo 15 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('telefono')?.errors?.['pattern']">
+          Solo se permiten numeros.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionFechaNacimiento">Fecha de nacimiento</label>
+        <input type="date" id="configuracionFechaNacimiento" placeholder="Enter project title" formControlName="fechaNacimiento">
+        <div *ngIf="studentsUpdateForm.get('fechaNacimiento')?.invalid && studentsUpdateForm.get('fechaNacimiento')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('fechaNacimiento')?.errors?.['required']">
+          La fecha de nacimiento es obligatorio.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionUniversidad">Universidad</label>
+        <input type="text" id="configuracionUniversidad" placeholder="Enter project title" formControlName="universidad">
+        <div *ngIf="studentsUpdateForm.get('universidad')?.invalid && studentsUpdateForm.get('universidad')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('universidad')?.errors?.['required']">
+          La universidad es obligatoria.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionCarrera">Carrera</label>
+        <input type="text" id="configuracionCarrera" placeholder="Enter project title" formControlName="carrera">
+        <div *ngIf="studentsUpdateForm.get('carrera')?.invalid && studentsUpdateForm.get('Nombre')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['required']">
+          La carrera es obligatoria.
+        </div>
+      </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionCarreraEstado">Estado</label>
+        <select id="configuracionCarreraEstado" formControlName="CarreraEstado">
+          <option value="" disabled selected>Seleccione un estado</option>
+          <option value="IN_PROGRESS">En progreso</option>
+          <option value="COMPLETED">Completado</option>
+          <option value="SUSPENDED">Suspendido</option>
+          <option value="ABANDONED">Abandonado</option>
+        </select>
+      </div>
+
+
+      <div class="form-group">
+        <label for="configuracionLinkedin">Redes Sociales</label>
+        <input type="url" id="configuracionLinkedin" placeholder="https://facebook.com" formControlName="Linkedin">
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.invalid && studentsUpdateForm.get('Nombre')?.touched" class="text-red-500 text-sm">
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['required']">
+          El nombre es obligatorio.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['maxlength']">
+          Máximo 15 caracteres permitidos.
+        </div>
+        <div *ngIf="studentsUpdateForm.get('Nombre')?.errors?.['pattern']">
+          Solo se permiten letras y espacios.
+        </div>
+      </div>
+      </div>    
+
+      <div class="actions">
+        <button type="submit" class="save-button" [disabled]="!studentsUpdateForm.valid" (click)="guardar()">Guardar Cambios</button>
+        <button type="button" class="cancel-button" [disabled]="!studentsUpdateForm.valid" (click)="cancelar()">Cancelar</button>
+      </div>    
+
+    </form>
+
+
+    <!-- 
+
+
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="loading-content">
+        <h3>Creando proyecto...</h3>
+        <p>Por favor espere mientras se procesa la información.</p>
+        <div class="progress-bar">
+          <div class="progress-bar-fill" [style.width]="progress + '%'"></div>
+        </div>
+        <p class="progress-text">{{ progress }}%</p>
+      </div>
+    </div>
+    
+
+    -->
+  </div>
+</div>

@@ -35,11 +35,11 @@
     <button
       pButton
       type="button"
-      class="user-btn p-button-text"
+      class="user-btn p-button-text px-2 py-2"
       (click)="openUserMenu($event)">
       <p-avatar label="A" shape="circle"></p-avatar>
-      <span class="user-name">Admin</span>
-      <i class="pi pi-chevron-down"></i>
+      <span class="user-name"></span>
+      <i class="pi pi-bars px-2"></i>
     </button>
     <p-menu #userMenu [popup]="true" [model]="userItems"></p-menu>
   </div>

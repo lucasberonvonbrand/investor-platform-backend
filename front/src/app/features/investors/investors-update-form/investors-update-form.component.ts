@@ -4,14 +4,14 @@ import {ReactiveFormsModule} from '@angular/forms';
 
 
 @Component({
-  selector: 'app-configuracion',
-  templateUrl: './configuracion.component.html',
-  styleUrls: ['./configuracion.component.scss'], 
+  selector: 'app-investors-update',
+  templateUrl: './investors-update-form.component.html',
+  styleUrls: ['./investors-update-form.component.scss'], 
   imports: [ReactiveFormsModule],
 })
-export class ConfiguracionComponent implements OnInit {
+export class InvestorsUpdateComponent implements OnInit {
   // Propiedad para el formulario reactivo, inicializada en ngOnInit ...
-  configuracionForm!: FormGroup;
+  investorsUpdateForm!: FormGroup;
   
   // Propiedad para almacenar el archivo seleccionado (imagen o documento)
   selectedFile: { file: File, url: string } | null = null;
@@ -49,7 +49,7 @@ usuario = {
 
 ngOnInit(): void {
     // Cargar los datos del usuario en el formulario
-    this.configuracionForm = this.fb.group({
+    this.investorsUpdateForm = this.fb.group({
       nombre: [this.usuario.nombre, Validators.required],
       //apellido: [this.usuario.apellido, Validators.required],
       dni: [this.usuario.dni, Validators.required],
@@ -59,8 +59,8 @@ ngOnInit(): void {
   }
 
   guardar() {
-    if (this.configuracionForm.valid) {
-      console.log('Datos guardados:', this.configuracionForm.value);
+    if (this.investorsUpdateForm.valid) {
+      console.log('Datos guardados:', this.investorsUpdateForm.value);
       alert('Perfil actualizado con éxito ✅');
     } else {
       alert('Por favor, completa los campos requeridos ❌');
@@ -68,8 +68,8 @@ ngOnInit(): void {
   }
 
   cancelar() {
-    if (this.configuracionForm.valid) {
-      console.log('Datos guardados:', this.configuracionForm.value);
+    if (this.investorsUpdateForm.valid) {
+      console.log('Datos guardados:', this.investorsUpdateForm.value);
       alert('Perfil actualizado con éxito ✅');
     } 
   }
