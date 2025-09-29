@@ -5,7 +5,8 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class StudentService {
-  private apiUrl = 'http://localhost:8080/api/students';
+  //private apiUrl = 'http://localhost:8080/api/students';
+  private apiUrl = '/api/students';
 
   private _students = signal<Student[]>([]);
   students = this._students.asReadonly();

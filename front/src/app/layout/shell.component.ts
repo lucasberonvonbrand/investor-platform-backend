@@ -67,7 +67,9 @@ toggleDarkMode() {
       icon: 'pi pi-cog',
       items: [
         { label: 'Usuarios', icon: 'pi pi-users', routerLink: '/usuarios' },
-        { label: 'Roles', icon: 'pi pi-id-card', routerLink: '/roles' }
+        { label: 'Roles', icon: 'pi pi-id-card', routerLink: '/roles' },
+        { label: 'Estudiantes', icon: 'pi pi-users', routerLink: '/estudiantes' },
+        { label: 'Inversores', icon: 'pi pi-users', routerLink: '/inversores' }
       ]
     }
     /*{
