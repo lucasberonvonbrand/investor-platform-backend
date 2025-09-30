@@ -2,7 +2,7 @@
 
 <!-- Header + acciones -->
 <div class="flex items-center justify-between mb-4">
-  <h2 class="text-2xl font-semibold">Panel</h2>
+  <h2 class="text-2xl font-semibold">Dashboard</h2>
   <div class="flex items-center gap-2">
     <button pButton type="button" label="Refrescar" icon="pi pi-refresh" (click)="reload()" [disabled]="loading"></button>
   </div>
@@ -71,50 +71,52 @@
   </p-card>
 </div>
 
+
+
 <!-- Grids con gráficas y “listas rápidas” -->
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4">
 
-<!-- Donut: Estudiantes por estado de grado -->
-<p-card class="shadow-sm xl:col-span-1" header="Estudiantes por estado de grado">
-  <p-chart
-    *ngIf="chartsEnabled"
-    type="doughnut"
-    [data]="studentsByDegreeData"
-    [options]="chartOptions"
-    style="height: 280px">
-  </p-chart>
-  <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
-    Activá las gráficas para ver la distribución (IN_PROGRESS, COMPLETED, …).
-  </div>
-</p-card>
+  <!-- Donut: Estudiantes por estado de grado -->
+  <p-card class="shadow-sm xl:col-span-1" header="Estudiantes por estado de grado">
+    <p-chart
+      *ngIf="chartsEnabled"
+      type="doughnut"
+      [data]="studentsByDegreeData"
+      [options]="chartOptions"
+      style="height: 280px">
+    </p-chart>
+    <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
+      Activá las gráficas para ver la distribución (IN_PROGRESS, COMPLETED, …).
+    </div>
+  </p-card>
 
-<!-- Barras: Usuarios por rol -->
-<p-card class="shadow-sm xl:col-span-2" header="Usuarios por rol">
-  <p-chart
-    *ngIf="chartsEnabled"
-    type="bar"
-    [data]="usersByRoleData"
-    [options]="chartOptions"
-    style="height: 280px">
-  </p-chart>
-  <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
-    Activá las gráficas para ver cuántos usuarios hay por rol (ADMIN, STUDENT, INVESTOR, …).
-  </div>
-</p-card>
+  <!-- Barras: Usuarios por rol -->
+  <p-card class="shadow-sm xl:col-span-2" header="Usuarios por rol">
+    <p-chart
+      *ngIf="chartsEnabled"
+      type="bar"
+      [data]="usersByRoleData"
+      [options]="chartOptions"
+      style="height: 280px">
+    </p-chart>
+    <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
+      Activá las gráficas para ver cuántos usuarios hay por rol (ADMIN, STUDENT, INVESTOR, …).
+    </div>
+  </p-card>
 
-<!-- Barras: Estudiantes por universidad -->
-<p-card class="shadow-sm" header="Estudiantes por universidad">
-  <p-chart
-    *ngIf="chartsEnabled"
-    type="bar"
-    [data]="universitiesData"
-    [options]="chartOptions"
-    style="height: 280px">
-  </p-chart>
-  <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
-    Activá las gráficas para ver la cantidad por universidad (UNLZ, UBA, …).
-  </div>
-</p-card>
+  <!-- Barras: Estudiantes por universidad -->
+  <p-card class="shadow-sm" header="Estudiantes por universidad">
+    <p-chart
+      *ngIf="chartsEnabled"
+      type="bar"
+      [data]="universitiesData"
+      [options]="chartOptions"
+      style="height: 280px">
+    </p-chart>
+    <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
+      Activá las gráficas para ver la cantidad por universidad (UNLZ, UBA, …).
+    </div>
+  </p-card>
 
   <!-- Quick lists -->
   <p-card class="shadow-sm" header="Últimos registros (muestra)">
@@ -140,3 +142,16 @@
     </div>
   </p-card>
 </div>
+<!-- Línea de tiempo de Proyectos -->
+<p-card class="mt-4 shadow-sm" header="Evolución de proyectos (últimos 12 meses)">
+  <p-chart
+    *ngIf="chartsEnabled && projectsTimelineData"
+    type="line"
+    [data]="projectsTimelineData"
+    [options]="projectsLineOptions"
+    class="h-[30rem]">
+  </p-chart>
+  <div class="text-sm opacity-70" *ngIf="!chartsEnabled">
+    Activá las gráficas para ver la evolución mensual.
+  </div>
+</p-card>

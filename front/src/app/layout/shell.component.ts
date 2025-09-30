@@ -41,14 +41,15 @@ toggleDarkMode() {
   @ViewChild('userMenu') userMenu!: Menu;
 
   userItems = [
-    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/configuracion') },
-    { label: 'Preferencias', icon: 'pi pi-cog', command: () => this.go('/configuracion') },
+    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/mi-perfil') },
     { separator: true },
     { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
   ];
 
   sideModel = [
-    { label: 'Inicio', icon: 'pi pi-home', routerLink: '/home' },
+    { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
+
+    { label: 'InicioINV+STU', icon: 'pi pi-home', routerLink: '/proyectos-panel' },
     {
       label: 'Gestión',
       icon: 'pi pi-database',
@@ -56,11 +57,6 @@ toggleDarkMode() {
         { label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' },
         { label: 'Mis Proyectos', icon:'pi pi-pencil',routerLink:'/misproyectos'}
       ]
-    },
-    {
-      label: 'Reportes',
-      icon: 'pi pi-chart-line',
-      items: [{ label: 'Dashboard', icon: 'pi pi-chart-bar', disabled: true }]
     },
     {
       label: 'Configuración',

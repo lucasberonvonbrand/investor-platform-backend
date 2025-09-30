@@ -14,8 +14,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'home' },
-      { path: 'home',        loadComponent: () => import('./features/panel/panel.component').then(m => m.PanelComponent) },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: 'dashboard',        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.PanelComponent) },
+      { path: 'proyectos-panel', loadComponent: () =>import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'usuarios',    loadComponent: () => import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'roles',       loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       { path: 'configuracion', loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
@@ -23,7 +24,9 @@ export const routes: Routes = [
       { path: 'misproyectos', loadComponent: () => import('./features/misproyectos/misproyectos.component').then(m => m.MisProyectosComponent) },
       { path: 'estudiantes', loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
       { path: 'inversores', loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },
-
+      { path: 'proyectos', loadComponent: () =>import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
+      { path: 'Miperfil', redirectTo: 'mi-perfil', pathMatch: 'full' }, // alias por si ya lo usás en el menú
+      { path: 'mi-perfil', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
 
     ],
   },

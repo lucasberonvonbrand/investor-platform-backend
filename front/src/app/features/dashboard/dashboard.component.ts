@@ -6,8 +6,8 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { ChartModule } from 'primeng/chart';                 // 👈 Habilitamos charts
-import type { ChartData, ChartOptions } from 'chart.js';     // 👈 Tipos
+import { ChartModule } from 'primeng/chart';
+import type { ChartData, ChartOptions } from 'chart.js';
 
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -15,6 +15,7 @@ import { catchError } from 'rxjs/operators';
 import { UsersService, IUser } from '../../core/services/users.service';
 import { StudentService } from '../../core/services/students.service';
 import { InvestorService } from '../../core/services/investors.service';
+import { ProjectsService, IProject } from '../../core/services/projects.service';
 
 type AnyObj = Record<string, any>;
 
@@ -22,14 +23,15 @@ type AnyObj = Record<string, any>;
   standalone: true,
   selector: 'app-panel',
   imports: [CommonModule, CardModule, ButtonModule, TagModule, TooltipModule, ToastModule, ChartModule],
-  templateUrl: './panel.component.html',
-  styleUrls: ['./panel.component.scss'],
+  templateUrl: './dashboard.component.html',
+  styleUrls: ['./dashboard.component.scss'],
   providers: [MessageService]
 })
 export class PanelComponent implements OnInit {
   private usersSvc = inject(UsersService);
   private studentsSvc = inject(StudentService);
   private investorsSvc = inject(InvestorService);
+  private projectsSvc = inject(ProjectsService);   // 👈 Proyectos (línea de tiempo)
   private toast = inject(MessageService);
 
   loading = false;
@@ -52,12 +54,26 @@ export class PanelComponent implements OnInit {
   students: AnyObj[] = [];
   investors: AnyObj[] = [];
 
-  // Data de charts
+  // ===== Proyectos & Timeline =====
+  projects: IProject[] = [];
+  projectsTimelineData!: ChartData<'line'>;
+  projectsLineOptions: ChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    elements: { line: { tension: 0.3 } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+    }
+  };
+
+  // ===== Data de otros charts =====
   studentsByDegreeData!: ChartData<'doughnut'>;
   usersByRoleData!: ChartData<'bar'>;
   universitiesData!: ChartData<'bar'>;
 
-  // Opciones (look simple, responsive)
+  // Opciones comunes
   chartOptions: ChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -78,12 +94,14 @@ export class PanelComponent implements OnInit {
     forkJoin({
       users: this.usersSvc.getAll().pipe(catchError(() => of([] as IUser[]))),
       students: this.studentsSvc.loadAll().pipe(catchError(() => of([] as AnyObj[]))),
-      investors: this.investorsSvc.loadAll().pipe(catchError(() => of([] as AnyObj[])))
+      investors: this.investorsSvc.loadAll().pipe(catchError(() => of([] as AnyObj[]))),
+      projects: this.projectsSvc.getAll().pipe(catchError(() => of([] as IProject[]))) // 👈 sumamos proyectos
     }).subscribe({
-      next: ({ users, students, investors }) => {
+      next: ({ users, students, investors, projects }) => {
         this.users = users || [];
         this.students = students || [];
         this.investors = investors || [];
+        this.projects = projects || [];
 
         // KPIs
         const activeStudents = this.students.filter(s => s?.enabled).length;
@@ -104,6 +122,7 @@ export class PanelComponent implements OnInit {
           this.buildStudentsByDegreeChart();
           this.buildUsersByRoleChart();
           this.buildUniversitiesChart();
+          this.buildProjectsTimeline(); // 👈 timeline de proyectos
         }
       },
       error: (err) => {
@@ -134,7 +153,6 @@ export class PanelComponent implements OnInit {
 
   // ====== Charts builders ======
   private buildStudentsByDegreeChart() {
-    // Cuenta por degreeStatus (IN_PROGRESS, COMPLETED, …)
     const order = ['IN_PROGRESS', 'COMPLETED', 'PAUSED', 'DROPPED', 'UNKNOWN'];
     const counts: Record<string, number> = {};
 
@@ -159,7 +177,6 @@ export class PanelComponent implements OnInit {
   }
 
   private buildUsersByRoleChart() {
-    // Cuenta por rol (toma rolesList o roles)
     const counts: Record<string, number> = {};
     for (const u of this.users as any[]) {
       const roles = u?.rolesList ?? u?.roles ?? [];
@@ -184,7 +201,6 @@ export class PanelComponent implements OnInit {
   }
 
   private buildUniversitiesChart() {
-    // Cuenta por universidad en students
     const uniCounts: Record<string, number> = {};
     for (const s of this.students) {
       const uni = s?.university ?? '—';
@@ -200,6 +216,51 @@ export class PanelComponent implements OnInit {
           label: 'Estudiantes',
           data,
           backgroundColor: this.seriesColors(labels.length)
+        }
+      ]
+    };
+  }
+
+  // ====== Línea de tiempo de proyectos (últimos 12 meses) ======
+  private buildProjectsTimeline(): void {
+    const now = new Date();
+    const labels: string[] = [];
+    const keys: string[] = [];
+
+    const ymKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    // Ventana de 12 meses (incluye el actual)
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }));
+      keys.push(ymKey(d));
+    }
+
+    const counts: Record<string, number> = Object.fromEntries(keys.map(k => [k, 0])) as Record<string, number>;
+
+    // Usamos p.lastUpdated (mappeado desde startDate en ProjectsService). Fallback: startDate si existiera.
+    const getIso = (p: IProject | any): string | null => p?.lastUpdated ?? p?.startDate ?? null;
+
+    for (const p of this.projects) {
+      const iso = getIso(p);
+      if (!iso) continue;
+      const d = new Date(iso);
+      if (isNaN(+d)) continue;
+      const k = ymKey(new Date(d.getFullYear(), d.getMonth(), 1));
+      if (k in counts) counts[k] += 1;
+    }
+
+    const data = keys.map(k => counts[k] ?? 0);
+
+    this.projectsTimelineData = {
+      labels,
+      datasets: [
+        {
+          label: 'Proyectos actualizados',
+          data,
+          fill: false,
+          borderColor: '#3b82f6',
+          pointBackgroundColor: '#3b82f6'
         }
       ]
     };

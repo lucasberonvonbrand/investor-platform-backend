@@ -25,13 +25,30 @@ export class StudentService {
       });
     });
   }
-
+ // 👇 NUEVO
+  getById(id: number): Observable<Student> {
+    return this.http.get<Student>(`${this.apiUrl}/${id}`);
+  }
   create(studentData: Partial<Student>): Observable<Student> {
     return new Observable((subscriber) => {
       this.http.post<Student>(this.apiUrl, studentData).subscribe({
         next: (createdStudent) => {
           this._students.update(list => [...list, createdStudent]);
           subscriber.next(createdStudent);
+          subscriber.complete();
+        },
+        error: (err) => subscriber.error(err)
+      });
+    });
+  }
+
+   // 👇 NUEVO
+  update(id: number, studentData: Partial<Student>): Observable<Student> {
+    return new Observable((subscriber) => {
+      this.http.put<Student>(`${this.apiUrl}/${id}`, studentData).subscribe({
+        next: (updated) => {
+          this._students.update(list => list.map(s => (s as any).id === id ? updated : s));
+          subscriber.next(updated);
           subscriber.complete();
         },
         error: (err) => subscriber.error(err)
