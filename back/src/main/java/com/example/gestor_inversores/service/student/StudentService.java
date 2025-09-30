@@ -2,6 +2,7 @@ package com.example.gestor_inversores.service.student;
 
 import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
 import com.example.gestor_inversores.dto.RequestStudentDTO;
+import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Role;
@@ -145,5 +146,17 @@ public class StudentService implements IStudentService {
     public List<Student> findAll() {
         return studentRepository.findAll();
     }
+
+    @Override
+    public List<ResponseStudentNameDTO> findAllStudentNames() {
+        return studentRepository.findAll().stream()
+                .map(student -> new ResponseStudentNameDTO(
+                        student.getId(),
+                        student.getFirstName(),
+                        student.getLastName()
+                ))
+                .toList();
+    }
+
 
 }
