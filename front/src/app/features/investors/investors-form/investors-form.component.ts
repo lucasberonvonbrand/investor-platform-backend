@@ -78,7 +78,7 @@ export class InvestorFormComponent {
         this.form.reset();
         setTimeout(() => {
           this.showModal.set(false);
-          this.router.navigateByUrl('/home', { replaceUrl: true });
+          this.router.navigateByUrl('/dashboard', { replaceUrl: true });
         }, 2000);
       },
       error: (err: any) => {
