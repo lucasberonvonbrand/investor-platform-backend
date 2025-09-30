@@ -2,6 +2,7 @@ package com.example.gestor_inversores.service.student;
 
 import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
 import com.example.gestor_inversores.dto.RequestStudentDTO;
+import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
 import com.example.gestor_inversores.model.Student;
 
 import java.util.List;
@@ -24,4 +25,7 @@ public interface IStudentService {
     Student activateStudent(Long id);
 
     Student desactivateStudent(Long id);
+
+    List<ResponseStudentNameDTO> findAllStudentNames();
+
 }

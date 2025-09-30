@@ -3,6 +3,7 @@ package com.example.gestor_inversores.controller;
 import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
 import com.example.gestor_inversores.dto.RequestStudentDTO;
 import com.example.gestor_inversores.dto.ResponseStudentDTO;
+import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.service.student.IStudentService;
@@ -36,6 +37,13 @@ public class StudentController {
                 .map(StudentMapper::studentToResponseStudentDTO)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
+    @GetMapping("/names")
+    public ResponseEntity<List<ResponseStudentNameDTO>> getAllStudentNames() {
+        List<ResponseStudentNameDTO> students = studentService.findAllStudentNames();
+        return ResponseEntity.ok(students);
     }
 
     @PostMapping
