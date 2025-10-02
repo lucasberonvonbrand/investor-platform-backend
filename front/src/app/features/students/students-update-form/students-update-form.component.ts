@@ -1,6 +1,6 @@
 import { Component,OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MessageModule } from 'primeng/message'; // agregado para msj de error primeng
+import { DegreeStatus, Province, University } from '../../../models/student.model'; // Corrige la ruta si es necesario
 
 @Component({
   selector: 'app-students-update',
@@ -9,7 +9,6 @@ import { MessageModule } from 'primeng/message'; // agregado para msj de error p
   standalone: true,
   imports: [
   ReactiveFormsModule,
-  MessageModule // agregado para msj de error primeng
 ],
 })
 
@@ -26,34 +25,70 @@ export class StudentsUpdateComponent implements OnInit {
   progress: number = 0; 
 
   // Constructor: inyección de dependencias como FormBuilder
-  //constructor(private fb: FormBuilder) {}
 constructor(private fb: FormBuilder) {}
+
+  // Arrays para los desplegables
+  provinces = Object.values(Province);
+  universities = Object.values(University);
+  degreeStatuses = Object.values(DegreeStatus);
 
 
 student = {
-  id: 1,
-  username: 'juan123',
-  password: '',
-  email: 'juan@example.com',
-  enabled: true,
-  accountNotExpired: true,
-  accountNotLocked: true,
-  credentialNotExpired: true,
-  nombre: 'Juan',
-  apellido: 'Pérez',
-  dni: '12345678',
-  telefono: '123456789',
-  fechaNacimiento: '1995-04-10',
-  universidad: "University.UBA",
-  carrera: 'Ingeniería',
-  degreeStatus: "DegreeStatus.IN_PROGRESS",
-  redSocial: 'https://facebook.com/juanperez'
-};
+    id: 1,
+    username: 'juan123',
+    password: '',
+    email: 'juan@example.com',
+    enabled: true,
+    accountNotExpired: true,
+    accountNotLocked: true,
+    credentialNotExpired: true,
+    firstName: 'Juan',
+    lastName: 'Pérez',
+    dni: '12345678',
+    phone: '123456789',
+    dateOfBirth: '1995-04-10',
+    university: University.UBA,
+    career: 'Ingeniería',
+    degreeStatus: DegreeStatus.IN_PROGRESS,
+    linkedinUrl: 'https://facebook.com/juanperez'
+  };
 
 
+ ngOnInit(): void {
+    this.studentsUpdateForm = this.fb.group({
+      username: [this.student.username, [Validators.required, Validators.maxLength(15), Validators.pattern('^[A-Za-z0-9 ./,!&]+$')]],
+      email: [this.student.email, [Validators.required, Validators.email]],
+      firstName: [this.student.firstName, [Validators.required, Validators.maxLength(15), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+      lastName: [this.student.lastName, [Validators.required, Validators.maxLength(20), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+      dni: [this.student.dni, [Validators.required, Validators.maxLength(8), Validators.pattern('^[0-9]+$')]],
+      phone: [this.student.phone, [Validators.required, Validators.maxLength(13), Validators.pattern('^[0-9]+$')]],
+      dateOfBirth: [this.student.dateOfBirth, Validators.required],
+      university: [this.student.university, Validators.required],
+      career: [this.student.career, Validators.required],
+      degreeStatus: [this.student.degreeStatus, Validators.required],
+      linkedinUrl: [this.student.linkedinUrl, [Validators.pattern('https?://.+')]]
+    });
+  }
+/*
 ngOnInit(): void {
     // Cargar los datos del usuario en el formulario
     this.studentsUpdateForm = this.fb.group({
+      username: 
+      [
+        this.student.username,
+         [
+          Validators.required,
+          Validators.maxLength(15),
+          Validators.pattern('^[A-Za-z0-9 ./,!&]]+$')
+        ]
+      ],
+      email: 
+      [
+        this.student.email,
+         [
+          Validators.required,
+        ]
+      ],
       nombre: 
       [
         this.student.nombre,
@@ -80,6 +115,15 @@ ngOnInit(): void {
           Validators.pattern('^[0-9]+$')
         ]
       ],
+      telefono: 
+      [
+        this.student.dni, 
+        [
+          Validators.required,
+          Validators.maxLength(13),
+          Validators.pattern('^[0-9]+$')
+        ]
+      ],
       fechaNacimiento: 
       [
         this.student.fechaNacimiento,
@@ -89,15 +133,13 @@ ngOnInit(): void {
       [
         this.student.redSocial,
         [
-          Validators.required,
-          Validators.maxLength(15),
-          Validators.pattern('^[A-Za-zÀ-ÿ ]+$')
+          Validators.maxLength(20)
         ]
       ],
       CarreraEstado: [null, Validators.required]
     });
   }
-
+*/
 
 /*
   guardar() {
