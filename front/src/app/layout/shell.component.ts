@@ -41,7 +41,10 @@ toggleDarkMode() {
   @ViewChild('userMenu') userMenu!: Menu;
 
   userItems = [
-    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/mi-perfil') },
+    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/configuracion') },
+    { label: 'Cuenta inversor', icon: 'pi pi-user', command: () => this.go('/inversor') },
+    { label: 'Cuenta Estudiante', icon: 'pi pi-user', command: () => this.go('/estudiante') },
+    { label: 'Borrar Cuenta', icon: 'pi pi-times', command: () => this.go('/inversor') },
     { separator: true },
     { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
   ];
