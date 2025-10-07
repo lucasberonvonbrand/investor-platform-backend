@@ -58,4 +58,8 @@ public class Earning {
     @JoinColumn(name = "confirmed_by_id")
     private Investor confirmedBy;
 
+    @OneToOne
+    @JoinColumn(name = "contract_id", nullable = false)
+    private Contract contract; // 🔹 relación directa con contrato
+
 }

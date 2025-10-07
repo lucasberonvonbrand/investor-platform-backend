@@ -83,4 +83,8 @@ public class Project {
     private Boolean deleted = false;
     private LocalDateTime deletedAt;
 
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    private Student owner;
+
 }
