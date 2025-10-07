@@ -2,6 +2,7 @@ package com.example.gestor_inversores.service.student;
 
 import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
 import com.example.gestor_inversores.dto.RequestStudentDTO;
+import com.example.gestor_inversores.dto.ResponseProjectByStudentDTO;
 import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.StudentMapper;
@@ -157,6 +158,15 @@ public class StudentService implements IStudentService {
                 ))
                 .toList();
     }
+
+    @Override
+    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));
+
+        return StudentMapper.mapProjectsToResponseProjectDTO(student.getProjectsList());
+    }
+
 
 
 }
