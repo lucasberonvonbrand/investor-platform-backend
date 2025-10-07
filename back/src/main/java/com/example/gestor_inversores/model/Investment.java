@@ -56,4 +56,14 @@ public class Investment {
     @JoinColumn(name = "confirmed_by_student_id")
     private Student confirmedBy; // puede ser null si aún no fue confirmada
 
+    private boolean deleted = false;
+    private LocalDate deletedAt;
+
+    // Investment.java
+    @OneToOne(mappedBy = "investment")
+    private Contract contract; // opcional, solo para navegación
+
+
+
+
 }
