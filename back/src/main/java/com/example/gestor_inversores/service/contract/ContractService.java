@@ -8,6 +8,7 @@ import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.ContractStatus;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import com.example.gestor_inversores.repository.*;
+import com.example.gestor_inversores.service.earning.IEarningService;
 import com.example.gestor_inversores.service.investment.InvestmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class ContractService implements IContractService {
     private final ContractActionMapper actionMapper;
     private final IInvestmentRepository investmentRepo;
     private final InvestmentService investmentService; // ✅ para usar returnInvestment()
+    private final IEarningService earningService; // ✅ nuevo: para crear earning automáticamente
 
     @Override
     public ResponseContractDTO createContract(RequestContractDTO dto) {
@@ -42,12 +44,12 @@ public class ContractService implements IContractService {
                 .createdByInvestor(investor)
                 .amount(dto.getAmount())
                 .currency(dto.getCurrency())
-                .status(ContractStatus.PENDING_STUDENT_SIGNATURE) // estado inicial
+                .status(ContractStatus.PENDING_STUDENT_SIGNATURE)
                 .createdAt(LocalDate.now())
                 .profit1Year(dto.getProfit1Year())
                 .profit2Years(dto.getProfit2Years())
                 .profit3Years(dto.getProfit3Years())
-                .actions(new ArrayList<>()) // lista vacía
+                .actions(new ArrayList<>())
                 .build();
 
         contractRepository.save(contract);
@@ -128,7 +130,6 @@ public class ContractService implements IContractService {
         Investment inv = contract.getInvestment();
 
         if (actionStatus == ContractStatus.SIGNED && inv == null) {
-            // Crear inversión al firmar contrato
             inv = new Investment();
             inv.setAmount(contract.getAmount());
             inv.setCurrency(contract.getCurrency());
@@ -144,26 +145,23 @@ public class ContractService implements IContractService {
         if (inv != null) {
             switch (actionStatus) {
                 case CANCELLED -> {
-                    // Cancelación sin devolución (nunca llegó a RECEIVED)
                     inv.setStatus(InvestmentStatus.CANCELLED);
                     investmentRepo.save(inv);
                 }
                 case REFUNDED -> {
-                    // Devolución al inversor
                     investmentService.returnInvestment(inv.getIdInvestment());
                 }
                 case CLOSED -> {
-                    // Contrato exitoso → la inversión queda en RECEIVED
-                    // (liquidación de ganancias se maneja aparte)
+                    // ⚡ Nuevo: crear earning automáticamente al cerrar contrato
+                    contractRepository.save(contract); // guardar antes de crear earning
+                    earningService.createFromContract(contract, student);
                 }
                 case SIGNED -> {
-                    // ⚡ Auto-cancelar si pasan 30 días y la inversión sigue IN_PROGRESS
                     if (inv.getStatus() == InvestmentStatus.IN_PROGRESS) {
                         LocalDate fechaLimite = inv.getCreatedAt().plusDays(30);
                         if (LocalDate.now().isAfter(fechaLimite)) {
                             inv.setStatus(InvestmentStatus.CANCELLED);
                             investmentRepo.save(inv);
-
                             contract.setStatus(ContractStatus.CANCELLED);
                         }
                     }

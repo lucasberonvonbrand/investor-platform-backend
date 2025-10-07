@@ -1,21 +1,26 @@
 package com.example.gestor_inversores.service.earning;
 
-import com.example.gestor_inversores.dto.RequestEarningDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
+import com.example.gestor_inversores.model.Contract;
+import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.model.enums.EarningStatus;
 
 import java.util.List;
 
 public interface IEarningService {
 
-    /**
-    ResponseEarningDTO generateEarning(RequestEarningDTO dto);
+    // Creación automática desde contrato cerrado
+    ResponseEarningDTO createFromContract(Contract contract, Student generatedByStudent);
 
-    ResponseEarningDTO confirmEarning(Long earningId, Long investorId, boolean received);
+    // Permitir creación manual (opcional)
+    ResponseEarningDTO createManual(Long generatedByStudentId, Long contractId, java.math.BigDecimal amount, com.example.gestor_inversores.model.enums.Currency currency);
 
-    ResponseEarningDTO getById(Long earningId);
+    // Confirmar por inversor (RECEIVED / NOT_RECEIVED)
+    ResponseEarningDTO confirmEarning(Long earningId, Long investorId, EarningStatus status);
 
+    // Consultas
+    List<ResponseEarningDTO> getByProject(Long projectId);
+    List<ResponseEarningDTO> getByInvestor(Long investorId);
+    List<ResponseEarningDTO> getByStudent(Long studentId);
     List<ResponseEarningDTO> getAll();
-
-    List<ResponseEarningDTO> getByContract(Long contractId);
-     **/
 }

@@ -42,7 +42,6 @@ public class StudentController {
         return ResponseEntity.ok(projects);
     }
 
-
     //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
     @GetMapping("/names")
     public ResponseEntity<List<ResponseStudentNameDTO>> getAllStudentNames() {

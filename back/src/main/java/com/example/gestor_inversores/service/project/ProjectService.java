@@ -188,4 +188,32 @@ public class ProjectService implements IProjectService {
         return ProjectMapper.projectToResponseProjectDTO(project);
     }
 
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwner(Student owner) {
+        List<Project> projects = projectRepository.findByOwner(owner);
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId) {
+        // Verificar si existe algún proyecto con ese ownerId
+        boolean ownerExists = projectRepository.existsByOwnerId(ownerId);
+
+        if (!ownerExists) {
+            throw new OwnerNotFoundException("El owner con id " + ownerId + " no existe");
+        }
+
+        // Traer todos los proyectos de ese owner
+        List<Project> projects = projectRepository.findByOwnerId(ownerId);
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+
+
+
 }

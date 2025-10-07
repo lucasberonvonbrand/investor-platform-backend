@@ -22,6 +22,13 @@ import java.util.List;
 @RestControllerAdvice
 public class ControllerHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(value = {OwnerNotFoundException.class})
+    public ResponseEntity<ApiError> handleOwnerNotFoundException(OwnerNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND; // 404
+        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
     @ExceptionHandler(value = {InvestmentNotFoundException.class})
     public ResponseEntity<ApiError> handleInvestmentNotFoundException(InvestmentNotFoundException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
