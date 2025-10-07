@@ -54,4 +54,10 @@ public class ProjectController {
         List<ResponseProjectDTO> list = projectService.getAllProjects();
         return ResponseEntity.status(HttpStatus.OK).body(list);
     }
+
+    // Endpoint usando ownerId
+    @GetMapping("/by-owner/{ownerId}")
+    public List<ResponseProjectDTO> getProjectsByOwnerId(@PathVariable Long ownerId) {
+        return projectService.getProjectsByOwnerId(ownerId);
+    }
 }
