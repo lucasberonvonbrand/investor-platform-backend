@@ -2,11 +2,13 @@ package com.example.gestor_inversores.mapper;
 
 import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Address;
+import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.service.role.IRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -141,6 +143,23 @@ public class StudentMapper {
                 if (addressDTO.getPostalCode() > 0) address.setPostalCode(addressDTO.getPostalCode());
             }
         }
+    }
+
+    public static List<ResponseProjectByStudentDTO> mapProjectsToResponseProjectDTO(Set<Project> projects) {
+        if (projects == null) return List.of();
+
+        return projects.stream().map(project -> ResponseProjectByStudentDTO.builder()
+                .idProject(project.getIdProject())
+                .name(project.getName())
+                .description(project.getDescription())
+                .budgetGoal(project.getBudgetGoal())
+                .currentGoal(project.getCurrentGoal())
+                .status(project.getStatus())
+                .startDate(project.getStartDate())
+                .estimatedEndDate(project.getEstimatedEndDate())
+                .endDate(project.getEndDate())
+                .build()
+        ).collect(Collectors.toList());
     }
 
 }
