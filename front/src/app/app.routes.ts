@@ -31,6 +31,8 @@ export const routes: Routes = [
       { path: 'proyectos', loadComponent: () =>import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'Miperfil', redirectTo: 'mi-perfil', pathMatch: 'full' }, // alias por si ya lo usás en el menú
       { path: 'mi-perfil', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'my-projects', loadComponent: () => import('./features/proyectos/my-projects-panel/my-projects-panel.component').then(m => m.MyProjectsPanelComponent) },
+
     ],
   },
 
