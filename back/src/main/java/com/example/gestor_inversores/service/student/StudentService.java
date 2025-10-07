@@ -167,6 +167,4 @@ public class StudentService implements IStudentService {
         return StudentMapper.mapProjectsToResponseProjectDTO(student.getProjectsList());
     }
 
-
-
 }
