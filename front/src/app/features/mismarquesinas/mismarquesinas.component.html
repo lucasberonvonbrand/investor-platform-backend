@@ -1,0 +1,9 @@
+<div class="home-container">
+  <h1>Áreas de Proyecto</h1>
+  <div class="cuadrados-grid">
+    <div class="cuadrado" *ngFor="let item of items">
+      <img [src]="item.img" [alt]="item.text" />
+      <div class="cuadrado-text">{{ item.text }}</div>
+    </div>
+  </div>
+</div>

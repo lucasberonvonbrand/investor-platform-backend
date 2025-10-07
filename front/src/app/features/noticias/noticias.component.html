@@ -1,0 +1,8 @@
+<div class="noticias-container">
+  <h2>Noticias Financieras</h2>
+  <div class="marquesinas-list">
+    <div class="marquesina" *ngFor="let noticia of noticias">
+      <span class="marquesina-text" [style.animationDuration]="noticia.speed">{{ noticia.text }}</span>
+    </div>
+  </div>
+</div>

@@ -23,13 +23,14 @@ export const routes: Routes = [
       { path: 'configuracion', loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
       { path: 'proyectos', loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'misproyectos', loadComponent: () => import('./features/misproyectos/misproyectos.component').then(m => m.MisProyectosComponent) },
+      { path: 'marquesinas', loadComponent: () => import('./features/marquesina/marquesina.component').then(m => m.MarquesinaComponent) },
+      { path: 'mismarquesinas', loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
+      { path: 'noticias', loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
       { path: 'estudiantes', loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
       { path: 'inversores', loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },
       { path: 'proyectos', loadComponent: () =>import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'Miperfil', redirectTo: 'mi-perfil', pathMatch: 'full' }, // alias por si ya lo usás en el menú
       { path: 'mi-perfil', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
-      
-
     ],
   },
 
