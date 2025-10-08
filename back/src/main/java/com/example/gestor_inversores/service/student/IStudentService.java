@@ -26,9 +26,9 @@ public interface IStudentService {
 
     List<ResponseStudentNameDTO> findAllStudentNames();
 
-    List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId);
-
     Optional<ResponseStudentDTO> findByUsername(String username);
+
+    List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active);
 
 
 }

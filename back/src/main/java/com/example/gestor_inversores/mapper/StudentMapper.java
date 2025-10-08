@@ -145,22 +145,26 @@ public class StudentMapper {
         }
     }
 
-    public static List<ResponseProjectByStudentDTO> mapProjectsToResponseProjectDTO(Set<Project> projects) {
+    public static List<ResponseProjectByStudentDTO> mapProjectsToResponseProjectDTO(Set<Project> projects, boolean active) {
         if (projects == null) return List.of();
 
-        return projects.stream().map(project -> ResponseProjectByStudentDTO.builder()
-                .idProject(project.getIdProject())
-                .name(project.getName())
-                .description(project.getDescription())
-                .budgetGoal(project.getBudgetGoal())
-                .currentGoal(project.getCurrentGoal())
-                .status(project.getStatus())
-                .startDate(project.getStartDate())
-                .estimatedEndDate(project.getEstimatedEndDate())
-                .endDate(project.getEndDate())
-                .build()
-        ).collect(Collectors.toList());
+        return projects.stream()
+                .filter(project -> active ? !project.getDeleted() : project.getDeleted())
+                .map(project -> ResponseProjectByStudentDTO.builder()
+                        .idProject(project.getIdProject())
+                        .name(project.getName())
+                        .description(project.getDescription())
+                        .budgetGoal(project.getBudgetGoal())
+                        .currentGoal(project.getCurrentGoal())
+                        .status(project.getStatus())
+                        .startDate(project.getStartDate())
+                        .estimatedEndDate(project.getEstimatedEndDate())
+                        .endDate(project.getEndDate())
+                        .build()
+                ).collect(Collectors.toList());
     }
+
+
 
 
 }

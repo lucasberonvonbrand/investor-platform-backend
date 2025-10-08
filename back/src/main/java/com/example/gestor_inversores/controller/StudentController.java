@@ -37,10 +37,14 @@ public class StudentController {
     }
 
     @GetMapping("/projects/{id}")
-    public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(@PathVariable Long id) {
-        List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id);
+    public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "true") boolean active) { // true = activos, false = inactivos
+
+        List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id, active);
         return ResponseEntity.ok(projects);
     }
+
 
     //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
     @GetMapping("/names")
