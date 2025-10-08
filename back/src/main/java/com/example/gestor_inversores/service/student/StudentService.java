@@ -158,5 +158,10 @@ public class StudentService implements IStudentService {
                 .toList();
     }
 
+    @Override
+        public Optional<Student> findByUsername(String username) {
+            // 💡 NUEVO MÉTODO: Implementación
+            return studentRepository.findByUsername(username); // Usamos el método del Repositorio
+        }
 
 }
