@@ -9,6 +9,10 @@ import { Avatar } from 'primeng/avatar';
 
 import { AuthService } from '../features/auth/login/auth.service';
 
+import { StudentService } from '../core/services/students.service';
+import { InvestorService } from '../core/services/investors.service'; 
+
+
 @Component({
   selector: 'app-shell', // 👈 evita 'app-root' para no chocar con el root
   standalone: true,
@@ -37,17 +41,22 @@ toggleDarkMode() {
 
   private router = inject(Router);
   private auth = inject(AuthService);
+    // private studentService: StudentService,
+    // private investorService: InvestorService, // Descomenta si tienes este servicio
+ 
 
   @ViewChild('userMenu') userMenu!: Menu;
 
-  userItems = [
-    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/configuracion') },
-    { label: 'Cuenta inversor', icon: 'pi pi-user', command: () => this.go('/inversor') },
-    { label: 'Cuenta Estudiante', icon: 'pi pi-user', command: () => this.go('/estudiante') },
-    { label: 'Borrar Cuenta', icon: 'pi pi-times', command: () => this.go('/inversor') },
-    { separator: true },
-    { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
-  ];
+userItems = [
+  { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/configuracion') },
+  ...(this.auth.getSession()?.roles.includes('ROLE_INVESTOR') ? [{ label: 'Cuenta Inversor', icon: 'pi pi-briefcase', command: () => this.go('/inversor-perfil') } ] : []),
+  ...(this.auth.getSession()?.roles.includes('ROLE_STUDENT') ? [ { label: 'Cuenta Estudiante', icon: 'pi pi-book', command: () => this.go('/estudiante-perfil') } ] : []),
+  { label: 'Borrar cuenta', icon: 'pi pi-times', command: () => this.logout() },
+  // { label: 'Borrar cuenta', icon: 'pi pi-times', command: () => this.borrarCuenta() },
+  { separator: true },
+  { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
+];
+
 
   sideModel = [
     { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
@@ -71,12 +80,6 @@ toggleDarkMode() {
         { label: 'Inversores', icon: 'pi pi-users', routerLink: '/inversores' }
       ]
     }
-    /*{
-    label: 'Proyectos',
-    icon: 'pi pi-database',
-    routerLink: '/proyectos', // ✅ Este elemento es un enlace de navegación
-    }
-    **/
 
 
   ];
@@ -93,4 +96,39 @@ toggleDarkMode() {
     this.auth.logout();
     this.router.navigateByUrl('/auth/login', { replaceUrl: true });
   }
-}
+
+    /*  BORRAR CUENTA  Si quieres un popup más elegante, usa el componente Dialog de PrimeNG
+borrarCuenta() {
+    if (!confirm('¿Estás seguro de que deseas borrar tu cuenta? Esta acción no se puede deshacer.')) {
+      return;
+    }
+    const session = this.auth.getSession();
+    if (!session) return;
+
+    // Detecta el rol y llama al servicio correspondiente
+    if (session.roles.includes('ROLE_STUDENT')) {
+      this.studentService.delete(session.id).subscribe({
+        next: () => {
+          alert('Cuenta de estudiante eliminada');
+          this.logout();
+        },
+        error: (err) => {
+          alert('Error al borrar la cuenta de estudiante');
+          console.error(err);
+        }
+      });
+    } else if (session.roles.includes('ROLE_INVESTOR')) {
+      // Descomenta si tienes InvestorService
+      
+      this.investorService.delete(session.id).subscribe({
+        next: () => {
+          alert('Cuenta de inversor eliminada');
+          this.logout();
+        },
+        error: (err) => {
+          alert('Error al borrar la cuenta de inversor');
+          console.error(err);
+        }
+      });
+      */
+    }

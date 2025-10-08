@@ -90,6 +90,7 @@
           <div *ngIf="studentsUpdateForm.get('university')?.errors?.['required']">La universidad es obligatoria.</div>
         </div>
       </div>
+      <!--
       <div class="form-group">
         <label for="configuracionProvincia">Provincia</label>
         <select id="configuracionProvincia" formControlName="province">
@@ -100,7 +101,7 @@
           <div *ngIf="studentsUpdateForm.get('province')?.errors?.['required']">La provincia es obligatoria.</div>
         </div>
       </div>
-
+      --->
 
       <div class="form-group">
         <label for="configuracionCarrera">Carrera</label>
@@ -132,7 +133,7 @@
       </div>    
 
       <div class="actions">
-        <button type="submit" class="save-button" [disabled]="studentsUpdateForm.invalid">Guardar Cambios</button>
+        <button type="submit" class="save-button">Guardar Cambios</button>
         <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
       </div>    
 
