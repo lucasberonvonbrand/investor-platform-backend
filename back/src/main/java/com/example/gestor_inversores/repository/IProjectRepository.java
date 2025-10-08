@@ -20,4 +20,15 @@ public interface IProjectRepository extends JpaRepository<Project, Long> {
 
     boolean existsByOwnerId(Long ownerId);
 
+    // Método para traer solo los proyectos que no están eliminados
+    List<Project> findByOwnerIdAndDeletedFalse(Long ownerId);
+
+    // Buscar proyectos activos de un estudiante
+    List<Project> findByStudents_IdAndDeletedFalse(Long studentId);
+
+    List<Project> findByOwnerIdAndDeletedTrue(Long ownerId);
+
+    List<Project> findByStudents_IdAndDeletedTrue(Long studentId);
+
+    List<Project> findByDeletedTrue();
 }

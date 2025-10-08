@@ -36,6 +36,11 @@ public class ProjectMapper {
     }
 
     public static ResponseProjectDTO projectToResponseProjectDTO(Project project) {
+        Long ownerId = project.getOwner() != null ? project.getOwner().getId() : null;
+        String ownerName = project.getOwner() != null
+                ? project.getOwner().getFirstName() + " " + project.getOwner().getLastName()
+                : "";
+
         return ResponseProjectDTO.builder()
                 .id(project.getIdProject())
                 .name(project.getName())
@@ -46,14 +51,15 @@ public class ProjectMapper {
                 .startDate(project.getStartDate())
                 .estimatedEndDate(project.getEstimatedEndDate())
                 .endDate(project.getEndDate())
-                .ownerId(project.getOwner().getId())
-                .ownerName(project.getOwner().getFirstName() + " " + project.getOwner().getLastName())
+                .ownerId(ownerId)
+                .ownerName(ownerName)
                 .students(project.getStudents().stream()
-                        .filter(s -> !s.getId().equals(project.getOwner().getId()))
+                        .filter(s -> project.getOwner() == null || !s.getId().equals(project.getOwner().getId()))
                         .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)
                         .toList())
                 .build();
     }
+
 
 
     public static Project requestProjectCurrentGoalUpdateToProject(RequestProjectCurrentGoalUpdateDTO dto, Project project) {

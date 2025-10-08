@@ -161,12 +161,20 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getAllProjects() {
-        return projectRepository.findByDeletedFalse()
-                .stream()
+    public List<ResponseProjectDTO> getAllProjects(boolean active) {
+        List<Project> projects;
+
+        if (active) {
+            projects = projectRepository.findByDeletedFalse();
+        } else {
+            projects = projectRepository.findByDeletedTrue();
+        }
+
+        return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
     }
+
 
     @Override
     public List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId) {
@@ -197,7 +205,7 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId) {
+    public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active) {
         // Verificar si existe algún proyecto con ese ownerId
         boolean ownerExists = projectRepository.existsByOwnerId(ownerId);
 
@@ -205,13 +213,39 @@ public class ProjectService implements IProjectService {
             throw new OwnerNotFoundException("El owner con id " + ownerId + " no existe");
         }
 
-        // Traer todos los proyectos de ese owner
-        List<Project> projects = projectRepository.findByOwnerId(ownerId);
+        // Traer proyectos según el parámetro
+        List<Project> projects;
+        if (active) {
+            projects = projectRepository.findByOwnerIdAndDeletedFalse(ownerId);
+        } else {
+            projects = projectRepository.findByOwnerIdAndDeletedTrue(ownerId);
+        }
 
         return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
     }
+
+    @Override
+    public ResponseProjectDTO activateProject(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no existe"));
+
+        if (!project.getDeleted()) {
+            throw new BusinessException("El proyecto ya está activo");
+        }
+
+        project.setDeleted(false);
+        project.setDeletedAt(null);
+        project.setModifiedAt(LocalDateTime.now());
+
+        Project restored = projectRepository.save(project);
+
+        return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
+
+
+
 
 
 

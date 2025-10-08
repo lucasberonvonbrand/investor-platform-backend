@@ -37,10 +37,14 @@ public class StudentController {
     }
 
     @GetMapping("/projects/{id}")
-    public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(@PathVariable Long id) {
-        List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id);
+    public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "true") boolean active) { // true = activos, false = inactivos
+
+        List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id, active);
         return ResponseEntity.ok(projects);
     }
+
 
     //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
     @GetMapping("/names")
@@ -79,5 +83,16 @@ public class StudentController {
         Student student = studentService.desactivateStudent(id);
         return ResponseEntity.ok(StudentMapper.studentToResponseStudentDTO(student));
     }
+
+    @GetMapping("/by-username")
+    public ResponseEntity<ResponseStudentDTO> getStudentByUsername(
+            @RequestParam("username") String username) {
+
+        return studentService.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
 
 }

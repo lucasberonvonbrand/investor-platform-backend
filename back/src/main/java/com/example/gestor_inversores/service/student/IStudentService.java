@@ -1,9 +1,6 @@
 package com.example.gestor_inversores.service.student;
 
-import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
-import com.example.gestor_inversores.dto.RequestStudentDTO;
-import com.example.gestor_inversores.dto.ResponseProjectByStudentDTO;
-import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Student;
 
 import java.util.List;
@@ -29,7 +26,9 @@ public interface IStudentService {
 
     List<ResponseStudentNameDTO> findAllStudentNames();
 
-    List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId);
+    Optional<ResponseStudentDTO> findByUsername(String username);
+
+    List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active);
 
 
 }

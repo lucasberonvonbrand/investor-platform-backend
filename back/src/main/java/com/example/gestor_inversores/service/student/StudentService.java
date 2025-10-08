@@ -1,13 +1,12 @@
 package com.example.gestor_inversores.service.student;
 
-import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
-import com.example.gestor_inversores.dto.RequestStudentDTO;
-import com.example.gestor_inversores.dto.ResponseProjectByStudentDTO;
-import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.StudentMapper;
+import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.repository.IProjectRepository;
 import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
 import com.example.gestor_inversores.service.role.RoleService;
@@ -18,9 +17,11 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class StudentService implements IStudentService {
@@ -30,6 +31,9 @@ public class StudentService implements IStudentService {
 
     @Autowired
     private IUserRepository userRepository;
+
+    @Autowired
+    private IProjectRepository projectRepository;
 
     @Autowired
     private RoleService roleService;
@@ -160,11 +164,27 @@ public class StudentService implements IStudentService {
     }
 
     @Override
-    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId) {
-        Student student = studentRepository.findById(studentId)
+    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
+        studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));
 
-        return StudentMapper.mapProjectsToResponseProjectDTO(student.getProjectsList());
+        List<Project> projects = active
+                ? projectRepository.findByStudents_IdAndDeletedFalse(studentId)
+                : projectRepository.findByStudents_IdAndDeletedTrue(studentId);
+
+        return StudentMapper.mapProjectsToResponseProjectDTO(new HashSet<>(projects), active);
+    }
+
+
+
+    @Override
+    public Optional<ResponseStudentDTO> findByUsername(String username) {
+        return studentRepository.findByUsername(username)
+                .map(StudentMapper::studentToResponseStudentDTO)
+                .or(() -> {
+                    throw new StudentNotFoundException(
+                            "Estudiante con username '" + username + "' no existe");
+                });
     }
 
 }
