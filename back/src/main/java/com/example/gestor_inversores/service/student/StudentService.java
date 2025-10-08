@@ -1,9 +1,6 @@
 package com.example.gestor_inversores.service.student;
 
-import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
-import com.example.gestor_inversores.dto.RequestStudentDTO;
-import com.example.gestor_inversores.dto.ResponseProjectByStudentDTO;
-import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Role;
@@ -166,5 +163,17 @@ public class StudentService implements IStudentService {
 
         return StudentMapper.mapProjectsToResponseProjectDTO(student.getProjectsList());
     }
+
+    @Override
+    public Optional<ResponseStudentDTO> findByUsername(String username) {
+        return studentRepository.findByUsername(username)
+                .map(StudentMapper::studentToResponseStudentDTO)
+                .or(() -> {
+                    throw new StudentNotFoundException(
+                            "Estudiante con username '" + username + "' no existe");
+                });
+    }
+
+
 
 }

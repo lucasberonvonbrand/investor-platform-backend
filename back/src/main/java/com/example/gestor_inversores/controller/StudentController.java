@@ -80,4 +80,15 @@ public class StudentController {
         return ResponseEntity.ok(StudentMapper.studentToResponseStudentDTO(student));
     }
 
+    @GetMapping("/by-username")
+    public ResponseEntity<ResponseStudentDTO> getStudentByUsername(
+            @RequestParam("username") String username) {
+
+        return studentService.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+
 }
