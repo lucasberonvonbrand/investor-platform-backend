@@ -57,9 +57,17 @@ toggleDarkMode() {
       label: 'Gestión',
       icon: 'pi pi-database',
       items: [
-        { label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' },
-        { label: 'Mis Proyectos', icon:'pi pi-pencil',routerLink:'/misproyectos'}
+  { label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' },
+  { label: 'Mis Proyectos', icon:'pi pi-pencil',routerLink:'/misproyectos' },
+  { label: 'Mis Marquesinas', icon:'pi pi-pencil',routerLink:'/mismarquesinas' },
+  { label: 'Marquesinas', icon:'pi pi-pencil',routerLink:'/marquesinas' },
+  { label: 'Noticias', icon:'pi pi-bell', routerLink:'/noticias' }
       ]
+    },
+    {///
+      label: 'Reportes',
+      icon: 'pi pi-chart-line',
+      items: [{ label: 'Dashboard', icon: 'pi pi-chart-bar', disabled: true }]
     },
     {
       label: 'Configuración',

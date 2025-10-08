@@ -1,9 +1,8 @@
 package com.example.gestor_inversores.service.project;
 
-import com.example.gestor_inversores.dto.RequestProjectDTO;
-import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
-import com.example.gestor_inversores.dto.ResponseProjectDTO;
-import com.example.gestor_inversores.dto.ResponseStudentDTO;
+import com.example.gestor_inversores.dto.*;
+import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.Student;
 
 import java.util.List;
 
@@ -12,7 +11,22 @@ public interface IProjectService {
     ResponseProjectDTO save(RequestProjectDTO projectDTO);
     ResponseProjectDTO update(Long id, RequestProjectUpdateDTO projectDTO);
     void delete(Long id);
-    List<ResponseProjectDTO> getAllProjects();
-    List<ResponseStudentDTO> getStudentsByProject(Long projectId);
+    List<ResponseProjectDTO> getAllProjects(boolean active);
+    List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId);
     ResponseProjectDTO findById(Long id);
+
+    // Buscar por Student
+    List<ResponseProjectDTO> getProjectsByOwner(Student owner);
+
+    /**
+    // Buscar por ownerId
+    List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId);
+     **/
+
+    List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active);
+
+    ResponseProjectDTO activateProject(Long id);
+
+
+
 }

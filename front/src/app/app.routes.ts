@@ -7,6 +7,7 @@ export const routes: Routes = [
   { path: 'auth/register', loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
   { path: 'create-student', loadComponent: () => import('./features/students/students-form/students-form.component').then(m => m.StudentFormComponent) },
   { path: 'create-investor', loadComponent: () => import('./features/investors/investors-form/investors-form.component').then(m => m.InvestorFormComponent) },
+  { path: "auth/reset-password", loadComponent: () => import("./features/auth/reset/reset-password.component").then(c => c.ResetPasswordComponent) },
 
 
   {
@@ -24,11 +25,15 @@ export const routes: Routes = [
       { path: 'inversor', loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateComponent) },
       { path: 'proyectos', loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'misproyectos', loadComponent: () => import('./features/misproyectos/misproyectos.component').then(m => m.MisProyectosComponent) },
+      { path: 'marquesinas', loadComponent: () => import('./features/marquesina/marquesina.component').then(m => m.MarquesinaComponent) },
+      { path: 'mismarquesinas', loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
+      { path: 'noticias', loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
       { path: 'estudiantes', loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
       { path: 'inversores', loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },
       { path: 'proyectos', loadComponent: () =>import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'Miperfil', redirectTo: 'mi-perfil', pathMatch: 'full' }, // alias por si ya lo usás en el menú
       { path: 'mi-perfil', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'my-projects', loadComponent: () => import('./features/proyectos/my-projects-panel/my-projects-panel.component').then(m => m.MyProjectsPanelComponent) },
 
     ],
   },
