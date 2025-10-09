@@ -47,88 +47,6 @@ public class InvestmentService implements IInvestmentService {
     private ContractService contractService;
 
     @Override
-    public ResponseInvestmentDTO create(RequestInvestmentDTO dto) {
-        Investor investor = investorRepo.findById(dto.getGeneratedById())
-                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
-
-        Project project = projectRepo.findById(dto.getProjectId())
-                .orElseThrow(() -> new ProjectNotFoundException("Proyecto no encontrado"));
-
-        Investment inv = new Investment();
-        inv.setAmount(dto.getAmount());
-        inv.setCurrency(dto.getCurrency());
-        inv.setGeneratedBy(investor);
-        inv.setProject(project);
-        inv.setStatus(InvestmentStatus.IN_PROGRESS);
-        inv.setCreatedAt(LocalDate.now());
-
-        return mapper.toResponse(investmentRepo.save(inv));
-    }
-
-    @Override
-    public ResponseInvestmentDTO updateDetails(Long id, RequestInvestmentDetailsDTO dto) {
-        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(id)
-                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
-
-        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
-            throw new UpdateException("No se pueden modificar detalles después de la confirmación del estudiante");
-        }
-
-        mapper.updateInvestmentFromDetailsDTO(dto, inv);
-        return mapper.toResponse(investmentRepo.save(inv));
-    }
-
-    @Override
-    public ResponseInvestmentDTO confirmByStudent(Long id, Long studentId, InvestmentStatus status) {
-        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(id)
-                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
-
-        Student student = studentRepo.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
-
-        if (inv.getStatus() == InvestmentStatus.RECEIVED || inv.getStatus() == InvestmentStatus.NOT_RECEIVED) {
-            throw new UpdateException("Esta inversión ya fue confirmada y no se puede modificar nuevamente.");
-        }
-
-        if (status != InvestmentStatus.RECEIVED && status != InvestmentStatus.NOT_RECEIVED) {
-            throw new UpdateException("Estado inválido para confirmación");
-        }
-
-        inv.setStatus(status);
-        inv.setConfirmedBy(student);
-        inv.setConfirmedAt(LocalDate.now());
-        Investment updatedInvestment = investmentRepo.save(inv);
-
-        // ⚡ Ajuste del currentGoal si es RECEIVED
-        if (status == InvestmentStatus.RECEIVED) {
-            Project project = updatedInvestment.getProject();
-
-            BigDecimal amountInUSD = updatedInvestment.getAmount();
-            if (updatedInvestment.getCurrency() != Currency.USD) {
-                amountInUSD = currencyConversionService
-                        .getConversionRate(updatedInvestment.getCurrency().name(), "USD")
-                        .getRate()
-                        .multiply(updatedInvestment.getAmount());
-            }
-
-            BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
-
-            RequestProjectCurrentGoalUpdateDTO dto = new RequestProjectCurrentGoalUpdateDTO();
-            dto.setCurrentGoal(newCurrentGoal);
-
-            ProjectMapper.requestProjectCurrentGoalUpdateToProject(dto, project);
-            projectRepo.save(project);
-        }
-
-        // ⚡ Auto-cancelar contrato si estudiante marca NOT_RECEIVED
-        if (status == InvestmentStatus.NOT_RECEIVED) {
-            autoCancelContractIfNeeded(updatedInvestment);
-        }
-
-        return mapper.toResponse(updatedInvestment);
-    }
-
-    @Override
     public ResponseInvestmentDTO cancelByInvestor(Long id) {
         Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(id)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
@@ -191,16 +109,103 @@ public class InvestmentService implements IInvestmentService {
 
     @Override
     public ResponseInvestmentDTO delete(Long id) {
-        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(id)
-                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+        Investment inv = investmentRepo.findById(id)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada con ID: " + id));
 
+        // 1. Revertir impacto financiero si ya fue recibida
+        if (inv.getStatus() == InvestmentStatus.RECEIVED) {
+            Project project = inv.getProject();
+            BigDecimal amountInUSD = inv.getAmount();
+            if (inv.getCurrency() != Currency.USD) {
+                amountInUSD = currencyConversionService
+                        .getConversionRate(inv.getCurrency().name(), "USD")
+                        .getRate()
+                        .multiply(inv.getAmount());
+            }
+            BigDecimal newCurrentGoal = project.getCurrentGoal().subtract(amountInUSD);
+            project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO)); // Evitar negativos
+            projectRepo.save(project);
+        }
+
+        // 2. Poner la inversión en un estado final y claro
+        inv.setStatus(InvestmentStatus.CANCELLED);
         inv.setDeleted(true);
         inv.setDeletedAt(LocalDate.now());
+
+        // 3. Asegurar que el contrato asociado se cancele
+        autoCancelContractIfNeeded(inv);
+
+        // 4. Guardar y retornar
+        return mapper.toResponse(investmentRepo.save(inv));
+    }
+
+    @Override
+    public ResponseInvestmentDTO confirmReceipt(Long investmentId, Long studentId) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        // 🛡️ VALIDACIÓN DE SEGURIDAD
+        Long projectOwnerId = inv.getProject().getOwner().getId();
+        if (!projectOwnerId.equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
+            throw new UpdateException("Esta inversión ya fue procesada y no se puede modificar nuevamente.");
+        }
+
+        inv.setStatus(InvestmentStatus.RECEIVED);
+        inv.setConfirmedBy(student);
+        inv.setConfirmedAt(LocalDate.now());
+
+        // Ajuste del currentGoal
+        Project project = inv.getProject();
+        BigDecimal amountInUSD = inv.getAmount();
+        if (inv.getCurrency() != Currency.USD) {
+            amountInUSD = currencyConversionService
+                    .getConversionRate(inv.getCurrency().name(), "USD")
+                    .getRate()
+                    .multiply(inv.getAmount());
+        }
+        BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
+
+        project.setCurrentGoal(newCurrentGoal);
+        projectRepo.save(project);
 
         return mapper.toResponse(investmentRepo.save(inv));
     }
 
     @Override
+    public ResponseInvestmentDTO markAsNotReceived(Long investmentId, Long studentId) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        // 🛡️ VALIDACIÓN DE SEGURIDAD
+        Long projectOwnerId = inv.getProject().getOwner().getId();
+        if (!projectOwnerId.equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
+            throw new UpdateException("Esta inversión ya fue procesada y no se puede modificar nuevamente.");
+        }
+
+        inv.setStatus(InvestmentStatus.NOT_RECEIVED);
+        inv.setConfirmedBy(student);
+        inv.setConfirmedAt(LocalDate.now());
+
+        // Auto-cancelar contrato
+        autoCancelContractIfNeeded(inv);
+
+        return mapper.toResponse(investmentRepo.save(inv));
+    }
+
     public ResponseInvestmentDTO returnInvestment(Long investmentId) {
         Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));

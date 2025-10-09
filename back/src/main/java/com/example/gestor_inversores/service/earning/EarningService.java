@@ -1,15 +1,9 @@
 package com.example.gestor_inversores.service.earning;
 
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
-import com.example.gestor_inversores.exception.BusinessException;
-import com.example.gestor_inversores.exception.EarningNotFoundException;
-import com.example.gestor_inversores.exception.InvestorNotFoundException;
+import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.EarningMapper;
-import com.example.gestor_inversores.model.Contract;
-import com.example.gestor_inversores.model.Earning;
-import com.example.gestor_inversores.model.Investor;
-import com.example.gestor_inversores.model.Project;
-import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.EarningStatus;
 import com.example.gestor_inversores.repository.IEarningRepository;
 import com.example.gestor_inversores.repository.IInvestorRepository;
@@ -39,7 +33,6 @@ public class EarningService implements IEarningService {
     private final IInvestorRepository investorRepository;
     private final MailService mailService;
 
-    @Override
     public ResponseEarningDTO createFromContract(Contract contract, Student generatedByStudent) {
         if (contract == null) throw new IllegalArgumentException("Contract cannot be null");
         Project project = contract.getProject();
@@ -92,89 +85,77 @@ public class EarningService implements IEarningService {
     }
 
     @Override
-    public ResponseEarningDTO createManual(Long generatedByStudentId, Long contractId, BigDecimal amount, com.example.gestor_inversores.model.enums.Currency currency) {
-        Student student = studentRepository.findById(generatedByStudentId)
-                .orElseThrow(() -> new RuntimeException("Student not found"));
+    public ResponseEarningDTO confirmReceipt(Long earningId, Long investorId) {
+        Earning earning = earningRepository.findById(earningId)
+                .orElseThrow(() -> new EarningNotFoundException("Ganancia no encontrada"));
 
-        Project project = null;
-        if (contractId != null) {
-            // intentar enlazar proyecto desde contrato
-            // si necesitás inyectar IContractRepository hacelo; por simplicidad, busco por contract.getProject() desde la entidad que me pasen
+        Investor investor = investorRepository.findById(investorId)
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        // 🛡️ VALIDACIÓN DE SEGURIDAD: Asegurarse de que el inversor es el dueño de la ganancia
+        Long earningOwnerId = earning.getContract().getCreatedByInvestor().getId();
+        if (!earningOwnerId.equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
         }
 
-        Earning e = new Earning();
-        e.setAmount(amount);
-        e.setCurrency(currency);
-        e.setStatus(EarningStatus.IN_PROGRESS);
-        e.setCreatedAt(LocalDate.now());
-        e.setGeneratedBy(student);
-        e.setProject(project);
+        if (earning.getStatus() == EarningStatus.RECEIVED) {
+            throw new BusinessException("Esta ganancia ya fue confirmada como recibida.");
+        }
 
-        Earning saved = earningRepository.save(e);
-        return earningMapper.toResponse(saved);
+        earning.setStatus(EarningStatus.RECEIVED);
+        earning.setConfirmedBy(investor);
+        earning.setConfirmedAt(LocalDate.now());
+
+        // Descontar la inversión inicial del presupuesto del proyecto
+        Project project = projectRepository.findById(earning.getProject().getIdProject())
+                .orElseThrow(() -> new BusinessException("La ganancia no está asociada a un proyecto válido"));
+
+        BigDecimal currentGoal = project.getCurrentGoal() != null ? project.getCurrentGoal() : BigDecimal.ZERO;
+        BigDecimal amountToSubtract = earning.getBaseAmount() != null ? earning.getBaseAmount() : BigDecimal.ZERO;
+
+        if (currentGoal.compareTo(amountToSubtract) < 0) {
+            throw new BusinessException("El proyecto no tiene fondos suficientes para pagar esta ganancia");
+        }
+
+        project.setCurrentGoal(currentGoal.subtract(amountToSubtract));
+        projectRepository.save(project);
+
+        return earningMapper.toResponse(earningRepository.save(earning));
     }
 
-    @Transactional
     @Override
-    public ResponseEarningDTO confirmEarning(Long earningId, Long investorId, EarningStatus status) {
-
-        // 🔹 Buscar la ganancia
+    public ResponseEarningDTO markAsNotReceived(Long earningId, Long investorId) {
         Earning earning = earningRepository.findById(earningId)
-                .orElseThrow(() -> new EarningNotFoundException("Earning not found"));
+                .orElseThrow(() -> new EarningNotFoundException("Ganancia no encontrada"));
 
-        // 🔹 Buscar inversor
         Investor investor = investorRepository.findById(investorId)
-                .orElseThrow(() -> new InvestorNotFoundException("Investor not found"));
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 🔹 Bloquear cambios si ya fue confirmada como RECEIVED
+        // 🛡️ VALIDACIÓN DE SEGURIDAD: Asegurarse de que el inversor es el dueño de la ganancia
+        Long earningOwnerId = earning.getContract().getCreatedByInvestor().getId();
+        if (!earningOwnerId.equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
+        }
+
         if (earning.getStatus() == EarningStatus.RECEIVED) {
-            throw new BusinessException("This earning was already confirmed as received. Status cannot be changed.");
+            throw new BusinessException("No se puede marcar como 'no recibida' una ganancia que ya fue confirmada.");
         }
 
-        // 🔹 Aplicar el estado recibido por parámetro (por defecto RECEIVED si viene null)
-        if (status == null) status = EarningStatus.RECEIVED;
-        earning.setStatus(status);
-        earning.setConfirmedAt(LocalDate.now());
+        earning.setStatus(EarningStatus.NOT_RECEIVED);
         earning.setConfirmedBy(investor);
+        earning.setConfirmedAt(LocalDate.now());
 
-        // 🔹 Recargar proyecto desde DB
-        Project project = projectRepository.findById(earning.getProject().getIdProject())
-                .orElseThrow(() -> new BusinessException("The earning is not linked to a valid project"));
-
-        // 🔹 Solo descontar si fue RECEIVED
-        if (status == EarningStatus.RECEIVED) {
-            BigDecimal currentGoal = project.getCurrentGoal() != null ? project.getCurrentGoal() : BigDecimal.ZERO;
-
-            // Descontar solo la inversión inicial (baseAmount)
-            BigDecimal amountToSubtract = earning.getBaseAmount() != null ? earning.getBaseAmount() : BigDecimal.ZERO;
-
-            if (currentGoal.compareTo(amountToSubtract) < 0) {
-                throw new BusinessException("The project does not have enough funds to pay this earning");
-            }
-
-            project.setCurrentGoal(currentGoal.subtract(amountToSubtract));
-            projectRepository.save(project);
+        // Enviar email de alerta al dueño del proyecto
+        Project project = earning.getProject();
+        if (project.getOwner() != null && project.getOwner().getEmail() != null && !project.getOwner().getEmail().isBlank()) {
+            String subject = "Alerta: Ganancia no recibida";
+            String body = "El inversor " + investor.getUsername() +
+                    " reportó que no recibió la ganancia del contrato " + earning.getContract().getIdContract() +
+                    " del proyecto " + project.getName() + ". Por favor, comuníquese con el inversor para resolverlo.";
+            mailService.sendEmail(project.getOwner().getEmail(), subject, body);
         }
 
-        // 🔹 NOT_RECEIVED: enviar email al owner (y permite cambiarlo más de una vez)
-        else if (status == EarningStatus.NOT_RECEIVED) {
-            if (project.getOwner() != null) {
-                Student owner = studentRepository.findById(project.getOwner().getId())
-                        .orElseThrow(() -> new BusinessException("Project owner not found"));
-
-                if (owner.getEmail() != null && !owner.getEmail().isBlank()) {
-                    String subject = "Alerta: Ganancia no recibida";
-                    String body = "El inversor " + investor.getUsername() +
-                            " reportó que no recibió la ganancia del contrato " + earning.getContract().getIdContract() +
-                            " del proyecto " + project.getName() + ". Por favor, comuníquese con el inversor para resolverlo.";
-
-                    mailService.sendEmail(owner.getEmail(), subject, body);
-                }
-            }
-        }
-
-        earningRepository.save(earning);
-        return earningMapper.toResponse(earning);
+        return earningMapper.toResponse(earningRepository.save(earning));
     }
 
     @Override

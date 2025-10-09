@@ -1,10 +1,10 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.*;
+import com.example.gestor_inversores.dto.RequestContractActionByStudentDTO;
+import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
 import com.example.gestor_inversores.service.investment.IInvestmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,31 +16,25 @@ public class InvestmentController {
     @Autowired
     private IInvestmentService service;
 
-    @PutMapping("/details/{id}")
-    public ResponseInvestmentDTO updateDetails(
-            @PathVariable Long id,
-            @RequestBody @Valid RequestInvestmentDetailsDTO dto) {
-
-        return service.updateDetails(id, dto);
+    // 💡 --- NUEVOS ENDPOINTS PARA ACCIONES DEL ESTUDIANTE ---
+    @PutMapping("/confirm-receipt/{id}")
+    public ResponseInvestmentDTO confirmReceipt(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return service.confirmReceipt(investmentId, dto.getStudentId());
     }
 
-    @PutMapping("/confirm/{id}")
-    public ResponseInvestmentDTO confirmByStudent(
-            @PathVariable Long id,
-            @RequestBody @Valid RequestInvestmentStatusDTO dto) {
-
-        return service.confirmByStudent(id, dto.getConfirmedByStudentId(), dto.getStatus());
+    @PutMapping("/mark-not-received/{id}")
+    public ResponseInvestmentDTO markAsNotReceived(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return service.markAsNotReceived(investmentId, dto.getStudentId());
     }
+    // ---------------------------------------------------------
 
     @PutMapping("/cancel/{id}")
-    public ResponseInvestmentDTO cancelByInvestor(
-            @PathVariable Long id) {
+    public ResponseInvestmentDTO cancelByInvestor(@PathVariable Long id) {
         return service.cancelByInvestor(id);
-    }
-
-    @PostMapping
-    public ResponseInvestmentDTO create(@RequestBody @Valid RequestInvestmentDTO dto) {
-        return service.create(dto);
     }
 
     @GetMapping("/{id}")

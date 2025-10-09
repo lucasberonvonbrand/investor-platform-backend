@@ -8,7 +8,7 @@ import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.ContractStatus;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import com.example.gestor_inversores.repository.*;
-import com.example.gestor_inversores.service.earning.IEarningService;
+import com.example.gestor_inversores.service.earning.EarningService;
 import com.example.gestor_inversores.service.investment.InvestmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class ContractService implements IContractService {
     private final ContractActionMapper actionMapper;
     private final IInvestmentRepository investmentRepo;
     private final InvestmentService investmentService; // ✅ para usar returnInvestment()
-    private final IEarningService earningService; // ✅ nuevo: para crear earning automáticamente
+    private final EarningService earningService; // ✅ nuevo: para crear earning automáticamente
 
     @Override
     public ResponseContractDTO createContract(RequestContractDTO dto) {
