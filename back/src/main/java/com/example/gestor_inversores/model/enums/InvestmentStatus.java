@@ -6,5 +6,6 @@ public enum InvestmentStatus {
     RECEIVED,
     NOT_RECEIVED,
     CANCELLED,
-    RETURNED
+    RETURNED,
+    COMPLETED
 }

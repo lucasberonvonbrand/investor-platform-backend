@@ -50,6 +50,13 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(apiError, httpStatus);
     }
 
+    @ExceptionHandler(value = {UserNotFoundException.class})
+    public ResponseEntity<ApiError> handleUserNotFoundException(UserNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Usuario no encontrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
     @ExceptionHandler(value = {BadCredentialsException.class})
     public ResponseEntity<ApiError> handleBadCredentialsException(BadCredentialsException ex) {
         HttpStatus httpStatus = HttpStatus.UNAUTHORIZED; // 401
@@ -71,6 +78,13 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(apiError, httpStatus);
     }
 
+    @ExceptionHandler(value = {UnauthorizedOperationException.class})
+    public ResponseEntity<ApiError> handleUnauthorizedOperationException(UnauthorizedOperationException ex) {
+        HttpStatus httpStatus = HttpStatus.FORBIDDEN; // 403
+        ApiError apiError = new ApiError("Acceso denegado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
     @ExceptionHandler(value = {InvalidPasswordException.class})
     public ResponseEntity<ApiError> handleInvalidPasswordException(InvalidPasswordException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
@@ -78,8 +92,8 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(apiError, httpStatus);
     }
 
-    @ExceptionHandler(value = {MailException.class})
-    public ResponseEntity<ApiError> handleMailException(MailException ex) {
+    @ExceptionHandler(value = {MailException.class, EmailSendException.class})
+    public ResponseEntity<ApiError> handleMailException(Exception ex) {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         ApiError apiError = new ApiError("Error al enviar el correo: " + ex.getMessage(), httpStatus, LocalDateTime.now());
         return new ResponseEntity<>(apiError, httpStatus);
@@ -135,6 +149,41 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiError> handleUpdateException(UpdateException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {DeleteException.class})
+    public ResponseEntity<ApiError> handleDeleteException(DeleteException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Error de borrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {BusinessException.class})
+    public ResponseEntity<ApiError> handleBusinessException(BusinessException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        ApiError apiError = new ApiError("Error de negocio: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {ContractNotFoundException.class, EarningNotFoundException.class})
+    public ResponseEntity<ApiError> handleNotFoundExceptions(RuntimeException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Recurso no encontrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {ContractAlreadySignedException.class, ContractCannotBeModifiedException.class, InvalidContractOperationException.class})
+    public ResponseEntity<ApiError> handleContractConflictExceptions(RuntimeException ex) {
+        HttpStatus httpStatus = HttpStatus.CONFLICT;
+        ApiError apiError = new ApiError("Operación de contrato inválida: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {CurrencyConversionException.class})
+    public ResponseEntity<ApiError> handleCurrencyConversionException(CurrencyConversionException ex) {
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        ApiError apiError = new ApiError("Error de conversión de moneda: " + ex.getMessage(), httpStatus, LocalDateTime.now());
         return new ResponseEntity<>(apiError, httpStatus);
     }
 

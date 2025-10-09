@@ -85,6 +85,12 @@ public class ContractService implements IContractService {
         Student student = studentRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
+        // 🛡️ NUEVA VALIDACIÓN: Asegurarse de que el estudiante es el dueño del proyecto
+        Long projectOwnerId = contract.getProject().getOwner().getId();
+        if (!projectOwnerId.equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar este contrato. Solo el dueño del proyecto puede hacerlo.");
+        }
+
         // 3️⃣ Validaciones según acción
         switch (actionStatus) {
             case SIGNED -> {
@@ -155,6 +161,12 @@ public class ContractService implements IContractService {
                     // ⚡ Nuevo: crear earning automáticamente al cerrar contrato
                     contractRepository.save(contract); // guardar antes de crear earning
                     earningService.createFromContract(contract, student);
+
+                    // 💡 Adicional: Actualizar el estado de la inversión a COMPLETADA
+                    if (inv.getStatus() == InvestmentStatus.RECEIVED) { // Solo si la inversión fue recibida
+                        inv.setStatus(InvestmentStatus.COMPLETED);
+                        investmentRepo.save(inv);
+                    }
                 }
                 case SIGNED -> {
                     if (inv.getStatus() == InvestmentStatus.IN_PROGRESS) {
