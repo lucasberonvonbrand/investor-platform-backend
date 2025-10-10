@@ -63,13 +63,18 @@ public class ContractController {
         return ResponseEntity.ok(contractService.cancelByInvestor(contractId, dto));
     }
 
-    @GetMapping("/project/{projectId}")
+    @GetMapping("/by-project/{projectId}")
     public ResponseEntity<List<ResponseContractDTO>> getContractsByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(contractService.getContractsByProject(projectId));
     }
 
-    @GetMapping("/investor/{investorId}")
+    @GetMapping("/by-investor/{investorId}")
     public ResponseEntity<List<ResponseContractDTO>> getContractsByInvestor(@PathVariable Long investorId) {
         return ResponseEntity.ok(contractService.getContractsByInvestor(investorId));
+    }
+
+    @GetMapping("/by-owner/{studentId}")
+    public ResponseEntity<List<ResponseContractDTO>> getContractsByOwner(@PathVariable Long studentId) {
+        return ResponseEntity.ok(contractService.getContractsByOwner(studentId));
     }
 }

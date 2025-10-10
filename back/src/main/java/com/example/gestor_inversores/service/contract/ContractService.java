@@ -341,6 +341,26 @@ public class ContractService implements IContractService {
                 .toList();
     }
 
+    @Override
+    public List<ResponseContractDTO> getContractsByOwner(Long ownerId) {
+        // 1. Validar que el estudiante exista
+        studentRepository.findById(ownerId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + ownerId + " no encontrado."));
+
+        // 2. Validar que el estudiante sea dueño de al menos un proyecto
+        if (!projectRepository.existsByOwnerId(ownerId)) {
+            throw new UnauthorizedOperationException("El estudiante con id " + ownerId + " no es dueño de ningún proyecto.");
+        }
+
+        // 3. Usar el nuevo método del repositorio
+        List<Contract> contracts = contractRepository.findByProjectOwnerId(ownerId);
+
+        // 4. Mapear y retornar
+        return contracts.stream()
+                .map(contractMapper::toResponseDTO)
+                .toList();
+    }
+
     public void saveContract(Contract contract) {
         contractRepository.save(contract);
     }

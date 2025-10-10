@@ -21,9 +21,10 @@ public interface IContractService {
     ResponseContractDTO updateContractByInvestor(Long contractId, RequestContractUpdateByInvestorDTO dto);
 
     ResponseContractDTO cancelByInvestor(Long contractId, RequestContractActionByInvestorDTO dto);
-
     // 🔹 Consultas
     List<ResponseContractDTO> getContractsByProject(Long projectId);
 
     List<ResponseContractDTO> getContractsByInvestor(Long investorId);
+
+    List<ResponseContractDTO> getContractsByOwner(Long ownerId);
 }
