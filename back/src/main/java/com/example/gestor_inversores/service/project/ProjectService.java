@@ -8,10 +8,13 @@ import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import com.example.gestor_inversores.repository.IProjectTagRepository;
+import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.service.student.IStudentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -25,18 +28,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
-    private final StudentMapper studentMapper;
-
-    @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, StudentMapper studentMapper) {
-        this.projectRepository = projectRepository;
-        this.studentService = studentService;
-        this.studentMapper = studentMapper;
-    }
+    private final IProjectTagRepository projectTagRepository;
+    private final GeminiService geminiService;
 
     @Transactional
     @Override
@@ -80,6 +78,10 @@ public class ProjectService implements IProjectService {
             }
         }
 
+        String tag = geminiService.askGemini(promptToGenerateTagSelection(project.getDescription())).toUpperCase();
+        System.out.println("Este es el tag seleccionado " + tag);
+        ProjectTag projectTag = projectTagRepository.findByName(tag);
+        project.setProjectTag(projectTag);
         Project savedProject;
 
         try {
@@ -98,12 +100,12 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        if(!projectDTO.getName().equals(searchedProject.getName()) &&
+        if (!projectDTO.getName().equals(searchedProject.getName()) &&
                 projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
             throw new ExistingProjectException("There is already a project with that name");
         }
 
-        if(projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
+        if (projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
@@ -187,5 +189,41 @@ public class ProjectService implements IProjectService {
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
         return ProjectMapper.projectToResponseProjectDTO(project);
+    }
+
+    private String promptToGenerateTagSelection(String description) {
+        return """
+                ERES UN CLASIFICADOR DE PROYECTOS EXPERTO.
+                Tu **ÚNICA** tarea es analizar la 'Descripción del proyecto' y **responder ÚNICA Y EXCLUSIVAMENTE** con una sola palabra, que debe ser una de las etiquetas enumeradas.
+                
+                REGLAS EXTREMADAMENTE OBLIGATORIAS:
+                1. **DEBES** elegir una de las etiquetas exactas.
+                2. **NO PUEDES** responder con ninguna explicación, saludo, frase, punto, coma, o carácter adicional.
+                3. Si la descripción no encaja perfectamente, elige la etiqueta **MÁS** cercana.
+                4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
+                
+                TECNOLOGIA
+                ECONOMIA
+                SALUD
+                EDUCACION
+                AMBIENTE
+                INFRAESTRUCTURA
+                SOCIAL
+                INVESTIGACION
+                LEGAL
+                MARKETING
+                ADMINISTRACION
+                CULTURA
+                LOGISTICA
+                RECURSOS HUMANOS
+                ENERGIA
+                CIENCIA
+                DISENO
+                PRODUCTO
+                SERVICIOS
+                MEJORA DE PROCESOS
+                
+                Descripción del proyecto:
+                """ + description + "\n\nRespuesta de la etiqueta única:";
     }
 }
