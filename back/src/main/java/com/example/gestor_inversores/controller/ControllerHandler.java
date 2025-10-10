@@ -22,6 +22,34 @@ import java.util.List;
 @RestControllerAdvice
 public class ControllerHandler extends ResponseEntityExceptionHandler {
 
+    @ExceptionHandler(value = {OwnerNotFoundException.class})
+    public ResponseEntity<ApiError> handleOwnerNotFoundException(OwnerNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND; // 404
+        ApiError apiError = new ApiError("Error: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {InvestmentNotFoundException.class})
+    public ResponseEntity<ApiError> handleInvestmentNotFoundException(InvestmentNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Inversión no encontrada: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {InvestorNotFoundException.class})
+    public ResponseEntity<ApiError> handleInvestorNotFoundException(InvestorNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Inversor no encontrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
+    @ExceptionHandler(value = {StudentNotFoundException.class})
+    public ResponseEntity<ApiError> handleStudentNotFoundException(StudentNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ApiError apiError = new ApiError("Estudiante no encontrado: " + ex.getMessage(), httpStatus, LocalDateTime.now());
+        return new ResponseEntity<>(apiError, httpStatus);
+    }
+
     @ExceptionHandler(value = {BadCredentialsException.class})
     public ResponseEntity<ApiError> handleBadCredentialsException(BadCredentialsException ex) {
         HttpStatus httpStatus = HttpStatus.UNAUTHORIZED; // 401

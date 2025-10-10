@@ -19,7 +19,9 @@
     "rxjs": "^7.8.1",
     "tslib": "^2.6.3",
     "zod": "^4.1.5",
-    "zone.js": "^0.15.1"
+    "zone.js": "^0.15.1",
+    "chart.js": "^4.x.x"
+
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "20.2.2",

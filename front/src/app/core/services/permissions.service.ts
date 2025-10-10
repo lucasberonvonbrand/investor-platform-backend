@@ -10,7 +10,6 @@ export interface IPermissionDTO {
 @Injectable({ providedIn: 'root' })
 export class PermissionsService {
   // Si NO usás proxy, poné la URL completa:
-  // private api = 'http://72.60.11.35:8080/api/permissions';
   private api = '/api/permissions';
 
   constructor(private http: HttpClient) {}

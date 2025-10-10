@@ -1,8 +1,6 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
-import com.example.gestor_inversores.dto.RequestStudentDTO;
-import com.example.gestor_inversores.dto.ResponseStudentDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.service.student.IStudentService;
@@ -38,6 +36,23 @@ public class StudentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/projects/{id}")
+    public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "true") boolean active) { // true = activos, false = inactivos
+
+        List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id, active);
+        return ResponseEntity.ok(projects);
+    }
+
+
+    //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
+    @GetMapping("/names")
+    public ResponseEntity<List<ResponseStudentNameDTO>> getAllStudentNames() {
+        List<ResponseStudentNameDTO> students = studentService.findAllStudentNames();
+        return ResponseEntity.ok(students);
+    }
+
     @PostMapping
     public ResponseEntity<ResponseStudentDTO> createStudent(@Valid @RequestBody RequestStudentDTO requestDTO) {
         Student saved = studentService.save(requestDTO);
@@ -68,5 +83,16 @@ public class StudentController {
         Student student = studentService.desactivateStudent(id);
         return ResponseEntity.ok(StudentMapper.studentToResponseStudentDTO(student));
     }
+
+    @GetMapping("/by-username")
+    public ResponseEntity<ResponseStudentDTO> getStudentByUsername(
+            @RequestParam("username") String username) {
+
+        return studentService.findByUsername(username)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
 
 }
