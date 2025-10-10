@@ -17,8 +17,10 @@ public interface IContractService {
 
     ResponseContractDTO refundContract(Long contractId, RequestContractActionByStudentDTO dto);
 
-    // 🔹 Actualización por inversor
+    // 🔹 Acciones del inversor
     ResponseContractDTO updateContractByInvestor(Long contractId, RequestContractUpdateByInvestorDTO dto);
+
+    ResponseContractDTO cancelByInvestor(Long contractId, RequestContractActionByInvestorDTO dto);
 
     // 🔹 Consultas
     List<ResponseContractDTO> getContractsByProject(Long projectId);

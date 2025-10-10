@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.service.investment;
 
+import com.example.gestor_inversores.dto.RequestInvestmentActionByInvestorDTO;
 import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
 
 import java.util.List;
@@ -20,8 +21,11 @@ public interface IInvestmentService {
 
     ResponseInvestmentDTO delete(Long id);
 
-    // 💡 NUEVOS MÉTODOS: Acciones específicas y seguras para el estudiante
+    // 💡 Acciones del estudiante
     ResponseInvestmentDTO confirmReceipt(Long investmentId, Long studentId);
 
     ResponseInvestmentDTO markAsNotReceived(Long investmentId, Long studentId);
+
+    // 💡 Nueva acción del inversor
+    ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
 }

@@ -35,7 +35,7 @@ public class ContractController {
         return ResponseEntity.ok(contractService.closeContract(id, dto));
     }
 
-    @PutMapping("/cancel/{id}")
+    @PutMapping("/cancel-by-student/{id}")
     public ResponseEntity<ResponseContractDTO> cancelContract(
             @PathVariable Long id,
             @Valid @RequestBody RequestContractActionByStudentDTO dto) {
@@ -54,6 +54,13 @@ public class ContractController {
             @PathVariable Long id,
             @Valid @RequestBody RequestContractUpdateByInvestorDTO dto) {
         return ResponseEntity.ok(contractService.updateContractByInvestor(id, dto));
+    }
+
+    @PutMapping("/cancel-by-investor/{id}")
+    public ResponseEntity<ResponseContractDTO> cancelByInvestor(
+            @PathVariable("id") Long contractId,
+            @Valid @RequestBody RequestContractActionByInvestorDTO dto) {
+        return ResponseEntity.ok(contractService.cancelByInvestor(contractId, dto));
     }
 
     @GetMapping("/project/{projectId}")

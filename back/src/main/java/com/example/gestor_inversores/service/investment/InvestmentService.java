@@ -2,14 +2,15 @@ package com.example.gestor_inversores.service.investment;
 
 import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.exception.*;
-import com.example.gestor_inversores.mapper.*;
+import com.example.gestor_inversores.mapper.InvestmentMapper;
 import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.Currency;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import com.example.gestor_inversores.model.enums.ContractStatus;
 import com.example.gestor_inversores.repository.*;
-import com.example.gestor_inversores.service.currency.CurrencyConversionService;
 import com.example.gestor_inversores.service.contract.ContractService;
+import com.example.gestor_inversores.service.currency.CurrencyConversionService;
+import com.example.gestor_inversores.service.mail.IMailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -24,27 +25,35 @@ import java.util.stream.Collectors;
 @Transactional
 public class InvestmentService implements IInvestmentService {
 
-    @Autowired
-    private IInvestmentRepository investmentRepo;
+    private final IInvestmentRepository investmentRepo;
+    private final IProjectRepository projectRepo;
+    private final IStudentRepository studentRepo;
+    private final IInvestorRepository investorRepo;
+    private final InvestmentMapper mapper;
+    private final CurrencyConversionService currencyConversionService;
+    private final IMailService mailService;
+    private final ContractService contractService;
 
     @Autowired
-    private IProjectRepository projectRepo;
-
-    @Autowired
-    private IStudentRepository studentRepo;
-
-    @Autowired
-    private IInvestorRepository investorRepo;
-
-    @Autowired
-    private InvestmentMapper mapper;
-
-    @Autowired
-    private CurrencyConversionService currencyConversionService;
-
-    @Autowired
-    @Lazy // Para evitar circular dependency con ContractService
-    private ContractService contractService;
+    public InvestmentService(
+            IInvestmentRepository investmentRepo,
+            IProjectRepository projectRepo,
+            IStudentRepository studentRepo,
+            IInvestorRepository investorRepo,
+            InvestmentMapper mapper,
+            CurrencyConversionService currencyConversionService,
+            IMailService mailService,
+            @Lazy ContractService contractService
+    ) {
+        this.investmentRepo = investmentRepo;
+        this.projectRepo = projectRepo;
+        this.studentRepo = studentRepo;
+        this.investorRepo = investorRepo;
+        this.mapper = mapper;
+        this.currencyConversionService = currencyConversionService;
+        this.mailService = mailService;
+        this.contractService = contractService;
+    }
 
     @Override
     public ResponseInvestmentDTO cancelByInvestor(Long id) {
@@ -175,7 +184,25 @@ public class InvestmentService implements IInvestmentService {
         project.setCurrentGoal(newCurrentGoal);
         projectRepo.save(project);
 
-        return mapper.toResponse(investmentRepo.save(inv));
+        Investment savedInvestment = investmentRepo.save(inv);
+
+        // Notificación al inversor
+        String toInvestor = savedInvestment.getGeneratedBy().getEmail();
+        String subject = String.format("¡Tu inversión para el proyecto '%s' ha sido confirmada!", savedInvestment.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nTe confirmamos que el estudiante %s %s ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+            "¡Gracias por tu contribución!\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            savedInvestment.getGeneratedBy().getUsername(),
+            student.getFirstName(),
+            student.getLastName(),
+            savedInvestment.getAmount(),
+            savedInvestment.getCurrency(),
+            savedInvestment.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return mapper.toResponse(savedInvestment);
     }
 
     @Override
@@ -200,10 +227,28 @@ public class InvestmentService implements IInvestmentService {
         inv.setConfirmedBy(student);
         inv.setConfirmedAt(LocalDate.now());
 
-        // Auto-cancelar contrato
-        autoCancelContractIfNeeded(inv);
+        Investment savedInvestment = investmentRepo.save(inv);
 
-        return mapper.toResponse(investmentRepo.save(inv));
+        // Auto-cancelar contrato
+        autoCancelContractIfNeeded(savedInvestment);
+
+        // Notificación al inversor
+        String toInvestor = savedInvestment.getGeneratedBy().getEmail();
+        String subject = String.format("Alerta sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl estudiante %s %s ha reportado que NO ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+            "El contrato asociado ha sido cancelado automáticamente. Por favor, ponte en contacto con el estudiante para aclarar la situación o contacta a soporte si crees que es un error.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            savedInvestment.getGeneratedBy().getUsername(),
+            student.getFirstName(),
+            student.getLastName(),
+            savedInvestment.getAmount(),
+            savedInvestment.getCurrency(),
+            savedInvestment.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return mapper.toResponse(savedInvestment);
     }
 
     public ResponseInvestmentDTO returnInvestment(Long investmentId) {
@@ -211,12 +256,38 @@ public class InvestmentService implements IInvestmentService {
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
 
         if (inv.getStatus() != InvestmentStatus.RECEIVED) {
-            throw new UpdateException("Solo inversiones RECEIVED pueden ser devueltas al inversor");
+            throw new UpdateException("Solo inversiones RECEIVED pueden iniciar el proceso de devolución.");
         }
 
+        inv.setStatus(InvestmentStatus.PENDING_RETURN);
+        inv.setConfirmedAt(LocalDate.now()); // La fecha de inicio de la devolución
+
+        return mapper.toResponse(investmentRepo.save(inv));
+    }
+
+    @Override
+    public ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto) {
+        // 1. Buscar entidades
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+        Investor investor = investorRepo.findById(dto.getInvestorId())
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        // 2. Validación de Seguridad: Asegurarse de que el inversor es el dueño de la inversión
+        if (!inv.getGeneratedBy().getId().equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para confirmar la devolución de esta inversión.");
+        }
+
+        // 3. Validación de Estado: Solo se pueden confirmar devoluciones pendientes
+        if (inv.getStatus() != InvestmentStatus.PENDING_RETURN) {
+            throw new UpdateException("Esta devolución no puede ser confirmada en su estado actual.");
+        }
+
+        // 4. Actualizar estado de la inversión
         inv.setStatus(InvestmentStatus.RETURNED);
         inv.setConfirmedAt(LocalDate.now());
 
+        // 5. Lógica Financiera: Descontar el dinero del presupuesto del proyecto
         Project project = inv.getProject();
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
@@ -225,16 +296,31 @@ public class InvestmentService implements IInvestmentService {
                     .getRate()
                     .multiply(inv.getAmount());
         }
-
         BigDecimal newCurrentGoal = project.getCurrentGoal().subtract(amountInUSD);
-        if (newCurrentGoal.compareTo(BigDecimal.ZERO) < 0) {
-            newCurrentGoal = BigDecimal.ZERO;
-        }
 
-        project.setCurrentGoal(newCurrentGoal);
+        project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO)); // Evitar negativos
         projectRepo.save(project);
 
-        return mapper.toResponse(investmentRepo.save(inv));
+        Investment savedInvestment = investmentRepo.save(inv);
+
+        // 6. Notificar al estudiante
+        Student student = project.getOwner();
+        String toStudent = student.getEmail();
+        String subject = String.format("Devolución confirmada para tu proyecto '%s'", project.getName());
+        String body = String.format(
+            "Hola %s,\n\nTe informamos que el inversor '%s' ha confirmado la recepción de la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
+            "El ciclo de inversión y devolución para este contrato ha sido completado exitosamente.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            student.getFirstName(),
+            investor.getUsername(),
+            savedInvestment.getAmount(),
+            savedInvestment.getCurrency(),
+            project.getName()
+        );
+        mailService.sendEmail(toStudent, subject, body);
+
+        // 7. Retornar DTO
+        return mapper.toResponse(savedInvestment);
     }
 
     // -------------------

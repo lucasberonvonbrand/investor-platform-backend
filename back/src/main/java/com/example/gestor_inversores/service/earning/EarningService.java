@@ -80,8 +80,39 @@ public class EarningService implements IEarningService {
         e.setGeneratedBy(generatedByStudent);
         e.setContract(contract);
 
-        Earning saved = earningRepository.save(e);
-        return earningMapper.toResponse(saved);
+        Earning savedEarning = earningRepository.save(e);
+
+        // Notificación al inversor
+        Investor investor = contract.getCreatedByInvestor();
+        String toInvestor = investor.getEmail();
+        String subject = String.format("¡El ciclo del proyecto '%s' ha finalizado!", project.getName());
+        String body = String.format(
+            "Hola %s,\n\n¡Buenas noticias! El proyecto '%s' en el que invertiste ha finalizado y se han calculado tus ganancias.\n\n" +
+            "Aquí tienes el desglose de tu retorno:\n" +
+            "------------------------------------\n" +
+            "Inversión Original:   %.2f %s\n" +
+            "Tasa de Ganancia:     %.2f%%\n" +
+            "Monto de la Ganancia: %.2f %s\n" +
+            "------------------------------------\n" +
+            "**Monto Total a Recibir: %.2f %s**\n\n" +
+            "Por favor, ponte en contacto con el estudiante %s %s para coordinar el pago de este monto total.\n\n" +
+            "Una vez que hayas recibido el pago, recuerda confirmarlo en la plataforma para cerrar el ciclo por completo.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            investor.getUsername(),
+            project.getName(),
+            savedEarning.getBaseAmount(),
+            savedEarning.getCurrency(),
+            savedEarning.getProfitRate().multiply(BigDecimal.valueOf(100)),
+            savedEarning.getProfitAmount(),
+            savedEarning.getCurrency(),
+            savedEarning.getAmount(),
+            savedEarning.getCurrency(),
+            project.getOwner().getFirstName(),
+            project.getOwner().getLastName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return earningMapper.toResponse(savedEarning);
     }
 
     @Override
@@ -92,7 +123,6 @@ public class EarningService implements IEarningService {
         Investor investor = investorRepository.findById(investorId)
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD: Asegurarse de que el inversor es el dueño de la ganancia
         Long earningOwnerId = earning.getContract().getCreatedByInvestor().getId();
         if (!earningOwnerId.equals(investor.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
@@ -106,7 +136,6 @@ public class EarningService implements IEarningService {
         earning.setConfirmedBy(investor);
         earning.setConfirmedAt(LocalDate.now());
 
-        // Descontar la inversión inicial del presupuesto del proyecto
         Project project = projectRepository.findById(earning.getProject().getIdProject())
                 .orElseThrow(() -> new BusinessException("La ganancia no está asociada a un proyecto válido"));
 
@@ -120,7 +149,23 @@ public class EarningService implements IEarningService {
         project.setCurrentGoal(currentGoal.subtract(amountToSubtract));
         projectRepository.save(project);
 
-        return earningMapper.toResponse(earningRepository.save(earning));
+        Earning savedEarning = earningRepository.save(earning);
+
+        String toStudent = savedEarning.getProject().getOwner().getEmail();
+        String subject = String.format("¡Pago de ganancia confirmado para tu proyecto '%s'!", savedEarning.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl inversor '%s' ha confirmado la recepción del pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
+            "¡Felicidades por completar el ciclo de inversión!\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            savedEarning.getProject().getOwner().getFirstName(),
+            investor.getUsername(),
+            savedEarning.getAmount(),
+            savedEarning.getCurrency(),
+            savedEarning.getProject().getName()
+        );
+        mailService.sendEmail(toStudent, subject, body);
+
+        return earningMapper.toResponse(savedEarning);
     }
 
     @Override
@@ -131,7 +176,6 @@ public class EarningService implements IEarningService {
         Investor investor = investorRepository.findById(investorId)
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD: Asegurarse de que el inversor es el dueño de la ganancia
         Long earningOwnerId = earning.getContract().getCreatedByInvestor().getId();
         if (!earningOwnerId.equals(investor.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
@@ -145,7 +189,6 @@ public class EarningService implements IEarningService {
         earning.setConfirmedBy(investor);
         earning.setConfirmedAt(LocalDate.now());
 
-        // Enviar email de alerta al dueño del proyecto
         Project project = earning.getProject();
         if (project.getOwner() != null && project.getOwner().getEmail() != null && !project.getOwner().getEmail().isBlank()) {
             String subject = "Alerta: Ganancia no recibida";
