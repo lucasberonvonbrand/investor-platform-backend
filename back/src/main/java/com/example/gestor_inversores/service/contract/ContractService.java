@@ -194,6 +194,12 @@ public class ContractService implements IContractService {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
 
+        // 🛡️ VALIDACIÓN DE SEGURIDAD: Asegurarse de que el inversor es el dueño del contrato
+        Long contractOwnerId = contract.getCreatedByInvestor().getId();
+        if (!contractOwnerId.equals(dto.getInvestorId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para modificar este contrato.");
+        }
+
         if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE)
             throw new ContractCannotBeModifiedException("Solo contratos pendientes pueden modificarse.");
 

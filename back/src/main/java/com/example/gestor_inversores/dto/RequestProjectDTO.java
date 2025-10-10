@@ -15,25 +15,32 @@ import java.util.Set;
 @NoArgsConstructor
 public class RequestProjectDTO {
 
-    @NotBlank(message = "Must contain a value")
-    @Size(min = 4, max = 100)
+    @NotBlank(message = "El nombre del proyecto es obligatorio")
+    @Size(min = 4, max = 100, message = "El nombre debe tener entre 4 y 100 caracteres")
     private String name;
-    @NotBlank(message = "Must contain a value")
-    @Size(min = 20, max = 500)
+
+    @NotBlank(message = "La descripción es obligatoria")
+    @Size(min = 20, max = 500, message = "La descripción debe tener entre 20 y 500 caracteres")
     private String description;
-    @NotNull(message = "It cannot be null")
-    @PositiveOrZero(message = "The amount must be greater than or equal to zero")
-    @Digits(integer = 12, fraction = 2, message = "The amount must have up to 12 whole digits and 2 decimal places")
+
+    @NotNull(message = "El presupuesto objetivo es obligatorio")
+    @PositiveOrZero(message = "El presupuesto objetivo debe ser mayor o igual a cero")
+    @Digits(integer = 12, fraction = 2, message = "El formato del presupuesto no es válido")
     private BigDecimal budgetGoal;
-    @NotNull(message = "Must contain a value")
+
+    @NotNull(message = "El estado del proyecto es obligatorio")
     private ProjectStatus status;
-    @NotNull(message = "It cannot be null")
+
+    @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate startDate;
-    @NotNull(message = "It cannot be null")
-    @FutureOrPresent(message = "The date must be current or future")
+
+    @NotNull(message = "La fecha de finalización estimada es obligatoria")
+    @FutureOrPresent(message = "La fecha de finalización debe ser hoy o en el futuro")
     private LocalDate estimatedEndDate;
-    @NotNull(message = "It cannot be null")
+
+    @NotNull(message = "El propietario del proyecto es obligatorio")
     private Long ownerId;
+
     // IDs de los estudiantes adicionales que participan en el proyecto
     private Set<Long> studentIds;
 

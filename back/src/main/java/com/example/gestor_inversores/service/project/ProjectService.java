@@ -4,10 +4,10 @@ import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
 import com.example.gestor_inversores.mapper.ProjectStudentMapper;
-import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.service.student.IStudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,13 +27,13 @@ public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
-    private final StudentMapper studentMapper;
+    private final IStudentRepository studentRepository; // Inyectado para uso interno
 
     @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, StudentMapper studentMapper) {
+    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
         this.projectRepository = projectRepository;
         this.studentService = studentService;
-        this.studentMapper = studentMapper;
+        this.studentRepository = studentRepository;
     }
 
     @Transactional
@@ -51,7 +51,7 @@ public class ProjectService implements IProjectService {
         }
 
         // Obtener estudiante dueño del proyecto
-        Student owner = studentService.findById(projectDTO.getOwnerId())
+        Student owner = studentRepository.findById(projectDTO.getOwnerId())
                 .orElseThrow(() -> new StudentNotFoundException("The student was not found"));
 
         // Mapear DTO a entidad
@@ -69,7 +69,7 @@ public class ProjectService implements IProjectService {
                 // Evitar agregar al dueño dos veces
                 if (studentId.equals(owner.getId())) continue;
 
-                Student student = studentService.findById(studentId)
+                Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new StudentNotFoundException(
                                 "Student with ID " + studentId + " not found"));
 
@@ -113,7 +113,7 @@ public class ProjectService implements IProjectService {
         if (Objects.nonNull(studentIds)) {
 
             Set<Student> studentsFromDTO = studentIds.stream()
-                    .map(studentId -> studentService.findById(studentId)
+                    .map(studentId -> studentRepository.findById(studentId)
                             .orElseThrow(() -> new StudentNotFoundException(
                                     "Student with ID " + studentId + " not found"))
                     )
@@ -243,11 +243,4 @@ public class ProjectService implements IProjectService {
 
         return ProjectMapper.projectToResponseProjectDTO(restored);
     }
-
-
-
-
-
-
-
 }

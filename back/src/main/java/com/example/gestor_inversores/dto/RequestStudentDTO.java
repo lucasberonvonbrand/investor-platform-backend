@@ -2,6 +2,7 @@ package com.example.gestor_inversores.dto;
 
 import com.example.gestor_inversores.model.enums.DegreeStatus;
 import com.example.gestor_inversores.model.enums.University;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
         import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -65,5 +66,6 @@ public class RequestStudentDTO {
     @Size(max = 500, message = "La descripción puede tener hasta 500 caracteres")
     private String description;
 
+    @Valid
     private AddressDTO address;
 }

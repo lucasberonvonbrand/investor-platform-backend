@@ -11,7 +11,7 @@ import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
 import com.example.gestor_inversores.service.role.RoleService;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,29 +24,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class StudentService implements IStudentService {
 
-    @Autowired
-    private IStudentRepository studentRepository;
-
-    @Autowired
-    private IUserRepository userRepository;
-
-    @Autowired
-    private IProjectRepository projectRepository;
-
-    @Autowired
-    private RoleService roleService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private StudentMapper mapper;
+    private final IStudentRepository studentRepository;
+    private final IUserRepository userRepository;
+    private final IProjectRepository projectRepository;
+    private final RoleService roleService;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final StudentMapper mapper;
 
     @Override
-    public Optional<Student> findById(Long id) {
-        return studentRepository.findById(id);
+    public ResponseStudentDTO findById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + id + " no encontrado"));
+        return mapper.studentToResponseStudentDTO(student);
     }
 
     @Override
@@ -143,13 +135,17 @@ public class StudentService implements IStudentService {
     }
 
     @Override
-    public Optional<Student> findByDni(String dni) {
-        return studentRepository.findByDni(dni);
+    public ResponseStudentDTO findByDni(String dni) {
+        Student student = studentRepository.findByDni(dni)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con DNI " + dni + " no encontrado"));
+        return mapper.studentToResponseStudentDTO(student);
     }
 
     @Override
-    public List<Student> findAll() {
-        return studentRepository.findAll();
+    public List<ResponseStudentDTO> findAll() {
+        return studentRepository.findAll().stream()
+                .map(mapper::studentToResponseStudentDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -175,12 +171,10 @@ public class StudentService implements IStudentService {
         return StudentMapper.mapProjectsToResponseProjectDTO(new HashSet<>(projects), active);
     }
 
-
-
     @Override
     public Optional<ResponseStudentDTO> findByUsername(String username) {
         return studentRepository.findByUsername(username)
-                .map(StudentMapper::studentToResponseStudentDTO)
+                .map(mapper::studentToResponseStudentDTO)
                 .or(() -> {
                     throw new StudentNotFoundException(
                             "Estudiante con username '" + username + "' no existe");
