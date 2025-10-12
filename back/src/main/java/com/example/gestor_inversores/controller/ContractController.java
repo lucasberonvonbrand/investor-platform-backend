@@ -35,7 +35,7 @@ public class ContractController {
         return ResponseEntity.ok(contractService.closeContract(id, dto));
     }
 
-    @PutMapping("/cancel/{id}")
+    @PutMapping("/cancel-by-student/{id}")
     public ResponseEntity<ResponseContractDTO> cancelContract(
             @PathVariable Long id,
             @Valid @RequestBody RequestContractActionByStudentDTO dto) {
@@ -56,13 +56,25 @@ public class ContractController {
         return ResponseEntity.ok(contractService.updateContractByInvestor(id, dto));
     }
 
-    @GetMapping("/project/{projectId}")
+    @PutMapping("/cancel-by-investor/{id}")
+    public ResponseEntity<ResponseContractDTO> cancelByInvestor(
+            @PathVariable("id") Long contractId,
+            @Valid @RequestBody RequestContractActionByInvestorDTO dto) {
+        return ResponseEntity.ok(contractService.cancelByInvestor(contractId, dto));
+    }
+
+    @GetMapping("/by-project/{projectId}")
     public ResponseEntity<List<ResponseContractDTO>> getContractsByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(contractService.getContractsByProject(projectId));
     }
 
-    @GetMapping("/investor/{investorId}")
+    @GetMapping("/by-investor/{investorId}")
     public ResponseEntity<List<ResponseContractDTO>> getContractsByInvestor(@PathVariable Long investorId) {
         return ResponseEntity.ok(contractService.getContractsByInvestor(investorId));
+    }
+
+    @GetMapping("/by-owner/{studentId}")
+    public ResponseEntity<List<ResponseContractDTO>> getContractsByOwner(@PathVariable Long studentId) {
+        return ResponseEntity.ok(contractService.getContractsByOwner(studentId));
     }
 }
