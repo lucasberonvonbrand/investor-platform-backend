@@ -80,6 +80,13 @@ public class ProjectService implements IProjectService {
             }
         }
 
+        String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription())).toUpperCase();
+        System.out.println("Esta es la respuesta de gemini " + selectedTag);
+        String cleanedTag = selectedTag.trim();
+        System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
+        ProjectTag tag = projectTagRepository.findByName(cleanedTag);
+        project.setProjectTag(tag);
+
         Project savedProject;
 
         try {
