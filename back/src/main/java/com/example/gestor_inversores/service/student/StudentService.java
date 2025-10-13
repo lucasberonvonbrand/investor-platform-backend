@@ -160,6 +160,10 @@ public class StudentService implements IStudentService {
     }
 
     @Override
+        public Optional<Student> findByUsername(String username) {
+            // 💡 NUEVO MÉTODO: Implementación
+            return studentRepository.findByUsername(username); // Usamos el método del Repositorio
+        }
     public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
         studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));

@@ -47,6 +47,10 @@ export class StudentService {
     );
   }
 
+
+
+
+
   getById(id: number): Observable<Student> { return this.http.get<Student>(`${this.apiUrl}/${id}`); }
   create(studentData: Partial<Student>): Observable<Student> {
     return new Observable((subscriber)=> {
@@ -56,6 +60,7 @@ export class StudentService {
       });
     });
   }
+
   update(id: number, studentData: Partial<Student>): Observable<Student> {
     return new Observable((subscriber)=> {
       this.http.put<Student>(`${this.apiUrl}/${id}`, studentData).subscribe({
@@ -66,4 +71,13 @@ export class StudentService {
   }
   activate(id: number) { return this.http.post<void>(`${this.apiUrl}/${id}/activate`, {}); }
   deactivate(id: number) { return this.http.post<void>(`${this.apiUrl}/${id}/deactivate`, {}); }
+
+getByUsername(username: string): Observable<Student> {
+  return this.http.get<Student>(`${this.apiUrl}/by-username/${username}`);
+}
+
+// borrar cuenta
+delete(id: number): Observable<void> {
+  return this.http.delete<void>(`${this.apiUrl}/${id}`);
+}
 }

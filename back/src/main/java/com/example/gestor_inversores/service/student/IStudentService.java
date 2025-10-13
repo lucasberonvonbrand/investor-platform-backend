@@ -26,6 +26,8 @@ public interface IStudentService {
 
     List<ResponseStudentNameDTO> findAllStudentNames();
 
+     // 💡 NUEVO MÉTODO: Definición en la interfaz
+    Optional<Student> findByUsername(String username); // 👈 ¡Añade esta línea!
     Optional<ResponseStudentDTO> findByUsername(String username);
 
     List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active);

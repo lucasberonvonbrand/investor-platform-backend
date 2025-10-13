@@ -77,6 +77,15 @@ public class StudentController {
         return ResponseEntity.ok(studentMapper.studentToResponseStudentDTO(student));
     }
 
+    // 💡 PASO FINAL: Endpoint para buscar por nombre de usuario
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<ResponseStudentDTO> getStudentByUsername(@PathVariable String username) {
+        return studentService.findByUsername(username) 
+                .map(StudentMapper::studentToResponseStudentDTO)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/by-username")
     public ResponseEntity<ResponseStudentDTO> getStudentByUsername(
             @RequestParam("username") String username) {
