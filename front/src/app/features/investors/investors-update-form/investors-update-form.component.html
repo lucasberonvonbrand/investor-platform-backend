@@ -1,0 +1,126 @@
+<div class="container">
+  <div class="form-card">
+    <div class="header">
+      <img src="https://www.svgrepo.com/show/436186/edit-tool-pencil.svg" alt="Perfil Logo" class="logo">
+      <div class="user-icon">👤</div>
+    </div>
+    <h2>Perfil</h2>
+
+    <form [formGroup]="investorsUpdateForm" (ngSubmit)="guardar()">
+      <div class="form-group">
+        <label for="configuracionUsername">Username</label>
+        <input type="text" id="configuracionUsername" placeholder="Enter project title" formControlName="Username">
+      </div>
+      <div class="form-group">
+        <label for="configuracionEmail">E-mail</label>
+        <input type="text" id="configuracionEmail" placeholder="Enter project title" formControlName="Email">
+      </div>
+      <!--
+      
+      <div class="form-group">
+        <label for="configuracionApellido">Apellido</label>
+        <input type="text" id="configuracionApellido" placeholder="Enter project title" formControlName="Apellido">
+      </div>
+      -->
+      <div class="form-group">
+        <label for="configuracionCuit">CUIT</label>
+        <input type="number" id="configuracionCuit" placeholder="Enter project title" formControlName="Cuit">
+      </div>
+      <div class="form-group">
+        <label for="configuracionNombre">Nombre</label>
+        <input type="text" id="configuracionNombre" placeholder="Enter project title" formControlName="Nombre">
+      </div>
+      <div class="form-group">
+        <label for="configuracionTelefono">Telefono</label>
+        <input type="number" id="configuracionTelefono" placeholder="Enter project title" formControlName="Telefono">
+      </div>
+      <!--
+      <div class="form-group">
+        <label for="configuracionFechaNacimiento">Fecha de nacimiento</label>
+        <input type="date" id="configuracionFechaNacimiento" placeholder="Enter project title" formControlName="FechaNacimiento">
+      </div>
+      -->
+      <div class="form-group">
+        <label for="configuracionPaginaWeb">Pagina web</label>
+        <input type="url" id="configuracionPaginaWeb" placeholder="https://google.com" formControlName="PaginaWeb">
+      </div>    
+
+      <div class="actions">
+        <button type="submit" class="create-button" [disabled]="!investorsUpdateForm.valid" (click)="guardar()">Guardar Cambios</button>
+        <button type="button" class="cancel-button" [disabled]="!investorsUpdateForm.valid" (click)="cancelar()">Cancelar</button>
+      </div>    
+
+
+      <!-- 
+      <div class="form-group">
+        <label for="projectStatus">Estado</label>
+        <select id="projectStatus" formControlName="status">
+          <option value="" disabled selected>Seleccione un estado</option>
+          <option value="IN_PROGRESS">En progreso</option>
+          <option value="PENDING_FUNDING">Financiamiento pendiente</option>
+          <option value="COMPLETED">Completado</option>
+        </select>
+      </div>
+      -->
+      <!-- 
+      <div class="form-group">
+        <label for="projectObjective">**Objetivo**</label>
+        <textarea id="projectObjective" placeholder="Define el objetivo del proyecto" formControlName="objective"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="startDate">**Fecha de Inicio Estimada**</label>
+        <input type="date" id="startDate" formControlName="startDate">
+      </div>
+      <div class="form-group">
+        <label for="endDate">**Fecha de Finalización Estimada**</label>
+        <input type="date" id="endDate" formControlName="endDate">
+      </div>
+      <div class="form-group">
+        <label for="creatorName">**Creador**</label>
+        <input type="text" id="creatorName" placeholder="Nombre del creador" formControlName="creator">
+      </div>
+      -->
+      <!-- 
+      <div class="form-group">
+        <label>Subir archivos & Fotos</label>
+        <div class="upload-section">
+          <div class="drop-zone" (click)="fileInput.click()" (drop)="onFileDrop($event)" (dragover)="onDragOver($event)">
+            <div class="drop-zone-content">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="icon">
+                <path d="M16 11H8V8h8v3zm-4 7h-2v2h2v-2zm8 0h-2v2h2v-2zm-6 0h-2v2h2v-2zm-6 0h-2v2h2v-2zM4 18h2v2H4v-2zm0-4h2v2H4v-2zm0-4h2v2H4v-2zm0-4h2v2H4V6zm4 0h2v2H8V6zm4 0h2v2h-2V6zm4 0h2v2h-2V6zm4 0h2v2h-2V6zM6 4h12v2H6V4zm-2 0h2v2H4V4zm0 14h2v2H4v-2z"/>
+              </svg>
+              <p>Arrastre o haga click aqui para subir</p>
+            </div>
+            <input type="file" #fileInput (change)="onFileSelect($event)" multiple hidden>
+          </div>
+          <div class="file-preview">
+            <p *ngIf="!selectedFile">File Preview</p>
+            <img [src]="selectedFile.url" *ngIf="selectedFile" alt="Preview" class="preview-image">
+          </div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="cancel-button">Cancelar</button>
+        <button type="submit" class="create-button" [disabled]="!projectForm.valid" (click)="onSubmit()">Crear</button>
+      </div> -->
+    </form>
+
+
+    <!-- 
+
+
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="loading-content">
+        <h3>Creando proyecto...</h3>
+        <p>Por favor espere mientras se procesa la información.</p>
+        <div class="progress-bar">
+          <div class="progress-bar-fill" [style.width]="progress + '%'"></div>
+        </div>
+        <p class="progress-text">{{ progress }}%</p>
+      </div>
+    </div>
+    
+
+    -->
+  </div>
+</div>

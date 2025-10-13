@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface IContractRepository extends JpaRepository<Contract, Long> {
@@ -13,5 +12,7 @@ public interface IContractRepository extends JpaRepository<Contract, Long> {
     List<Contract> findByProject_IdProject(Long projectId);
 
     List<Contract> findByCreatedByInvestorId(Long investorId);
+
+    List<Contract> findByProjectOwnerId(Long ownerId);
 
 }

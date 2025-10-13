@@ -1,15 +1,22 @@
+
 package com.example.gestor_inversores.service.project;
 
-import com.example.gestor_inversores.dto.*;
+import com.example.gestor_inversores.dto.RequestProjectDTO;
+import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
+import com.example.gestor_inversores.dto.ResponseProjectDTO;
+import com.example.gestor_inversores.dto.ResponseProjectStudentDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
 import com.example.gestor_inversores.mapper.ProjectStudentMapper;
-import com.example.gestor_inversores.mapper.StudentMapper;
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import com.example.gestor_inversores.repository.IProjectTagRepository;
+import com.example.gestor_inversores.service.ia.GeminiService;
+import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.service.student.IStudentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -23,18 +30,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
-    private final StudentMapper studentMapper;
+    private final IProjectTagRepository projectTagRepository;
+    private final GeminiService geminiService;
+    private final IStudentRepository studentRepository; // Inyectado para uso interno
 
-    @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, StudentMapper studentMapper) {
+    /* @Autowired
+    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
         this.projectRepository = projectRepository;
         this.studentService = studentService;
-        this.studentMapper = studentMapper;
-    }
+        this.studentRepository = studentRepository;
+    } */
 
     @Transactional
     @Override
@@ -51,7 +61,7 @@ public class ProjectService implements IProjectService {
         }
 
         // Obtener estudiante dueño del proyecto
-        Student owner = studentService.findById(projectDTO.getOwnerId())
+        Student owner = studentRepository.findById(projectDTO.getOwnerId())
                 .orElseThrow(() -> new StudentNotFoundException("The student was not found"));
 
         // Mapear DTO a entidad
@@ -69,7 +79,7 @@ public class ProjectService implements IProjectService {
                 // Evitar agregar al dueño dos veces
                 if (studentId.equals(owner.getId())) continue;
 
-                Student student = studentService.findById(studentId)
+                Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new StudentNotFoundException(
                                 "Student with ID " + studentId + " not found"));
 
@@ -77,6 +87,13 @@ public class ProjectService implements IProjectService {
                 student.getProjectsList().add(project);
             }
         }
+
+        String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription())).toUpperCase();
+        System.out.println("Esta es la respuesta de gemini " + selectedTag);
+        String cleanedTag = selectedTag.trim();
+        System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
+        ProjectTag tag = projectTagRepository.findByName(cleanedTag);
+        project.setProjectTag(tag);
 
         Project savedProject;
 
@@ -96,12 +113,12 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        if(!projectDTO.getName().equals(searchedProject.getName()) &&
+        if (!projectDTO.getName().equals(searchedProject.getName()) &&
                 projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
             throw new ExistingProjectException("There is already a project with that name");
         }
 
-        if(projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
+        if (projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
@@ -113,7 +130,7 @@ public class ProjectService implements IProjectService {
         if (Objects.nonNull(studentIds)) {
 
             Set<Student> studentsFromDTO = studentIds.stream()
-                    .map(studentId -> studentService.findById(studentId)
+                    .map(studentId -> studentRepository.findById(studentId)
                             .orElseThrow(() -> new StudentNotFoundException(
                                     "Student with ID " + studentId + " not found"))
                     )
@@ -161,12 +178,20 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getAllProjects() {
-        return projectRepository.findByDeletedFalse()
-                .stream()
+    public List<ResponseProjectDTO> getAllProjects(boolean active) {
+        List<Project> projects;
+
+        if (active) {
+            projects = projectRepository.findByDeletedFalse();
+        } else {
+            projects = projectRepository.findByDeletedTrue();
+        }
+
+        return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
     }
+
 
     @Override
     public List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId) {
@@ -179,7 +204,6 @@ public class ProjectService implements IProjectService {
                 .toList();
     }
 
-
     @Override
     public ResponseProjectDTO findById(Long id) {
         Project project = projectRepository.findByIdProjectAndDeletedFalse(id)
@@ -188,4 +212,88 @@ public class ProjectService implements IProjectService {
         return ProjectMapper.projectToResponseProjectDTO(project);
     }
 
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwner(Student owner) {
+        List<Project> projects = projectRepository.findByOwner(owner);
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active) {
+        // Verificar si existe algún proyecto con ese ownerId
+        boolean ownerExists = projectRepository.existsByOwnerId(ownerId);
+
+        if (!ownerExists) {
+            throw new OwnerNotFoundException("El owner con id " + ownerId + " no existe");
+        }
+
+        // Traer proyectos según el parámetro
+        List<Project> projects;
+        if (active) {
+            projects = projectRepository.findByOwnerIdAndDeletedFalse(ownerId);
+        } else {
+            projects = projectRepository.findByOwnerIdAndDeletedTrue(ownerId);
+        }
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseProjectDTO activateProject(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no existe"));
+
+        if (!project.getDeleted()) {
+            throw new BusinessException("El proyecto ya está activo");
+        }
+
+        project.setDeleted(false);
+        project.setDeletedAt(null);
+        project.setModifiedAt(LocalDateTime.now());
+
+        Project restored = projectRepository.save(project);
+
+        return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
+
+    private String promptToGenerateTagSelection(String description) {
+        return """
+                ERES UN CLASIFICADOR DE PROYECTOS EXPERTO.
+                Tu **ÚNICA** tarea es analizar la 'Descripción del proyecto' y **responder ÚNICA Y EXCLUSIVAMENTE** con una sola palabra, que debe ser una de las etiquetas enumeradas.
+                
+                REGLAS EXTREMADAMENTE OBLIGATORIAS:
+                1. **DEBES** elegir una de las etiquetas exactas.
+                2. **NO PUEDES** responder con ninguna explicación, saludo, frase, punto, coma, o carácter adicional.
+                3. Si la descripción no encaja perfectamente, elige la etiqueta **MÁS** cercana.
+                4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
+                
+                TECNOLOGÍA
+
+                EDUCACIÓN
+
+                SALUD Y BIENESTAR
+
+                SOSTENIBILIDAD Y MEDIO AMBIENTE
+
+                ARTE Y CULTURA
+
+                FINANCIERO
+
+                COMERCIO ELECTRÓNICO
+
+                ALIMENTOS Y BEBIDAS
+
+                SERVICIOS PROFESIONALES
+
+                IMPACTO SOCIAL
+
+                OTROS
+                
+                Descripción del proyecto:
+                """ + description + "\n\nRespuesta de la etiqueta única:";
+    }
 }

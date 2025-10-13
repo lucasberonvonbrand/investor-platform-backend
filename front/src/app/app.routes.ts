@@ -4,6 +4,7 @@ import { authGuard } from './features/auth/login/auth.guard';
 // 👉 usar los guards centralizados en /features/auth/guards
 import { studentGuard, studentMatch } from './features/auth/guards/student.guard';
 import { investorGuard, investorMatch } from './features/auth/guards/investor.guard';
+import { roleGuard } from './features/auth/login/role.guard';
 
 export const routes: Routes = [
   { path: 'auth/login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
@@ -24,6 +25,8 @@ export const routes: Routes = [
       { path: 'usuarios',         loadComponent: () => import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'roles',            loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       { path: 'configuracion',    loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
+      { path: 'estudiante-perfil', canActivate: [authGuard, roleGuard('ROLE_STUDENT')], loadComponent: () => import('./features/students/students-update-form/students-update-form.component').then(m => m.StudentsUpdateComponent)},
+      { path: 'inversor-perfil',canActivate: [authGuard, roleGuard('ROLE_INVESTOR')],loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateComponent)},
       { path: 'proyectos',        loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'marquesinas',      loadComponent: () => import('./features/marquesina/marquesina.component').then(m => m.MarquesinaComponent) },
       { path: 'mismarquesinas',   loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
@@ -43,7 +46,7 @@ export const routes: Routes = [
           import('./features/proyectos/my-projects-panel/my-projects-panel.component')
             .then(m => m.MyProjectsPanelComponent)
       },
-
+      { path: 'contrato', loadComponent: () => import('./features/contrato/contract.component').then(m => m.ContratosComponent) },
       // SOLO inversores
       {
         path: 'mis-inversiones',

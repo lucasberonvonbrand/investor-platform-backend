@@ -28,17 +28,28 @@ public class Earning {
     private Long idEarning;
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "El estado de la ganancia es obligatorio")
+    @NotNull
     private EarningStatus status;
 
     @Column(nullable = false, precision = 15, scale = 2)
-    @NotNull(message = "El monto no puede ser nulo")
-    @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
-    private BigDecimal amount;
+    @NotNull
+    @DecimalMin("0.01")
+    private BigDecimal amount; // total: base + profit
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    @NotNull
+    private BigDecimal baseAmount; // inversión inicial del contrato
+
+    @Column(nullable = false, precision = 5, scale = 4)
+    @NotNull
+    private BigDecimal profitRate; // ej. 0.06
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    @NotNull
+    private BigDecimal profitAmount; // ganancia calculada
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "La moneda es obligatoria")
-    @Column(nullable = false)
+    @NotNull
     private Currency currency;
 
     private LocalDate createdAt;
@@ -46,12 +57,12 @@ public class Earning {
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
-    @NotNull(message = "El proyecto es obligatorio")
+    @NotNull
     private Project project;
 
     @ManyToOne
     @JoinColumn(name = "generated_by_id", nullable = false)
-    @NotNull(message = "El estudiante generador es obligatorio")
+    @NotNull
     private Student generatedBy;
 
     @ManyToOne
@@ -60,6 +71,5 @@ public class Earning {
 
     @OneToOne
     @JoinColumn(name = "contract_id", nullable = false)
-    private Contract contract; // 🔹 relación directa con contrato
-
+    private Contract contract;
 }

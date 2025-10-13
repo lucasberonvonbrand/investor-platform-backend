@@ -2,35 +2,30 @@ package com.example.gestor_inversores.dto;
 
 import com.example.gestor_inversores.model.enums.Currency;
 import com.example.gestor_inversores.model.enums.EarningStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ResponseEarningDTO {
 
     private Long idEarning;
-    private EarningStatus status;
-
-    private BigDecimal amount; // monto final con profit
-    private BigDecimal baseAmount; // monto original sin profit
+    private BigDecimal amount; // monto de la ganancia
+    private BigDecimal profitRate; // porcentaje aplicado, ej 0.06
     private Currency currency;
+    private EarningStatus status;
     private LocalDate createdAt;
     private LocalDate confirmedAt;
-
-    private Long projectId;
-    private String projectTitle;
-
-    private Long generatedById;
-    private String generatedByName;
-
-    private Long confirmedById;
-    private String confirmedByName;
-
     private Long contractId;
+    private Long projectId;
+    private Long generatedById;
+    private Long confirmedById;
+    private BigDecimal baseAmount;   // inversión inicial
+    private BigDecimal profitAmount; // ganancia calculada
+
 }

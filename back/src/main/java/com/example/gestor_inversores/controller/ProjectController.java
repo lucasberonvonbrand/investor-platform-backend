@@ -50,8 +50,31 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ResponseProjectDTO>> getAll() {
-        List<ResponseProjectDTO> list = projectService.getAllProjects();
-        return ResponseEntity.status(HttpStatus.OK).body(list);
+    public List<ResponseProjectDTO> getAllProjects(@RequestParam(defaultValue = "true") boolean active) {
+        return projectService.getAllProjects(active);
     }
+
+    /**
+    // Endpoint usando ownerId
+    @GetMapping("/by-owner/{ownerId}")
+    public List<ResponseProjectDTO> getProjectsByOwnerId(@PathVariable Long ownerId) {
+        return projectService.getProjectsByOwnerId(ownerId);
+    }
+    **/
+
+    // Endpoint usando ownerId y parámetro active
+    @GetMapping("/by-owner/{ownerId}")
+    public List<ResponseProjectDTO> getProjectsByOwnerId(
+            @PathVariable Long ownerId,
+            @RequestParam(defaultValue = "true") boolean active) { // true = activos, false = inactivos
+        return projectService.getProjectsByOwnerId(ownerId, active);
+    }
+
+    @PutMapping("/activate/{id}")
+    public ResponseEntity<ResponseProjectDTO> restoreProject(@PathVariable Long id) {
+        ResponseProjectDTO restoredProject = projectService.activateProject(id);
+        return ResponseEntity.status(HttpStatus.OK).body(restoredProject);
+    }
+
+
 }

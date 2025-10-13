@@ -30,6 +30,8 @@ export interface Session {
 const TOKEN_KEY = "auth_token";   // token JWT
 const USER_KEY  = "auth_user";    // metadatos de sesión
 
+
+
 /** Si tu backend es /auth/login, ajustá esta ruta */
 const LOGIN_PATH = "/api/auth/login";
 
@@ -99,6 +101,24 @@ export class AuthService {
       return null;
     }
   }
+
+// Devuelve el primer rol (por ejemplo: ROLE_STUDENT o ROLE_INVESTOR) 
+getUserRole(): string | null {
+  const session = this.getSession();
+  if (!session) return null;
+
+  // 🔹 authorities es un string como "CREATE,DELETE,READ,ROLE_STUDENT,UPDATE"
+  // buscamos el que empiece con "ROLE_"
+  const role = session.roles?.find(r => r.startsWith('ROLE_')) ?? null;
+  return role;
+}
+
+getUserId(): string | null {
+  const session = this.getSession();
+  if (!session) return null;
+  // 🔹 En tu token, el "sub" es el nombre de usuario
+  return session.username || null;
+}
 
   /** ¿Token vigente? (si no hay exp, asume válido) */
   get isLoggedIn(): boolean {

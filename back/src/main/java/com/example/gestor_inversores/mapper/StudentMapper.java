@@ -4,8 +4,9 @@ import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Address;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.model.enums.Province;
 import com.example.gestor_inversores.service.role.IRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,10 +14,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class StudentMapper {
 
-    @Autowired
-    private IRoleService roleService;
+    private final IRoleService roleService;
+    private final AddressMapper addressMapper;
 
     public Student requestStudentDTOToStudent(RequestStudentDTO dto) {
         if (dto == null) return null;
@@ -43,18 +45,13 @@ public class StudentMapper {
 
         // Address
         if (dto.getAddress() != null) {
-            student.setAddress(dto.getAddress().toEntity());
+            student.setAddress(addressMapper.toEntity(dto.getAddress()));
         }
-
-        /**
-        // Roles (se asignan en el Service, no aquí)
-        student.setRolesList(new HashSet<>());
-         **/
 
         return student;
     }
 
-    public static ResponseStudentDTO studentToResponseStudentDTO(Student student) {
+    public ResponseStudentDTO studentToResponseStudentDTO(Student student) {
         if (student == null) return null;
 
         ResponseStudentDTO dto = new ResponseStudentDTO();
@@ -79,13 +76,7 @@ public class StudentMapper {
         dto.setDescription(student.getDescription());
 
         if (student.getAddress() != null) {
-            AddressDTO addressDTO = new AddressDTO();
-            addressDTO.setStreet(student.getAddress().getStreet());
-            addressDTO.setNumber(student.getAddress().getNumber());
-            addressDTO.setCity(student.getAddress().getCity());
-            addressDTO.setProvince(student.getAddress().getProvince().name());
-            addressDTO.setPostalCode(student.getAddress().getPostalCode());
-            dto.setAddress(addressDTO);
+            dto.setAddress(addressMapper.fromEntity(student.getAddress()));
         }
 
         if (student.getProjectsList() != null) {
@@ -133,34 +124,41 @@ public class StudentMapper {
             Address address = student.getAddress();
 
             if (address == null) {
-                address = addressDTO.toEntity();
+                address = addressMapper.toEntity(addressDTO);
                 student.setAddress(address);
             } else {
+                // NOTA: Esta lógica de parcheo manual podría moverse al AddressMapper en el futuro
                 if (addressDTO.getStreet() != null) address.setStreet(addressDTO.getStreet());
                 if (addressDTO.getNumber() > 0) address.setNumber(addressDTO.getNumber());
                 if (addressDTO.getCity() != null) address.setCity(addressDTO.getCity());
-                if (addressDTO.getProvince() != null) address.setProvince(com.example.gestor_inversores.model.enums.Province.valueOf(addressDTO.getProvince()));
+                if (addressDTO.getProvince() != null) {
+                    try {
+                        address.setProvince(Province.valueOf(addressDTO.getProvince().toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        // Ignorar provincia inválida en un parcheo
+                    }
+                }
                 if (addressDTO.getPostalCode() > 0) address.setPostalCode(addressDTO.getPostalCode());
             }
         }
     }
 
-    public static List<ResponseProjectByStudentDTO> mapProjectsToResponseProjectDTO(Set<Project> projects) {
+    public static List<ResponseProjectByStudentDTO> mapProjectsToResponseProjectDTO(Set<Project> projects, boolean active) {
         if (projects == null) return List.of();
 
-        return projects.stream().map(project -> ResponseProjectByStudentDTO.builder()
-                .idProject(project.getIdProject())
-                .name(project.getName())
-                .description(project.getDescription())
-                .budgetGoal(project.getBudgetGoal())
-                .currentGoal(project.getCurrentGoal())
-                .status(project.getStatus())
-                .startDate(project.getStartDate())
-                .estimatedEndDate(project.getEstimatedEndDate())
-                .endDate(project.getEndDate())
-                .build()
-        ).collect(Collectors.toList());
+        return projects.stream()
+                .filter(project -> active ? !project.getDeleted() : project.getDeleted())
+                .map(project -> ResponseProjectByStudentDTO.builder()
+                        .idProject(project.getIdProject())
+                        .name(project.getName())
+                        .description(project.getDescription())
+                        .budgetGoal(project.getBudgetGoal())
+                        .currentGoal(project.getCurrentGoal())
+                        .status(project.getStatus())
+                        .startDate(project.getStartDate())
+                        .estimatedEndDate(project.getEstimatedEndDate())
+                        .endDate(project.getEndDate())
+                        .build()
+                ).collect(Collectors.toList());
     }
-
-
 }
