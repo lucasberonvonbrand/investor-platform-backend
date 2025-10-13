@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './features/auth/login/auth.guard';
+import { roleGuard } from './features/auth/login/role.guard';
 
 export const routes: Routes = [
   { path: 'auth/login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
@@ -12,7 +13,7 @@ export const routes: Routes = [
 
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard,roleGuard],
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -21,6 +22,8 @@ export const routes: Routes = [
       { path: 'usuarios',    loadComponent: () => import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'roles',       loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       { path: 'configuracion', loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
+      { path: 'estudiante-perfil', canActivate: [authGuard, roleGuard('ROLE_STUDENT')], loadComponent: () => import('./features/students/students-update-form/students-update-form.component').then(m => m.StudentsUpdateComponent)},
+      { path: 'inversor-perfil',canActivate: [authGuard, roleGuard('ROLE_INVESTOR')],loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateComponent)},
       { path: 'proyectos', loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'misproyectos', loadComponent: () => import('./features/misproyectos/misproyectos.component').then(m => m.MisProyectosComponent) },
       { path: 'marquesinas', loadComponent: () => import('./features/marquesina/marquesina.component').then(m => m.MarquesinaComponent) },
@@ -32,7 +35,7 @@ export const routes: Routes = [
       { path: 'Miperfil', redirectTo: 'mi-perfil', pathMatch: 'full' }, // alias por si ya lo usás en el menú
       { path: 'mi-perfil', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'my-projects', loadComponent: () => import('./features/proyectos/my-projects-panel/my-projects-panel.component').then(m => m.MyProjectsPanelComponent) },
-
+      { path: 'contrato', loadComponent: () => import('./features/contrato/contract.component').then(m => m.ContratosComponent) },
     ],
   },
 

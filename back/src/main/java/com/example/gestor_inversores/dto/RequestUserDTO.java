@@ -2,6 +2,7 @@ package com.example.gestor_inversores.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +25,7 @@ public class RequestUserDTO {
     @Email(message = "Email no válido")
     private String email;
 
+    @Pattern(regexp = "^(https?://).*$", message = "Si se proporciona, debe ser una URL válida")
     private String photoUrl;
 
     // Campos de seguridad opcionales

@@ -1,7 +1,5 @@
 package com.example.gestor_inversores.dto;
 
-import com.example.gestor_inversores.model.Address;
-import com.example.gestor_inversores.model.enums.Province;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -28,30 +26,5 @@ public class AddressDTO {
 
     @Positive(message = "El código postal debe ser positivo")
     private int postalCode;
-
-    public Address toEntity() {
-        Address address = new Address();
-        address.setStreet(this.street);
-        address.setNumber(this.number);
-        address.setCity(this.city);
-        if (this.province != null) {
-            address.setProvince(Province.valueOf(this.province));
-        }
-        address.setPostalCode(this.postalCode);
-        return address;
-    }
-
-    public static AddressDTO fromEntity(Address address) {
-        if (address == null) return null;
-
-        AddressDTO dto = new AddressDTO();
-        dto.setStreet(address.getStreet());
-        dto.setNumber(address.getNumber());
-        dto.setCity(address.getCity());
-        dto.setProvince(address.getProvince() != null ? address.getProvince().name() : null);
-        dto.setPostalCode(address.getPostalCode());
-
-        return dto;
-    }
 
 }

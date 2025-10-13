@@ -1,13 +1,8 @@
 package com.example.gestor_inversores.mapper;
 
-import com.example.gestor_inversores.dto.RequestEarningDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
 import com.example.gestor_inversores.model.Earning;
 import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 @Component
 public class EarningMapper {
@@ -30,13 +25,4 @@ public class EarningMapper {
         return dto;
     }
 
-    public Earning fromRequest(RequestEarningDTO dto) {
-        if (dto == null) return null;
-        Earning e = new Earning();
-        e.setAmount(dto.getAmount());
-        e.setCurrency(dto.getCurrency());
-        e.setCreatedAt(java.time.LocalDate.now());
-        // status y relaciones se setean en el servicio
-        return e;
-    }
 }

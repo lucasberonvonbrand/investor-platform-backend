@@ -1,9 +1,7 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.RequestConfirmEarningDTO;
-import com.example.gestor_inversores.dto.RequestEarningDTO;
+import com.example.gestor_inversores.dto.RequestEarningActionDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
-import com.example.gestor_inversores.model.enums.EarningStatus;
 import com.example.gestor_inversores.service.earning.IEarningService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,51 +19,40 @@ public class EarningController {
 
     private final IEarningService earningService;
 
-    // listado general
+    // 💡 --- NUEVOS ENDPOINTS PARA ACCIONES DEL INVERSOR ---
+    @PutMapping("/confirm-receipt/{id}")
+    public ResponseEntity<ResponseEarningDTO> confirmReceipt(
+            @PathVariable("id") Long earningId,
+            @RequestBody @Valid RequestEarningActionDTO dto) {
+        return ResponseEntity.ok(earningService.confirmReceipt(earningId, dto.getInvestorId()));
+    }
+
+    @PutMapping("/mark-not-received/{id}")
+    public ResponseEntity<ResponseEarningDTO> markAsNotReceived(
+            @PathVariable("id") Long earningId,
+            @RequestBody @Valid RequestEarningActionDTO dto) {
+        return ResponseEntity.ok(earningService.markAsNotReceived(earningId, dto.getInvestorId()));
+    }
+    // ----------------------------------------------------
+
+    // --- ENDPOINTS DE LECTURA (SE MANTIENEN) ---
     @GetMapping
     public ResponseEntity<List<ResponseEarningDTO>> getAll() {
         return ResponseEntity.ok(earningService.getAll());
     }
 
-    // por proyecto
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<ResponseEarningDTO>> getByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(earningService.getByProject(projectId));
     }
 
-    // por inversor (confirmados por ese inversor)
     @GetMapping("/investor/{investorId}")
     public ResponseEntity<List<ResponseEarningDTO>> getByInvestor(@PathVariable Long investorId) {
         return ResponseEntity.ok(earningService.getByInvestor(investorId));
     }
 
-    // por estudiante (generadas por ese estudiante)
     @GetMapping("/student/{studentId}")
     public ResponseEntity<List<ResponseEarningDTO>> getByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(earningService.getByStudent(studentId));
-    }
-
-    // confirmar earning por inversor: body tiene investorId y status (RECEIVED/NOT_RECEIVED)
-    @PutMapping("/confirm/{earningId}")
-    public ResponseEntity<ResponseEarningDTO> confirmEarning(
-            @PathVariable Long earningId,
-            @RequestBody RequestConfirmEarningDTO request) {
-
-        return ResponseEntity.ok(
-                earningService.confirmEarning(earningId, request.getInvestorId(), request.getStatus())
-        );
-    }
-
-
-    // endpoint opcional para crear manualmente (no hace falta si todo es automático)
-    @PostMapping
-    public ResponseEntity<ResponseEarningDTO> createManual(@Valid @RequestBody RequestEarningDTO dto) {
-        ResponseEarningDTO created = earningService.createManual(
-                dto.getGeneratedById(),
-                dto.getContractId(),
-                dto.getAmount(),
-                dto.getCurrency()
-        );
-        return ResponseEntity.ok(created);
     }
 }

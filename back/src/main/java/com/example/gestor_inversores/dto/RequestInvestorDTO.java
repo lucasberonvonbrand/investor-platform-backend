@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -40,6 +41,7 @@ public class RequestInvestorDTO {
     @Size(max = 100, message = "El sitio web no puede superar 100 caracteres")
     private String webSite;
 
+    @Valid
     private AddressDTO address;
 
 }
