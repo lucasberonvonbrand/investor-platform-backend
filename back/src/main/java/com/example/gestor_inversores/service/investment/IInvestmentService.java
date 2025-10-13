@@ -1,23 +1,18 @@
 package com.example.gestor_inversores.service.investment;
 
-import com.example.gestor_inversores.dto.*;
-import com.example.gestor_inversores.model.enums.InvestmentStatus;
+import com.example.gestor_inversores.dto.RequestInvestmentActionByInvestorDTO;
+import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
 
 import java.util.List;
 
 public interface IInvestmentService {
-
-    ResponseInvestmentDTO create(RequestInvestmentDTO dto);
-
-    ResponseInvestmentDTO updateDetails(Long id, RequestInvestmentDetailsDTO dto);
-
-    ResponseInvestmentDTO confirmByStudent(Long id, Long studentId, InvestmentStatus status);
 
     ResponseInvestmentDTO cancelByInvestor(Long id);
 
     ResponseInvestmentDTO getById(Long id);
 
     List<ResponseInvestmentDTO> getAll();
+
     // Para estudiantes
     List<ResponseInvestmentDTO> getActiveForStudents();
 
@@ -26,5 +21,11 @@ public interface IInvestmentService {
 
     ResponseInvestmentDTO delete(Long id);
 
+    // 💡 Acciones del estudiante
+    ResponseInvestmentDTO confirmReceipt(Long investmentId, Long studentId);
 
+    ResponseInvestmentDTO markAsNotReceived(Long investmentId, Long studentId);
+
+    // 💡 Nueva acción del inversor
+    ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
 }

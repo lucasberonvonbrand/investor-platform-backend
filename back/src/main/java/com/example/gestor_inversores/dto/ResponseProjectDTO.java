@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,4 +25,10 @@ public class ResponseProjectDTO {
     private LocalDate startDate;
     private LocalDate estimatedEndDate;
     private LocalDate endDate;
+    private Long ownerId;
+    private String ownerName; // opcional
+
+    // Lista de participantes
+    private List<ResponseProjectStudentDTO> students;
+
 }

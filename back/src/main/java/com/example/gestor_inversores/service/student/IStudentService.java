@@ -1,8 +1,6 @@
 package com.example.gestor_inversores.service.student;
 
-import com.example.gestor_inversores.dto.RequestStudentUpdateDTO;
-import com.example.gestor_inversores.dto.RequestStudentDTO;
-import com.example.gestor_inversores.dto.ResponseStudentNameDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Student;
 
 import java.util.List;
@@ -10,15 +8,15 @@ import java.util.Optional;
 
 public interface IStudentService {
 
-    public List<Student> findAll();
+    List<ResponseStudentDTO> findAll();
 
-    public Optional<Student> findById(Long id);
+    ResponseStudentDTO findById(Long id);
 
-    public Optional<Student> findByDni(String dni);
+    ResponseStudentDTO findByDni(String dni);
 
-    public Student save(RequestStudentDTO student);
+    Student save(RequestStudentDTO student);
 
-    public void deleteById(Long id);
+    void deleteById(Long id);
 
     Optional<Student> patchStudent(Long id, RequestStudentUpdateDTO patchDto);
 
@@ -30,6 +28,9 @@ public interface IStudentService {
 
      // 💡 NUEVO MÉTODO: Definición en la interfaz
     Optional<Student> findByUsername(String username); // 👈 ¡Añade esta línea!
+    Optional<ResponseStudentDTO> findByUsername(String username);
+
+    List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active);
 
 
 }

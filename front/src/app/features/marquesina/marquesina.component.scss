@@ -1,0 +1,30 @@
+:host {
+  display: block; /* Asegura que cada marquesina ocupe su propio espacio */
+  overflow: hidden; /* Oculta cualquier contenido que se desborde */
+  white-space: nowrap; /* Evita que el texto se rompa en varias líneas */
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.marquesina-container {
+  display: flex;
+  width: max-content; /* Asegura que el contenedor de los contenidos sea tan ancho como su contenido */
+  animation: scroll var(--animation-speed) linear infinite;
+}
+
+.marquesina-container.paused {
+  animation-play-state: paused; /* Pausa la animación al pasar el ratón */
+}
+
+.marquesina-content {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #333;
+  padding-right: 20px; /* Espacio entre las repeticiones del texto */
+}
+
+/* Animación de desplazamiento */
+@keyframes scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); } /* Desplaza la mitad del contenido */
+}

@@ -5,19 +5,21 @@ import com.example.gestor_inversores.dto.RequestProjectDTO;
 import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseProjectDTO;
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.Student;
 
 public class ProjectMapper {
 
     private ProjectMapper() {}
 
-    public static Project requestProjectToProject(RequestProjectDTO requestProjectDTO) {
+    public static Project requestProjectToProject(RequestProjectDTO dto, Student owner) {
         return Project.builder()
-                .name(requestProjectDTO.getName())
-                .description(requestProjectDTO.getDescription())
-                .budgetGoal(requestProjectDTO.getBudgetGoal())
-                .status(requestProjectDTO.getStatus())
-                .startDate(requestProjectDTO.getStartDate())
-                .estimatedEndDate(requestProjectDTO.getEstimatedEndDate())
+                .name(dto.getName())
+                .description(dto.getDescription())
+                .budgetGoal(dto.getBudgetGoal())
+                .status(dto.getStatus())
+                .startDate(dto.getStartDate())
+                .estimatedEndDate(dto.getEstimatedEndDate())
+                .owner(owner) // <--- owner agregado
                 .build();
     }
 
@@ -34,6 +36,11 @@ public class ProjectMapper {
     }
 
     public static ResponseProjectDTO projectToResponseProjectDTO(Project project) {
+        Long ownerId = project.getOwner() != null ? project.getOwner().getId() : null;
+        String ownerName = project.getOwner() != null
+                ? project.getOwner().getFirstName() + " " + project.getOwner().getLastName()
+                : "";
+
         return ResponseProjectDTO.builder()
                 .id(project.getIdProject())
                 .name(project.getName())
@@ -44,8 +51,16 @@ public class ProjectMapper {
                 .startDate(project.getStartDate())
                 .estimatedEndDate(project.getEstimatedEndDate())
                 .endDate(project.getEndDate())
+                .ownerId(ownerId)
+                .ownerName(ownerName)
+                .students(project.getStudents().stream()
+                        .filter(s -> project.getOwner() == null || !s.getId().equals(project.getOwner().getId()))
+                        .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)
+                        .toList())
                 .build();
     }
+
+
 
     public static Project requestProjectCurrentGoalUpdateToProject(RequestProjectCurrentGoalUpdateDTO dto, Project project) {
         project.setCurrentGoal(dto.getCurrentGoal());

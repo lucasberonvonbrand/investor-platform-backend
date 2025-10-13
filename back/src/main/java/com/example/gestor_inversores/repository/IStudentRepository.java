@@ -11,8 +11,7 @@ public interface IStudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByDni(String dni);
 
-     // 💡 NUEVO MÉTODO: Buscar un Student por su username
-    // Spring Data JPA generará automáticamente el SQL para buscar por el campo 'username'
-    Optional<Student> findByUsername(String username); // 👈 ¡Añade esta línea!
+    // IStudentRepository
+    Optional<Student> findByUsername(String username);
 
 }

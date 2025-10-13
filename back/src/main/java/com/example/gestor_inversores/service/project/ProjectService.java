@@ -1,15 +1,13 @@
 package com.example.gestor_inversores.service.project;
 
-import com.example.gestor_inversores.dto.RequestProjectDTO;
-import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
-import com.example.gestor_inversores.dto.ResponseProjectDTO;
-import com.example.gestor_inversores.dto.ResponseStudentDTO;
+import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
-import com.example.gestor_inversores.mapper.StudentMapper;
+import com.example.gestor_inversores.mapper.ProjectStudentMapper;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.service.student.IStudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -29,13 +27,13 @@ public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
-    private final StudentMapper studentMapper;
+    private final IStudentRepository studentRepository; // Inyectado para uso interno
 
     @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, StudentMapper studentMapper) {
+    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
         this.projectRepository = projectRepository;
         this.studentService = studentService;
-        this.studentMapper = studentMapper;
+        this.studentRepository = studentRepository;
     }
 
     @Transactional
@@ -53,11 +51,11 @@ public class ProjectService implements IProjectService {
         }
 
         // Obtener estudiante dueño del proyecto
-        Student owner = studentService.findById(projectDTO.getOwnerId())
+        Student owner = studentRepository.findById(projectDTO.getOwnerId())
                 .orElseThrow(() -> new StudentNotFoundException("The student was not found"));
 
         // Mapear DTO a entidad
-        Project project = ProjectMapper.requestProjectToProject(projectDTO);
+        Project project = ProjectMapper.requestProjectToProject(projectDTO, owner);
         project.setCurrentGoal(BigDecimal.ZERO);
         project.setCreatedAt(LocalDateTime.now());
 
@@ -71,7 +69,7 @@ public class ProjectService implements IProjectService {
                 // Evitar agregar al dueño dos veces
                 if (studentId.equals(owner.getId())) continue;
 
-                Student student = studentService.findById(studentId)
+                Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new StudentNotFoundException(
                                 "Student with ID " + studentId + " not found"));
 
@@ -115,7 +113,7 @@ public class ProjectService implements IProjectService {
         if (Objects.nonNull(studentIds)) {
 
             Set<Student> studentsFromDTO = studentIds.stream()
-                    .map(studentId -> studentService.findById(studentId)
+                    .map(studentId -> studentRepository.findById(studentId)
                             .orElseThrow(() -> new StudentNotFoundException(
                                     "Student with ID " + studentId + " not found"))
                     )
@@ -163,23 +161,32 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getAllProjects() {
-        return projectRepository.findByDeletedFalse()
-                .stream()
+    public List<ResponseProjectDTO> getAllProjects(boolean active) {
+        List<Project> projects;
+
+        if (active) {
+            projects = projectRepository.findByDeletedFalse();
+        } else {
+            projects = projectRepository.findByDeletedTrue();
+        }
+
+        return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
     }
 
+
     @Override
-    public List<ResponseStudentDTO> getStudentsByProject(Long projectId) {
+    public List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId) {
         Project project = projectRepository.findByIdProjectAndDeletedFalse(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        return project.getStudents()
-                .stream()
-                .map(StudentMapper::studentToResponseStudentDTO)
+        return project.getStudents().stream()
+                .filter(s -> !s.getId().equals(project.getOwner().getId())) // excluye al owner
+                .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)
                 .toList();
     }
+
 
     @Override
     public ResponseProjectDTO findById(Long id) {
@@ -189,4 +196,51 @@ public class ProjectService implements IProjectService {
         return ProjectMapper.projectToResponseProjectDTO(project);
     }
 
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwner(Student owner) {
+        List<Project> projects = projectRepository.findByOwner(owner);
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active) {
+        // Verificar si existe algún proyecto con ese ownerId
+        boolean ownerExists = projectRepository.existsByOwnerId(ownerId);
+
+        if (!ownerExists) {
+            throw new OwnerNotFoundException("El owner con id " + ownerId + " no existe");
+        }
+
+        // Traer proyectos según el parámetro
+        List<Project> projects;
+        if (active) {
+            projects = projectRepository.findByOwnerIdAndDeletedFalse(ownerId);
+        } else {
+            projects = projectRepository.findByOwnerIdAndDeletedTrue(ownerId);
+        }
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public ResponseProjectDTO activateProject(Long id) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no existe"));
+
+        if (!project.getDeleted()) {
+            throw new BusinessException("El proyecto ya está activo");
+        }
+
+        project.setDeleted(false);
+        project.setDeletedAt(null);
+        project.setModifiedAt(LocalDateTime.now());
+
+        Project restored = projectRepository.save(project);
+
+        return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
 }
