@@ -1,15 +1,22 @@
+
 package com.example.gestor_inversores.service.project;
 
-import com.example.gestor_inversores.dto.*;
+import com.example.gestor_inversores.dto.RequestProjectDTO;
+import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
+import com.example.gestor_inversores.dto.ResponseProjectDTO;
+import com.example.gestor_inversores.dto.ResponseProjectStudentDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
 import com.example.gestor_inversores.mapper.ProjectStudentMapper;
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import com.example.gestor_inversores.repository.IProjectTagRepository;
+import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.service.student.IStudentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
@@ -23,10 +30,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
     private final IStudentService studentService;
+    private final IProjectTagRepository projectTagRepository;
+    private final GeminiService geminiService;
     private final IStudentRepository studentRepository; // Inyectado para uso interno
 
     @Autowired
@@ -78,6 +88,13 @@ public class ProjectService implements IProjectService {
             }
         }
 
+        String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription())).toUpperCase();
+        System.out.println("Esta es la respuesta de gemini " + selectedTag);
+        String cleanedTag = selectedTag.trim();
+        System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
+        ProjectTag tag = projectTagRepository.findByName(cleanedTag);
+        project.setProjectTag(tag);
+
         Project savedProject;
 
         try {
@@ -96,12 +113,12 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        if(!projectDTO.getName().equals(searchedProject.getName()) &&
+        if (!projectDTO.getName().equals(searchedProject.getName()) &&
                 projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
             throw new ExistingProjectException("There is already a project with that name");
         }
 
-        if(projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
+        if (projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
@@ -187,7 +204,6 @@ public class ProjectService implements IProjectService {
                 .toList();
     }
 
-
     @Override
     public ResponseProjectDTO findById(Long id) {
         Project project = projectRepository.findByIdProjectAndDeletedFalse(id)
@@ -242,5 +258,41 @@ public class ProjectService implements IProjectService {
         Project restored = projectRepository.save(project);
 
         return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
+
+    private String promptToGenerateTagSelection(String description) {
+        return """
+                ERES UN CLASIFICADOR DE PROYECTOS EXPERTO.
+                Tu **ÚNICA** tarea es analizar la 'Descripción del proyecto' y **responder ÚNICA Y EXCLUSIVAMENTE** con una sola palabra, que debe ser una de las etiquetas enumeradas.
+                
+                REGLAS EXTREMADAMENTE OBLIGATORIAS:
+                1. **DEBES** elegir una de las etiquetas exactas.
+                2. **NO PUEDES** responder con ninguna explicación, saludo, frase, punto, coma, o carácter adicional.
+                3. Si la descripción no encaja perfectamente, elige la etiqueta **MÁS** cercana.
+                4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
+                
+                TECNOLOGIA
+                ECONOMIA
+                SALUD
+                EDUCACION
+                AMBIENTE
+                INFRAESTRUCTURA
+                SOCIAL
+                INVESTIGACION
+                LEGAL
+                MARKETING
+                ADMINISTRACION
+                CULTURA
+                LOGISTICA
+                RECURSOS HUMANOS
+                ENERGIA
+                CIENCIA
+                DISENO
+                PRODUCTO
+                SERVICIOS
+                MEJORA DE PROCESOS
+                
+                Descripción del proyecto:
+                """ + description + "\n\nRespuesta de la etiqueta única:";
     }
 }
