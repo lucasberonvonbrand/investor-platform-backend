@@ -1,38 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 
-export type MyProjectStatus = 'PENDING_FUNDING' | 'IN_PROGRESS' | 'COMPLETED';
-
-export interface CreateMyProjectDto {
-  name: string;
-  description: string;
-  budgetGoal: number;
-  status: MyProjectStatus | string;
-  startDate: string;         // YYYY-MM-DD
-  estimatedEndDate: string;  // YYYY-MM-DD
-  ownerId: number;
-  studentIds: number[];
-}
-
-export interface IMyProject {
-  id: number;
-  title: string;
-  summary?: string | null;
-  category?: string | null;
-  status?: 'IDEA'|'IN_PROGRESS'|'MVP'|'FUNDING'|'COMPLETED'|string;
-  university?: string | null;
-  owner?: string | null;
-  // opcionales crudos
-  ownerId?: number | null;
-  studentIds?: number[] | null;
-
-  lastUpdated?: string | null;
-  fundingGoal?: number | null;
-  fundingRaised?: number | null;
-}
-
-interface MyProjectApi {
+export interface IMyProjectStudent { id: number; name: string; }
+export interface IMyProjectApi {
   id: number;
   name: string;
   description: string;
@@ -42,46 +13,77 @@ interface MyProjectApi {
   startDate: string;
   estimatedEndDate: string;
   endDate: string | null;
-
   ownerId?: number;
-  studentIds?: number[];
+  ownerName?: string;
+  students?: IMyProjectStudent[];
 }
 
-function adaptMyProject(p: MyProjectApi): IMyProject {
+export interface IMyProject {
+  id: number;
+  title: string;
+  summary: string | null;
+  status: string | null;
+  lastUpdated: string | null;
+  fundingGoal: number | null;
+  fundingRaised: number | null;
+  owner?: string | null;
+  category?: string | null;
+  university?: string | null;
+  students?: IMyProjectStudent[] | null;
+}
+
+function adapt(p: IMyProjectApi): IMyProject {
   return {
     id: p.id,
     title: p.name,
-    summary: p.description,
-    status: p.status,
-    fundingGoal: p.budgetGoal,
-    fundingRaised: p.currentGoal,
-    lastUpdated: p.startDate || null,
+    summary: p.description ?? null,
+    status: p.status ?? null,
+    lastUpdated: p.startDate ?? null,
+    fundingGoal: p.budgetGoal ?? null,
+    fundingRaised: p.currentGoal ?? null,
+    owner: p.ownerName ?? null,
     category: '—',
     university: null,
-    owner: null,
-    ownerId: p.ownerId ?? null,
-    studentIds: p.studentIds ?? null,
+    students: p.students ?? null,
   };
 }
 
 @Injectable({ providedIn: 'root' })
 export class MyProjectsService {
   private http = inject(HttpClient);
-  private api = '/api/projects/mine';
 
-  /** Trae mis proyectos (server-side, según usuario autenticado) */
-  getMine(options?: { includeAssigned?: boolean }): Observable<IMyProject[]> {
-    let params = new HttpParams();
-    if (options?.includeAssigned) params = params.set('includeAssigned', 'true');
+  /** Lee id de estudiante desde localStorage ('auth_user') */
+private getUserId(): number | null {
+  try {
+    const raw = localStorage.getItem('auth_user');
+    if (!raw) return null;
+    const u = JSON.parse(raw) as { id:number };
+    return typeof u?.id === 'number' ? u.id : null;
+  } catch {
+    return null;
+  }
+}
 
-    return this.http
-      .get<MyProjectApi[]>(this.api, { params })
-      .pipe(map(list => (list ?? []).map(adaptMyProject)));
+/** Mis proyectos como OWNER: /api/projects/by-owner/{id} */
+getMine(): Observable<IMyProject[]> {
+  const id = this.getUserId();
+  if (!id) return of([]);
+
+  const url = `/api/projects/by-owner/${id}`;
+  // (opcional) log para verificar
+  // console.log('[MyProjects] GET', url);
+
+  return this.http.get<IMyProjectApi[]>(url).pipe(
+    map(list => (list ?? []).map(adapt))
+  );
+}
+
+  /** Extra: por owner, si te sirve reusar (ej: ownerId=4 devuelve proyectos) */
+  getByOwner(ownerId: number): Observable<IMyProject[]> {
+    return this.http.get<IMyProjectApi[]>(`/api/projects/by-owner/${ownerId}`).pipe(
+      map(list => (list ?? []).map(adapt))
+    );
   }
 
-  /** Crear (si tu backend lo permite contra /projects) */
-  create(dto: CreateMyProjectDto): Observable<{ id: number } & MyProjectApi> {
-    // si querés que cree SIEMPRE como “mío”, lo usual es POST a /api/projects (no /mine)
-    return this.http.post<{ id: number } & MyProjectApi>('/api/projects', dto);
-  }
+
 }
