@@ -39,12 +39,12 @@ public class ProjectService implements IProjectService {
     private final GeminiService geminiService;
     private final IStudentRepository studentRepository; // Inyectado para uso interno
 
-    @Autowired
+    /* @Autowired
     public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
         this.projectRepository = projectRepository;
         this.studentService = studentService;
         this.studentRepository = studentRepository;
-    }
+    } */
 
     @Transactional
     @Override
@@ -271,26 +271,27 @@ public class ProjectService implements IProjectService {
                 3. Si la descripción no encaja perfectamente, elige la etiqueta **MÁS** cercana.
                 4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
                 
-                TECNOLOGIA
-                ECONOMIA
-                SALUD
-                EDUCACION
-                AMBIENTE
-                INFRAESTRUCTURA
-                SOCIAL
-                INVESTIGACION
-                LEGAL
-                MARKETING
-                ADMINISTRACION
-                CULTURA
-                LOGISTICA
-                RECURSOS HUMANOS
-                ENERGIA
-                CIENCIA
-                DISENO
-                PRODUCTO
-                SERVICIOS
-                MEJORA DE PROCESOS
+                TECNOLOGÍA
+
+                EDUCACIÓN
+
+                SALUD Y BIENESTAR
+
+                SOSTENIBILIDAD Y MEDIO AMBIENTE
+
+                ARTE Y CULTURA
+
+                FINANCIERO
+
+                COMERCIO ELECTRÓNICO
+
+                ALIMENTOS Y BEBIDAS
+
+                SERVICIOS PROFESIONALES
+
+                IMPACTO SOCIAL
+
+                OTROS
                 
                 Descripción del proyecto:
                 """ + description + "\n\nRespuesta de la etiqueta única:";

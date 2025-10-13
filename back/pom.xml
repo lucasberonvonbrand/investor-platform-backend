@@ -98,7 +98,6 @@
         </dependency>
 
         <!-- Swagger -->
-
          <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -115,15 +114,11 @@
             <artifactId>google-genai</artifactId>
             <version>1.0.0</version>
         </dependency>
-
-
+        <dependency>
             <groupId>nz.ac.waikato.cms.weka</groupId>
             <artifactId>weka-stable</artifactId>
             <version>3.8.6</version>
         </dependency>
-
-
-
 
     </dependencies>
 

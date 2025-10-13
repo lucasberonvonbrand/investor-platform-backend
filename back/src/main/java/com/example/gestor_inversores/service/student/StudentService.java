@@ -159,12 +159,7 @@ public class StudentService implements IStudentService {
                 .toList();
     }
 
-    @Override
-        public Optional<Student> findByUsername(String username) {
-            // 💡 NUEVO MÉTODO: Implementación
-            return studentRepository.findByUsername(username); // Usamos el método del Repositorio
-        }
-    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
+     public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
         studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));
 
@@ -175,7 +170,7 @@ public class StudentService implements IStudentService {
         return StudentMapper.mapProjectsToResponseProjectDTO(new HashSet<>(projects), active);
     }
 
-    @Override
+     @Override
     public Optional<ResponseStudentDTO> findByUsername(String username) {
         return studentRepository.findByUsername(username)
                 .map(mapper::studentToResponseStudentDTO)
@@ -183,6 +178,6 @@ public class StudentService implements IStudentService {
                     throw new StudentNotFoundException(
                             "Estudiante con username '" + username + "' no existe");
                 });
-    }
+    } 
 
 }
