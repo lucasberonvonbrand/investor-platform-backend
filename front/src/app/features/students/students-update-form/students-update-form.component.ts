@@ -6,10 +6,13 @@ import { Router } from '@angular/router'
 // AGREGADO PARA EL STUDENT SERVICE
 import { StudentService } from '../../../core/services/students.service';
 import { AuthService } from '../../auth/login/auth.service'; // 👈 para leer el token/rol
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 import { Student } from '../../../models/student.model';
 import { CommonModule } from '@angular/common';
-////
-
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 
 @Component({
   selector: 'app-students-update',
@@ -17,9 +20,11 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./students-update-form.component.scss'], 
   standalone: true,
   imports: [
-  ReactiveFormsModule,
-  CommonModule
-],
+    ReactiveFormsModule,
+    CommonModule,
+    ToastModule, CardModule, ButtonModule, InputTextModule
+  ],
+  providers: [MessageService]
 })
 
 
@@ -27,17 +32,17 @@ export class StudentsUpdateComponent implements OnInit {
 
 // Nuevo studentsUpdateForm con valores iniciales vacíos
 studentsUpdateForm: FormGroup = this.fb.group({
-  username: [''],
-  email: [''],
-  firstName: [''],
-  lastName: [''],
-  dni: [''],
-  phone: [''],
-  dateOfBirth: [''],
-  university: [''],
-  career: [''],
-  degreeStatus: [''],
-  linkedinUrl: ['']
+  username: [''], email: [''],
+  firstName: [''], lastName: [''], dni: [''], phone: [''], dateOfBirth: [''],
+  university: [''], career: [''], degreeStatus: [''],
+  linkedinUrl: [''], description: [''],
+  address: this.fb.group({
+    street: [''],
+    number: [null],
+    city: [''],
+    province: [''],
+    postalCode: [null]
+  })
 });
 
 
@@ -51,7 +56,8 @@ studentsUpdateForm: FormGroup = this.fb.group({
     private fb: FormBuilder,
     private studentService: StudentService,
     private auth: AuthService, // 👈 inyectamos AuthService
-    private router: Router
+    private router: Router,
+    private toast: MessageService
   ) {}
 
 
@@ -59,7 +65,12 @@ studentsUpdateForm: FormGroup = this.fb.group({
   // Arrays para los desplegables
   provinces = Object.values(Province);
   universities = Object.values(University);
-  degreeStatuses = Object.values(DegreeStatus);
+  degreeStatuses = [
+    { label: 'En curso', value: DegreeStatus.IN_PROGRESS },
+    { label: 'Completado', value: DegreeStatus.COMPLETED },
+    { label: 'Suspendido', value: DegreeStatus.SUSPENDED },
+    { label: 'Abandonado', value: DegreeStatus.ABANDONED }
+  ];
 
 //////////////STUDENT SERVICE
 ngOnInit(): void {
@@ -110,11 +121,18 @@ ngOnInit(): void {
       dni: [student.dni ?? '', [Validators.required, Validators.maxLength(8), Validators.pattern('^[0-9]+$')]],
       phone: [student.phone ?? '', [Validators.required, Validators.maxLength(13), Validators.pattern('^[0-9]+$')]],
       dateOfBirth: [student.dateOfBirth ?? '', Validators.required],
-      university: [student.university ?? '', Validators.required],
-      // provinces: [student.provinces, Validators.required],
+      university: [student.university ?? '', Validators.required],      
       career: [student.career ?? '', Validators.required],
       degreeStatus: [student.degreeStatus ?? '', Validators.required],
-      linkedinUrl: [student.linkedinUrl ?? '', [Validators.pattern('https?://.+')]]
+      linkedinUrl: [student.linkedinUrl ?? '', [Validators.pattern('https?://.+')]],
+      description: [student.description ?? '', Validators.maxLength(500)],
+      address: this.fb.group({
+        street: [student.address?.street ?? '', Validators.required],
+        number: [student.address?.number ?? null, Validators.required],
+        city: [student.address?.city ?? '', Validators.required],
+        province: [student.address?.province ?? '', Validators.required],
+        postalCode: [student.address?.postalCode ?? null, Validators.required]
+      })
     });
   }
 
@@ -122,24 +140,23 @@ ngOnInit(): void {
     if (this.studentsUpdateForm.invalid) {
       this.studentsUpdateForm.markAllAsTouched();
       this.studentsUpdateForm.updateValueAndValidity();
+      this.toast.add({ severity: 'warn', summary: 'Atención', detail: 'Por favor, completa todos los campos requeridos.' });
       return;
     }
 
     this.studentService.update(this.student.id, this.studentsUpdateForm.value).subscribe({
       next: (updated) => {
         console.log('Perfil actualizado:', updated);
-        alert('Perfil actualizado con éxito ✅');
+        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente.' });
       },
       error: (err) => {
         console.error('Error actualizando perfil:', err);
-        alert('Error al guardar ❌');
+        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil.' });
       }
     });
   }
 
   cancelar() {
-    this.router.navigateByUrl('/dashboard');
+    this.router.navigateByUrl('/proyectos-panel');
   }
 }
-
-

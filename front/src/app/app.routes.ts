@@ -5,6 +5,7 @@ import { authGuard } from './features/auth/login/auth.guard';
 import { studentGuard, studentMatch } from './features/auth/guards/student.guard';
 import { investorGuard, investorMatch } from './features/auth/guards/investor.guard';
 import { roleGuard } from './features/auth/login/role.guard';
+import { studentOnlyGuard } from './features/auth/guards/student-only.guard'; // ⬅️ NUEVO
 
 export const routes: Routes = [
   { path: 'auth/login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
@@ -19,10 +20,9 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: '', pathMatch: 'full', redirectTo: 'proyectos-panel' },
       { path: 'dashboard',        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.PanelComponent) },
       { path: 'proyectos-panel',  loadComponent: () => import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
-      { path: 'usuarios',         loadComponent: () => import('./features/usuarios/usuarios.component').then(m => m.UsuariosComponent) },
       { path: 'roles',            loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       { path: 'configuracion',    loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
       { path: 'estudiante-perfil', canActivate: [authGuard, roleGuard('ROLE_STUDENT')], loadComponent: () => import('./features/students/students-update-form/students-update-form.component').then(m => m.StudentsUpdateComponent)},
@@ -32,21 +32,32 @@ export const routes: Routes = [
       { path: 'mismarquesinas',   loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
       { path: 'noticias',         loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
       { path: 'estudiantes',      loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
-      { path: 'inversores',       loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },
-      { path: 'proyectos',        loadComponent: () => import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
+      { path: 'inversores',       loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },      
       { path: 'Miperfil',         redirectTo: 'mi-perfil', pathMatch: 'full' },
       { path: 'mi-perfil',        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
 
       // SOLO estudiantes
       {
-        path: 'my-projects',
+        path: 'misproyectos', // CORREGIDO: Coincide con el routerLink del menú
         canMatch: [studentMatch],
         canActivate: [studentGuard],
         loadComponent: () =>
           import('./features/proyectos/my-projects-panel/my-projects-panel.component')
             .then(m => m.MyProjectsPanelComponent)
       },
-      { path: 'contrato', loadComponent: () => import('./features/contrato/contract.component').then(m => m.ContratosComponent) },
+
+      // NUEVO: Proyectos donde participo (no owner)
+      {
+        path: 'proyectos-participo',
+        canMatch: [studentMatch],
+        canActivate: [studentGuard, studentOnlyGuard],
+        loadComponent: () =>
+          import('./features/proyectos/participant-projects-panel/participant-projects-panel.component')
+            .then(m => m.ParticipantProjectsPanelComponent)
+      },
+
+      { path: 'legales', loadComponent: () => import('./features/contrato/contract.component').then(m => m.ContratosComponent) },
+
       // SOLO inversores
       {
         path: 'mis-inversiones',

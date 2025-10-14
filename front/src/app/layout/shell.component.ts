@@ -1,12 +1,12 @@
-import { Component, ViewChild, OnInit, inject } from '@angular/core';
+import { Component, ViewChild, inject } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { PanelMenu } from 'primeng/panelmenu';
 import { Menu } from 'primeng/menu';
 import { Button } from 'primeng/button';
-import { Avatar } from 'primeng/avatar';
 import { MenuItem } from 'primeng/api';
+import { Avatar } from 'primeng/avatar';
 
 import { AuthService } from '../features/auth/login/auth.service';
 
@@ -15,7 +15,7 @@ import { InvestorService } from '../core/services/investors.service';
 
 
 @Component({
-  selector: 'app-shell',
+  selector: 'app-shell', // 👈 evita 'app-root' para no chocar con el root
   standalone: true,
   imports: [
     CommonModule,
@@ -25,11 +25,21 @@ import { InvestorService } from '../core/services/investors.service';
     Menu,
     Button,
     Avatar,
+    
   ],
   templateUrl: './shell.component.html',
-  styleUrls: ['./shell.component.scss'],
+  styleUrls: ['./shell.component.scss']
 })
-export class ShellComponent implements OnInit {
+export class ShellComponent {
+ sidebarCollapsed = false;
+ isDark = document.documentElement.classList.contains('app-dark');
+
+toggleDarkMode() {
+  this.isDark = !this.isDark;
+  document.documentElement.classList.toggle('app-dark', this.isDark);
+  localStorage.setItem('theme:dark', String(this.isDark));
+}
+
   private router = inject(Router);
   private auth = inject(AuthService);
     // private studentService: StudentService,
@@ -38,65 +48,89 @@ export class ShellComponent implements OnInit {
 
   @ViewChild('userMenu') userMenu!: Menu;
 
-  userItems = [
-    { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/mi-perfil') },
-    { separator: true },
-    { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
-  ];
+userItems = [
+  { label: 'Mi perfil', icon: 'pi pi-user', command: () => this.go('/configuracion') },
+  ...(this.auth.getSession()?.roles.includes('ROLE_INVESTOR') ? [{ label: 'Cuenta Inversor', icon: 'pi pi-briefcase', command: () => this.go('/inversor-perfil') } ] : []),
+  ...(this.auth.getSession()?.roles.includes('ROLE_STUDENT') ? [ { label: 'Cuenta Estudiante', icon: 'pi pi-book', command: () => this.go('/estudiante-perfil') } ] : []),
+  { label: 'Borrar cuenta', icon: 'pi pi-times', command: () => this.logout() },
+  // { label: 'Borrar cuenta', icon: 'pi pi-times', command: () => this.borrarCuenta() },
+  { separator: true },
+  { label: 'Cerrar sesión', icon: 'pi pi-sign-out', command: () => this.logout() }
+];
 
-  sideModel = [
-    { label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' },
+  // Hacemos que el menú lateral sea una propiedad que se construye dinámicamente
+  sideModel: MenuItem[] = [];
 
-    { label: 'InicioINV+STU', icon: 'pi pi-home', routerLink: '/proyectos-panel' },
-    {
-      label: 'Gestión',
-      icon: 'pi pi-database',
-      items: [
-  { label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' },
-  { label: 'Mis Proyectos', icon:'pi pi-pencil',routerLink:'/misproyectos' },
-  { label: 'Mis Marquesinas', icon:'pi pi-pencil',routerLink:'/mismarquesinas' },
-  { label: 'Marquesinas', icon:'pi pi-pencil',routerLink:'/marquesinas' },
-  { label: 'Noticias', icon:'pi pi-bell', routerLink:'/noticias' }
-      ]
-    },
-    {///
-      label: 'Reportes',
-      icon: 'pi pi-chart-line',
-      items: [{ label: 'Dashboard', icon: 'pi pi-chart-bar', disabled: true }]
-    },
-    {
-      label: 'Configuración',
-      icon: 'pi pi-cog',
-      items: [
-        { label: 'Usuarios', icon: 'pi pi-users', routerLink: '/usuarios' },
-        { label: 'Roles', icon: 'pi pi-id-card', routerLink: '/roles' },
-        { label: 'Estudiantes', icon: 'pi pi-users', routerLink: '/estudiantes' },
-        { label: 'Inversores', icon: 'pi pi-users', routerLink: '/inversores' }
-      ]
+  constructor() {
+    this.buildSideMenu();
+  }
+
+  private buildSideMenu(): void {
+    const session = this.auth.getSession();
+    const roles = session?.roles || [];
+
+    const isStudent = roles.includes('ROLE_STUDENT');
+    const isInvestor = roles.includes('ROLE_INVESTOR');
+    const isAdmin = roles.includes('ROLE_ADMIN');
+
+    const menu: MenuItem[] = [
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: '/proyectos-panel' },
+    ];
+
+    // --- Sección de Gestión (Dinámica) ---
+    const managementItems: MenuItem[] = [];
+    if (isStudent) {
+      managementItems.push({ label: 'Crear Proyecto', icon: 'pi pi-plus', routerLink: '/proyectos' });
+      managementItems.push({ label: 'Mis Proyectos', icon: 'pi pi-pencil', routerLink: '/misproyectos' });
+      managementItems.push({ label: 'Proyectos donde participo', icon: 'pi pi-pencil', routerLink: '/proyectos-participo' });
     }
-    /*{
-    label: 'Proyectos',
-    icon: 'pi pi-database',
-    routerLink: '/proyectos', // ✅ Este elemento es un enlace de navegación
+    if (isInvestor) {
+      managementItems.push({ label: 'Marquesinas', icon: 'pi pi-table', routerLink: '/marquesinas' });
+      managementItems.push({ label: 'Mis Marquesinas', icon: 'pi pi-pencil', routerLink: '/mismarquesinas' });
+      managementItems.push({ label: 'Mis Inversiones', icon: 'pi pi-dollar', routerLink: '/mis-inversiones' });
+      managementItems.push({ label: 'Noticias', icon: 'pi pi-bell', routerLink: '/noticias' });
     }
-    **/
+    // Items comunes para ambos roles logueados
+    if (isStudent || isInvestor) {
+      managementItems.push({ label: 'Legales', icon: 'pi pi-info-circle', routerLink: '/legales' });
+    }
 
+    if (managementItems.length > 0) {
+      menu.push({ label: 'Gestión', icon: 'pi pi-database', items: managementItems });
+    }
 
-  ];
+    // --- Sección de Reportes (Ej: solo Admin) ---
+    if (isAdmin) {
+      menu.push({
+        label: 'Reportes',
+        icon: 'pi pi-chart-line',
+        items: [{ label: 'Dashboard', icon: 'pi pi-home', routerLink: '/dashboard' }]
+      });
+    }
+
+    // --- Sección de Configuración (Ej: solo Admin) ---
+    if (isAdmin) {
+      menu.push({
+        label: 'Configuración',
+        icon: 'pi pi-cog',
+        items: [
+          { label: 'Roles', icon: 'pi pi-id-card', routerLink: '/roles' },
+          { label: 'Estudiantes', icon: 'pi pi-users', routerLink: '/estudiantes' },
+          { label: 'Inversores', icon: 'pi pi-users', routerLink: '/inversores' }
+        ]
+      });
+    }
+
+    this.sideModel = menu;
+  }
 
   toggleSidebar() { 
     this.isDark = !this.isDark;
     document.documentElement.classList.toggle('app-dark', this.isDark);
     localStorage.setItem('theme:dark', String(this.isDark));
   }
-
-  openUserMenu(event: MouseEvent) {
-    this.userMenu?.toggle(event);
-  }
-
-  go(url: string) {
-    this.router.navigateByUrl(url);
-  }
+  openUserMenu(event: MouseEvent) { this.userMenu.toggle(event); }
+  go(url: string) { this.router.navigateByUrl(url); }
 
   logout() {
     this.auth.logout();

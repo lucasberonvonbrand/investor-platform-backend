@@ -5,10 +5,14 @@ import { InvestorService } from '../../../core/services/investors.service';
 import { Investor, Province } from '../../../models/investor.model';
 import { Router } from '@angular/router';
 
+// PrimeNG
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+
 @Component({
   selector: 'app-investor-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor],
+  imports: [ReactiveFormsModule, NgIf, NgFor, InputTextModule, ButtonModule],
   templateUrl: './investors-form.component.html',
   styleUrls: ['./investors-form.component.scss']
 })

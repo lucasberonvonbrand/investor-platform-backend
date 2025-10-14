@@ -1,23 +1,27 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, CanMatchFn, Router, UrlTree } from '@angular/router';
 
-/** Lee usuario desde localStorage (auth_user o pp_user) */
-function readRoles(): string[] {
+function readUser(): { roles?: string[]; exp?: number } | null {
   try {
     const raw = localStorage.getItem('auth_user') ?? localStorage.getItem('pp_user');
-    const u = raw ? JSON.parse(raw) as { roles?: string[] } : null;
-    return Array.isArray(u?.roles) ? u!.roles! : [];
-  } catch { return []; }
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
 }
 
-/** Bloquea incluso el lazy-load si no es estudiante */
-export const studentMatch: CanMatchFn = () => {
-  const router = inject(Router);
-  return readRoles().includes('ROLE_STUDENT') ? true : router.parseUrl('/proyectos-panel');
-};
+function isExpired(exp?: number): boolean {
+  return !!exp && (exp * 1000) < Date.now();
+}
 
-/** Redundante pero útil si navegan por código */
-export const studentGuard: CanActivateFn = () => {
+function ensureStudentOrRedirect(): true | UrlTree {
   const router = inject(Router);
-  return readRoles().includes('ROLE_STUDENT') ? true : router.parseUrl('/proyectos-panel');
-};
+  const u = readUser();
+  if (!u) return router.parseUrl('/auth/login');
+  if (isExpired(u.exp)) return router.parseUrl('/auth/login');
+
+  const roles = u.roles ?? [];
+  const ok = roles.includes('ROLE_STUDENT') || roles.includes('STUDENT');
+  return ok ? true : router.parseUrl('/proyectos-panel');
+}
+
+export const studentMatch: CanMatchFn = () => ensureStudentOrRedirect();
+export const studentGuard: CanActivateFn = () => ensureStudentOrRedirect();

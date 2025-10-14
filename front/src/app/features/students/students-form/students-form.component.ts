@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
 import { StudentService } from '../../../core/services/students.service';
@@ -16,6 +16,12 @@ export class StudentFormComponent {
   private service = inject(StudentService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+
+  /** Si es true, el componente se comporta como un modal (no redirige, emite evento) */
+  @Input() isModal = false;
+
+  /** Evento que se emite cuando se crea un estudiante con éxito en modo modal */
+  @Output() userCreated = new EventEmitter<void>();
 
   universities = Object.values(University);
   degreeStatuses = Object.values(DegreeStatus);
@@ -92,10 +98,14 @@ export class StudentFormComponent {
 
         this.form.reset();
 
-        setTimeout(() => {
-          this.showModal.set(false);
-          this.router.navigateByUrl('/home-students', { replaceUrl: true });
-        }, 2000);
+        if (this.isModal) {
+          this.userCreated.emit(); // Avisa al componente padre (la tabla)
+        } else {
+          setTimeout(() => {
+            this.showModal.set(false);
+            this.router.navigateByUrl('/auth/login', { replaceUrl: true }); // Redirige al login en modo público
+          }, 2000);
+        }
       },
       error: (err: any) => {
         // Limpiar errores anteriores

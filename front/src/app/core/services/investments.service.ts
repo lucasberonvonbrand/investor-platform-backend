@@ -25,6 +25,7 @@ export interface IContractLite {
   status: 'borrador' | 'activo' | 'finalizado' | 'cancelado';
   startDate?: string | null;
   endDate?: string | null;
+  currency?: 'USD' | 'ARS' | 'CNY';
   amount?: number | null;
 }
 
@@ -32,58 +33,43 @@ export interface IContractLite {
 export class InvestmentsService {
   private http = inject(HttpClient);
 
-  // ========= EP reales (ejemplo) =========
-  // private getContractsByInvestor(investorId: number): Observable<IContractLite[]> {
-  //   return this.http.get<IContractLite[]>(`/api/contracts?investorId=${investorId}&status=activo`);
-  // }
-  // private getProjectsByIds(ids: number[]): Observable<IMyProject[]> {
-  //   return this.http.post<IMyProject[]>(`/api/projects/batch`, { ids });
-  // }
-
-  // ========= MOCKS para probar ya =========
-  private _contracts: IContractLite[] = [
-    { id: 40, projectId: 101, investorId: 5, status: 'activo', startDate: '2025-08-01' },
-    { id: 41, projectId: 202, investorId: 5, status: 'activo', startDate: '2025-08-20' },
-    { id: 42, projectId: 303, investorId: 8, status: 'activo', startDate: '2025-05-15' },
-  ];
-  private _projects: IMyProject[] = [
-    { id: 101, title: 'Detector de Fugas IoT', summary: 'Sensado y dashboard', status: 'IN_PROGRESS',
-      lastUpdated: new Date().toISOString(), fundingGoal: 10000, fundingRaised: 4200, category: 'IoT', university: 'UNLAM', tags: ['iot','sensors'] },
-    { id: 202, title: 'Plataforma EdTech', summary: 'Clases en vivo', status: 'IN_PROGRESS',
-      lastUpdated: new Date().toISOString(), fundingGoal: 15000, fundingRaised: 10000, category: 'EdTech', university: 'UNLAM', tags: ['angular','node'] },
-    { id: 303, title: 'App Salud Móvil', summary: 'Seguimiento de pacientes', status: 'COMPLETED',
-      lastUpdated: '2025-06-01', fundingGoal: 20000, fundingRaised: 20000, category: 'Salud', university: 'UNLaM', tags: ['mobile'] },
-  ];
-
-  private _getContractsByInvestorMock(investorId: number): Observable<IContractLite[]> {
-    return of(this._contracts.filter(c => c.investorId === investorId && c.status === 'activo')).pipe(delay(150));
-    // si querés incluir borradores/en curso: ajustá el filtro de status arriba
+  // --- Endpoints Reales ---
+  private getContractsByInvestor(investorId: number): Observable<IContractLite[]> {
+    // Llama al endpoint que trae los contratos de un inversor
+    return this.http.get<IContractLite[]>(`/api/contracts/by-investor/${investorId}`);
   }
-  private _getProjectsByIdsMock(ids: number[]): Observable<IMyProject[]> {
-    return of(this._projects.filter(p => ids.includes(p.id))).pipe(delay(120));
+
+  // Nuevo método para el dashboard
+  getAllContracts(): Observable<IContractLite[]> {
+    return this.http.get<IContractLite[]>(`/api/contracts`);
   }
 
   /** Retorna proyectos donde el inversor actual tiene contrato "activo" */
   getMyInvestedProjects(): Observable<IMyProject[]> {
     const user = this.getCurrentUser();
     const investorId = user?.id;
-    if (!investorId) return of([]);
+    if (!investorId) {
+      return of([]); // Si no hay ID de inversor, no se puede hacer la llamada
+    }
 
-    // Con EP reales usarías this.getContractsByInvestor(...) + this.getProjectsByIds(...)
-    return this._getContractsByInvestorMock(investorId).pipe(
-      map(contracts => Array.from(new Set(contracts.map(c => c.projectId)))),
-      // traer proyectos
-      // switchMap(ids => this.getProjectsByIds(ids))
-      // mock:
-      // @ts-ignore
-      map(ids => ids as number[]),
-      // @ts-ignore
-      (ids$) => combineLatest([ids$]).pipe(
-        // unwrap
-        map(([ids]) => ids),
-        // @ts-ignore
-        switchMap((ids: number[]) => this._getProjectsByIdsMock(ids))
-      )
+    // 1. Obtener los contratos del inversor
+    return this.getContractsByInvestor(investorId).pipe(
+      // 2. Extraer los proyectos de esos contratos
+      map(contracts => (contracts ?? []).map((c: any) => c.project)),
+      // 3. Adaptar la estructura de datos a la que espera el componente (IMyProject)
+      map(projects => (projects ?? []).map((p: any) => ({
+        id: p.id,
+        title: p.name,
+        summary: p.description,
+        status: p.status,
+        lastUpdated: p.startDate,
+        fundingGoal: p.budgetGoal,
+        fundingRaised: p.currentGoal,
+        owner: p.ownerName,
+        category: '—', // El backend no provee categoría aquí
+        university: null,
+        students: p.students,
+      } as IMyProject)))
     );
   }
 
