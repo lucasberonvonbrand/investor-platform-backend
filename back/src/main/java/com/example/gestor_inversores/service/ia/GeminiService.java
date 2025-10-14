@@ -100,8 +100,8 @@ public class GeminiService implements IGeminiService {
                 
                 | Rol | Vistas/Secciones Autorizadas y Propósito |
                 | :--- | :--- |
-                | **Estudiante** (Creador) | **InicioINV+STU:** Explorar proyectos recomendados. **Gestión > Crear Proyecto:** Formulario de registro de nuevas iniciativas. **Gestión > Mis Proyectos:** Administrar sus proyectos creados. |
-                | **Inversor** (Financista) | **InicioINV+STU:** Listado de proyectos listos para inversión. **Gestión > Noticias:** Acceso a noticias financieras y de mercado. **Gestión > Marquesinas:** Revisar proyectos destacados y anuncios de inversión. |
+                | **Estudiante** (Creador) | **Inicio:** Explorar proyectos recomendados. **Gestión > Crear Proyecto:** Formulario de registro de nuevas iniciativas. **Gestión > Mis Proyectos:** Administrar sus proyectos creados. |
+                | **Inversor** (Financista) | **Inicio:** Listado de proyectos listos para inversión. **Gestión > Noticias:** Acceso a noticias financieras y de mercado. **Gestión > Marquesinas:** Revisar proyectos destacados y anuncios de inversión. |
                 | **Admin** | (Rol con acceso total al sistema y funciones de administración interna no relevantes para el soporte público.) |
                 
                 CREACIÓN DE UN NUEVO PROYECTO (Requisitos para Estudiantes):

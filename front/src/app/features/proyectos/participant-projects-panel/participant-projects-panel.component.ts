@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, Input } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
+// PrimeNG Modules
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ButtonModule } from 'primeng/button';
@@ -13,28 +15,28 @@ import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { IMyProject, MyProjectsService } from '../../../core/services/my-projects.service';
-import { Router } from '@angular/router';
+
+// Services and Interfaces
+import { ParticipantProjectsService } from '../../../core/services/participant-projects.service';
+import { IMyProject } from '../../../core/services/my-projects.service';
 
 @Component({
   standalone: true,
-  selector: 'app-my-projects-panel',
+  selector: 'app-participant-projects-panel',
   imports: [
     CommonModule, FormsModule,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TagModule, TableModule, DialogModule, DividerModule, TooltipModule, ToastModule
+    TagModule, TableModule, DialogModule, DividerModule, TooltipModule, ToastModule,
   ],
-  templateUrl: './my-projects-panel.component.html',
-  styleUrls: ['./my-projects-panel.component.scss'],
+  templateUrl: './participant-projects-panel.component.html',
+  styleUrls: ['./participant-projects-panel.component.scss'],
   providers: [MessageService]
 })
-export class MyProjectsPanelComponent implements OnInit {
-  private svc = inject(MyProjectsService);
+export class ParticipantProjectsPanelComponent implements OnInit {
+  // Inyección de dependencias
+  private svc = inject(ParticipantProjectsService);
   private toast = inject(MessageService);
   private router = inject(Router);
-
-  /** Incluir también proyectos donde soy asignado (miembro/estudiante) */
-  @Input() includeAssigned = true;
 
   // filtros
   q = '';
@@ -49,7 +51,7 @@ export class MyProjectsPanelComponent implements OnInit {
   // vista
   viewMode: 'cards' | 'table' = 'cards';
 
-  // detalle (ya no se usa el diálogo; mantenemos por compatibilidad UI si tenés botones que lo abren)
+  // detalle (para el dialog opcional)
   showDetail = false;
   selected: IMyProject | null = null;
 
@@ -60,26 +62,30 @@ export class MyProjectsPanelComponent implements OnInit {
   kpis = { total: 0, activos: 0, recientes: 0, conFinanciacion: 0 };
 
   // Favoritos (localStorage)
-  private favKey = 'pp_fav_my_projects';
+  private favKey = 'pp_fav_member_projects';
   favIds = new Set<number>();
 
   ngOnInit(): void {
     this.restoreFavs();
-    this.reload();
+    this.reload(); // Renombramos loadProjects a reload para consistencia
   }
 
   reload(): void {
     this.loading = true;
-    this.svc.getMine().subscribe({
-      next: (list) => {
+    this.svc.getMineAsParticipant().subscribe({
+      next: (list: IMyProject[]) => {
         this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
         this.applyFilters();
         this.computeKpis();
         this.buildRecommended();
+
+        if (this.projects.length === 0) {
+          this.toast.add({ severity: 'info', summary: 'Información', detail: 'No estás participando en ningún proyecto.' });
+        }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
-        this.toast.add({ severity: 'error', summary: 'Mis Proyectos', detail: 'No se pudieron cargar' });
+        this.toast.add({ severity: 'error', summary: 'Proyectos donde participo', detail: 'No se pudieron cargar' });
       },
       complete: () => (this.loading = false)
     });
@@ -151,13 +157,13 @@ export class MyProjectsPanelComponent implements OnInit {
     this.persistFavs();
   }
 
-  // ===== Navegar al detalle maestro =====
-  openDetail(p: IMyProject) {
+  // ===== Navegar al maestro =====
+  openDetail(p: IMyProject): void {
     if (!p?.id) return;
     this.router.navigate(['/proyectos-maestro', p.id]);
   }
 
-  // tags colores
+  // --- Helpers para la UI (copiados de MyProjectsPanelComponent para consistencia) ---
   private readonly tagPalette: Array<{bg: string; fg: string}> = [
     { bg: '#22c55e', fg: '#ffffff' },
     { bg: '#3b82f6', fg: '#ffffff' },
@@ -167,12 +173,20 @@ export class MyProjectsPanelComponent implements OnInit {
     { bg: '#14b8a6', fg: '#ffffff' },
     { bg: '#06b6d4', fg: '#111111' },
   ];
+
   private hashKey(name: string): number {
     let h=0; for (let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))>>>0; return h;
   }
-  tagStyle(text: string, index: number) {
+  tagStyle(text: string | undefined, index: number) {
     const key = text ?? String(index);
     const c = this.tagPalette[this.hashKey(key) % this.tagPalette.length];
-    return { 'background-color': c.bg, color: c.fg, 'border-color': 'transparent', 'border-radius': '8px', 'font-weight': 700, 'padding': '0 .5rem' };
+    return {
+      'background-color': c.bg,
+      color: c.fg,
+      'border-color': 'transparent',
+      'border-radius': '8px',
+      'font-weight': 700,
+      'padding': '0 .5rem'
+    };
   }
 }

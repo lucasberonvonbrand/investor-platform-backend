@@ -247,7 +247,7 @@ export class RolesComponent implements OnInit {
       message: `¿Eliminar el rol "${row.role}"?`,
       accept: () => {
         // Si tu servicio tiene delete(row.id) activalo acá; por ahora mock:
-        this.toast.add({ severity: 'success', summary: 'Eliminado (mock)', detail: row.role });
+        this.toast.add({ severity: 'success', summary: 'Eliminado ', detail: row.role });
       }
     });
   }

@@ -5,11 +5,10 @@
   <div class="p-toolbar-group-left">
     <span class="p-input-icon-left">
       <i class="pi pi-search"></i>
-      <input pInputText type="text" placeholder="Buscar mis proyectos..."
+      <input pInputText type="text" placeholder="Buscar proyectos donde participo..."
              [(ngModel)]="q" (input)="applyFilters()" />
     </span>
 
-    <!-- Select nativo para categoría -->
     <span class="ml-2">
       <select class="p-inputtext p-component" [(ngModel)]="selectedCategory" (change)="applyFilters()">
         <option [ngValue]="''">Todas las categorías</option>
@@ -34,8 +33,8 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
   <p-card class="shadow-sm">
     <div class="flex items-center gap-3">
-      <span class="pi pi-user text-2xl opacity-80"></span>
-      <div><div class="text-xs opacity-70">Mis proyectos</div><div class="text-xl font-bold">{{ kpis.total }}</div></div>
+      <span class="pi pi-users text-2xl opacity-80"></span>
+      <div><div class="text-xs opacity-70">Proyectos donde participo</div><div class="text-xl font-bold">{{ kpis.total }}</div></div>
     </div>
   </p-card>
   <p-card class="shadow-sm">
@@ -58,8 +57,8 @@
   </p-card>
 </div>
 
-<!-- ===== Vista principal: CARDS o TABLA ===== -->
-<p-card class="mt-4 shadow-sm" header="Mis Proyectos">
+<!-- Vista principal -->
+<p-card class="mt-4 shadow-sm" header="Proyectos donde participo">
   <!-- Cards -->
   <div *ngIf="viewMode==='cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
     <div *ngFor="let row of filtered"
@@ -130,7 +129,7 @@
           [breakpoints]="{ '1200px':'80vw', '960px':'90vw', '640px':'95vw' }"
           [contentStyle]="{ 'max-height':'75vh', 'overflow':'auto' }"
           [maximizable]="true" [dismissableMask]="true"
-          header="Detalle de mi proyecto">
+          header="Detalle del proyecto">
   <ng-container *ngIf="selected">
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2 text-lg font-semibold">{{ selected.title }}</div>

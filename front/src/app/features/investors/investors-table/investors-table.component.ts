@@ -16,12 +16,14 @@ import { PasswordModule } from 'primeng/password';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { HttpClient } from '@angular/common/http';
 
 // 👇 desde features/investors → core/services (dos niveles)
 import { InvestorService } from '../../../core/services/investors.service';
+import { InvestorFormComponent } from '../investors-form/investors-form.component';
 
 interface IAddress {
   street: string;
@@ -56,10 +58,10 @@ interface IInvestorView {
 @Component({
   standalone: true,
   selector: 'app-investors',
-  imports: [
+  imports: [ InvestorFormComponent,
     CommonModule, FormsModule,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TableModule, TagModule, ToastModule, ConfirmDialogModule,
+    TableModule, TagModule, ToastModule, ConfirmDialogModule, SelectButtonModule,
     DialogModule, PasswordModule, CheckboxModule, DividerModule, TooltipModule
   ],
   providers: [MessageService, ConfirmationService],
@@ -75,7 +77,13 @@ export class InvestorsComponent implements OnInit {
   // relativo (proxy)
   private apiUrl = '/api/investors';
 
-  investors: IInvestorView[] = [];
+  // --- Estado del componente ---
+  allInvestors: IInvestorView[] = []; // Lista completa sin filtrar
+  filteredInvestors: IInvestorView[] = []; // Lista que se muestra en la tabla
+  filterStatusOptions = [
+    { label: 'Habilitados', value: 'enabled' }, { label: 'Deshabilitados', value: 'disabled' }, { label: 'Todos', value: 'all' }
+  ];
+  currentFilter: 'enabled' | 'disabled' | 'all' = 'enabled';
   loading = false;
 
   showDetail = false;
@@ -133,8 +141,9 @@ export class InvestorsComponent implements OnInit {
     this.loading = true;
     this.svc.loadAll().subscribe({
       next: (data) => {
-        this.investors = (data || []).map(d => this.normalize(d));
+        this.allInvestors = (data || []).map(d => this.normalize(d));
         this.loading = false;
+        this.applyFilter(); // Aplicar el filtro inicial
       },
       error: (err) => {
         console.error(err);
@@ -142,6 +151,24 @@ export class InvestorsComponent implements OnInit {
         this.toast.add({ severity: 'error', summary: 'Investors', detail: 'No se pudieron cargar' });
       }
     });
+  }
+
+  applyFilter(): void {
+    if (this.currentFilter === 'all') {
+      this.filteredInvestors = [...this.allInvestors];
+    } else {
+      const isEnabled = this.currentFilter === 'enabled';
+      this.filteredInvestors = this.allInvestors.filter(i => i.enabled === isEnabled);
+    }
+  }
+
+  onFilterChange(): void {
+    this.applyFilter();
+  }
+
+  handleUserCreation(): void {
+    this.showDialog = false;
+    this.reload();
   }
 
   onView(row: IInvestorView) { this.selected = row; this.showDetail = true; }

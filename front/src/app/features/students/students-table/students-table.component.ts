@@ -18,6 +18,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { HttpClient } from '@angular/common/http';
@@ -25,6 +26,8 @@ import { HttpClient } from '@angular/common/http';
 // 👇 Path corregido: desde features/estudiantes a core/services es ../../
 import { StudentService } from '../../../core/services/students.service';
 import { RolesService, IRole } from '../../../core/services/roles.service';
+import { DegreeStatus } from '../../../models/student.model';
+import { StudentFormComponent } from '../students-form/students-form.component';
 
 interface IStudentView {
   id: number;
@@ -64,11 +67,10 @@ interface IStudentView {
   standalone: true,
   selector: 'app-estudiantes',
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, StudentFormComponent,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TableModule, TagModule, ToastModule, ConfirmDialogModule,
-    DialogModule, PasswordModule, CheckboxModule, MultiSelectModule,
-    DividerModule, TooltipModule
+    TableModule, TagModule, ToastModule, ConfirmDialogModule, SelectButtonModule,
+    DialogModule, PasswordModule, CheckboxModule, MultiSelectModule, DividerModule, TooltipModule
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './students-table.component.html',   // 👈 corregido
@@ -84,7 +86,13 @@ export class EstudiantesComponent implements OnInit {
   // Relativo para pasar por el proxy
   private apiUrl = '/api/students';
 
-  students: IStudentView[] = [];
+  // --- Estado del componente ---
+  allStudents: IStudentView[] = []; // Lista completa sin filtrar
+  filteredStudents: IStudentView[] = []; // Lista que se muestra en la tabla
+  filterStatusOptions = [
+    { label: 'Habilitados', value: 'enabled' }, { label: 'Deshabilitados', value: 'disabled' }, { label: 'Todos', value: 'all' }
+  ];
+  currentFilter: 'enabled' | 'disabled' | 'all' = 'enabled';
   loading = false;
 
   showDetail = false;
@@ -96,6 +104,12 @@ export class EstudiantesComponent implements OnInit {
   formModel: IStudentView = this.emptyForm();
   availableRoles: IRole[] = [];
   selectedRoles: IRole[] = [];
+  degreeStatusOptions = [
+    { label: 'En curso', value: DegreeStatus.IN_PROGRESS },
+    { label: 'Completado', value: DegreeStatus.COMPLETED },
+    { label: 'Suspendido', value: DegreeStatus.SUSPENDED },
+    { label: 'Abandonado', value: DegreeStatus.ABANDONED }
+  ];
 
   ngOnInit(): void {
     this.reload();
@@ -155,8 +169,9 @@ export class EstudiantesComponent implements OnInit {
     this.loading = true;
     this.studentsSvc.loadAll().subscribe({
       next: (data) => {
-        this.students = (data || []).map(d => this.normalize(d));
+        this.allStudents = (data || []).map(d => this.normalize(d));
         this.loading = false;
+        this.applyFilter(); // Aplicar el filtro inicial
       },
       error: (err) => {
         console.error(err);
@@ -164,6 +179,24 @@ export class EstudiantesComponent implements OnInit {
         this.toast.add({ severity: 'error', summary: 'Estudiantes', detail: 'No se pudieron cargar' });
       }
     });
+  }
+
+  applyFilter(): void {
+    if (this.currentFilter === 'all') {
+      this.filteredStudents = [...this.allStudents];
+    } else {
+      const isEnabled = this.currentFilter === 'enabled';
+      this.filteredStudents = this.allStudents.filter(s => s.enabled === isEnabled);
+    }
+  }
+
+  onFilterChange(): void {
+    this.applyFilter();
+  }
+
+  handleUserCreation(): void {
+    this.showDialog = false;
+    this.reload();
   }
 
   onView(row: IStudentView) { this.selected = row; this.showDetail = true; }
@@ -233,7 +266,7 @@ export class EstudiantesComponent implements OnInit {
     }
 
     this.loading = true;
-    this.http.put(`${this.apiUrl}/${this.formModel.id}`, body).subscribe({
+    this.http.patch(`${this.apiUrl}/${this.formModel.id}`, body).subscribe({
       next: () => {
         this.toast.add({ severity: 'success', summary: 'Estudiante', detail: 'Actualizado' });
         this.showDialog = false;
@@ -300,5 +333,10 @@ export class EstudiantesComponent implements OnInit {
       'font-weight': 700,
       'padding': '0 .5rem'
     };
+  }
+
+  getDegreeStatusLabel(statusValue: string | null | undefined): string {
+    const status = this.degreeStatusOptions.find(s => s.value === statusValue);
+    return status ? status.label : (statusValue || '—');
   }
 }

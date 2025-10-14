@@ -112,7 +112,7 @@ export class LoginComponent implements OnDestroy {
     const { username, password } = this.form.getRawValue();
 
     this.auth.login(username!, password!).subscribe({
-      next: () => this.router.navigateByUrl("/dashboard", { replaceUrl: true }),
+      next: () => this.router.navigateByUrl("/proyectos-panel", { replaceUrl: true }),
       error: (err) => {
         // err ya viene normalizado por mapAuthError en el service
         this.serverError.set(err);

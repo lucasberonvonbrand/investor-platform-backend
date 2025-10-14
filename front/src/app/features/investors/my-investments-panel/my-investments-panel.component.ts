@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, Input } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms'; // ✅ Angular forms
 
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -8,33 +8,30 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
-import { DialogModule } from 'primeng/dialog';
-import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { IMyProject, MyProjectsService } from '../../../core/services/my-projects.service';
 import { Router } from '@angular/router';
+
+import { InvestmentsService, IMyProject } from '../../../core/services/investments.service';
 
 @Component({
   standalone: true,
-  selector: 'app-my-projects-panel',
-  imports: [
-    CommonModule, FormsModule,
-    CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TagModule, TableModule, DialogModule, DividerModule, TooltipModule, ToastModule
-  ],
-  templateUrl: './my-projects-panel.component.html',
-  styleUrls: ['./my-projects-panel.component.scss'],
+  selector: 'app-my-investments-panel',
+ imports: [
+  CommonModule, FormsModule,
+  CardModule, ToolbarModule, ButtonModule, InputTextModule,
+  TagModule, TableModule, TooltipModule, ToastModule
+],
+
+  templateUrl: './my-investments-panel.component.html',
+  styleUrls: ['./my-investments-panel.component.scss'],
   providers: [MessageService]
 })
-export class MyProjectsPanelComponent implements OnInit {
-  private svc = inject(MyProjectsService);
+export class MyInvestmentsPanelComponent implements OnInit {
+  private svc = inject(InvestmentsService);
   private toast = inject(MessageService);
   private router = inject(Router);
-
-  /** Incluir también proyectos donde soy asignado (miembro/estudiante) */
-  @Input() includeAssigned = true;
 
   // filtros
   q = '';
@@ -49,28 +46,19 @@ export class MyProjectsPanelComponent implements OnInit {
   // vista
   viewMode: 'cards' | 'table' = 'cards';
 
-  // detalle (ya no se usa el diálogo; mantenemos por compatibilidad UI si tenés botones que lo abren)
-  showDetail = false;
-  selected: IMyProject | null = null;
-
   // loading
   loading = false;
 
   // KPIs
   kpis = { total: 0, activos: 0, recientes: 0, conFinanciacion: 0 };
 
-  // Favoritos (localStorage)
-  private favKey = 'pp_fav_my_projects';
-  favIds = new Set<number>();
-
   ngOnInit(): void {
-    this.restoreFavs();
     this.reload();
   }
 
   reload(): void {
     this.loading = true;
-    this.svc.getMine().subscribe({
+    this.svc.getMyInvestedProjects().subscribe({
       next: (list) => {
         this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
         this.applyFilters();
@@ -79,7 +67,7 @@ export class MyProjectsPanelComponent implements OnInit {
       },
       error: (err) => {
         console.error(err);
-        this.toast.add({ severity: 'error', summary: 'Mis Proyectos', detail: 'No se pudieron cargar' });
+        this.toast.add({ severity: 'error', summary: 'Mis Inversiones', detail: 'No se pudieron cargar' });
       },
       complete: () => (this.loading = false)
     });
@@ -132,26 +120,7 @@ export class MyProjectsPanelComponent implements OnInit {
     this.recommended = scored.sort((a,b)=>b.s-a.s).slice(0,6).map(x=>x.p);
   }
 
-  // ===== Favoritos =====
-  private restoreFavs(): void {
-    try {
-      const raw = localStorage.getItem(this.favKey);
-      this.favIds = new Set(raw ? (JSON.parse(raw) as number[]) : []);
-    } catch {
-      this.favIds = new Set<number>();
-    }
-  }
-  private persistFavs(): void {
-    localStorage.setItem(this.favKey, JSON.stringify(Array.from(this.favIds)));
-  }
-  isFav(id: number): boolean { return this.favIds.has(id); }
-  toggleFav(p: IMyProject): void {
-    if (!p?.id) return;
-    this.favIds.has(p.id) ? this.favIds.delete(p.id) : this.favIds.add(p.id);
-    this.persistFavs();
-  }
-
-  // ===== Navegar al detalle maestro =====
+  // navegación al maestro
   openDetail(p: IMyProject) {
     if (!p?.id) return;
     this.router.navigate(['/proyectos-maestro', p.id]);
