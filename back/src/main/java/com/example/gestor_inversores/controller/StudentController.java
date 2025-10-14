@@ -52,6 +52,14 @@ public class StudentController {
         return ResponseEntity.ok(studentMapper.studentToResponseStudentDTO(saved));
     }
 
+    @PutMapping("/update-by-admin/{id}")
+    public ResponseEntity<ResponseStudentDTO> updateByAdmin(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestStudentUpdateByAdminDTO dto) {
+        ResponseStudentDTO updatedStudent = studentService.updateByAdmin(id, dto);
+        return ResponseEntity.ok(updatedStudent);
+    }
+
     @PatchMapping("/{id}")
     public ResponseEntity<ResponseStudentDTO> patchStudent(
             @PathVariable Long id,

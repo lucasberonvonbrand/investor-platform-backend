@@ -10,6 +10,8 @@ public interface IRoleService {
 
     Optional<Role> findById(Long id);
 
+    Optional<Role> findByRole(String role); // <-- AÑADIDO
+
     Role save(Role role);
 
     void deleteById(Long id);

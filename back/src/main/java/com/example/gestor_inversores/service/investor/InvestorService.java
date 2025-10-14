@@ -1,6 +1,7 @@
 package com.example.gestor_inversores.service.investor;
 
 import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateByAdminDTO;
 import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
 import com.example.gestor_inversores.exception.*;
@@ -9,10 +10,11 @@ import com.example.gestor_inversores.model.Investor;
 import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.repository.IInvestorRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
-import com.example.gestor_inversores.service.role.RoleService;
+import com.example.gestor_inversores.service.role.IRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -23,7 +25,7 @@ import java.util.stream.Collectors;
 public class InvestorService implements IInvestorService {
 
     private final IInvestorRepository investorRepository;
-    private final RoleService roleService;
+    private final IRoleService roleService; // Cambiado a la interfaz para desacoplar
     private final BCryptPasswordEncoder passwordEncoder;
     private final InvestorMapper mapper;
     private final IUserRepository userRepository;
@@ -43,8 +45,9 @@ public class InvestorService implements IInvestorService {
         investor.setAccountNotLocked(true);
         investor.setCredentialNotExpired(true);
 
-        Role investorRole = roleService.findById(2L)
-                .orElseThrow(() -> new RuntimeException("Rol INVESTOR no encontrado"));
+        // Búsqueda de rol por nombre, mucho más robusto
+        Role investorRole = roleService.findByRole("INVESTOR")
+                .orElseThrow(() -> new RoleNotFoundException("Rol INVESTOR no encontrado. Asegúrese de que esté creado en la base de datos."));
         investor.setRolesList(Set.of(investorRole));
 
         if (investor.getPassword() != null && !investor.getPassword().isBlank()) {
@@ -53,6 +56,18 @@ public class InvestorService implements IInvestorService {
 
         Investor savedInvestor = investorRepository.save(investor);
         return mapper.investorToResponseInvestorDTO(savedInvestor);
+    }
+
+    @Override
+    @Transactional
+    public ResponseInvestorDTO updateByAdmin(Long id, RequestInvestorUpdateByAdminDTO dto) {
+        Investor investorToUpdate = investorRepository.findById(id)
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor con id " + id + " no encontrado para actualizar"));
+
+        mapper.updateInvestorFromAdminDto(dto, investorToUpdate);
+
+        Investor updatedInvestor = investorRepository.save(investorToUpdate);
+        return mapper.investorToResponseInvestorDTO(updatedInvestor);
     }
 
     @Override

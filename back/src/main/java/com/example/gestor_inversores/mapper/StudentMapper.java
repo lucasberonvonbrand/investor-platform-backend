@@ -100,6 +100,35 @@ public class StudentMapper {
         return dto;
     }
 
+    public void updateStudentFromAdminDto(RequestStudentUpdateByAdminDTO dto, Student student) {
+        if (dto == null || student == null) return;
+
+        // Campos de User
+        student.setUsername(dto.getUsername());
+        student.setEmail(dto.getEmail());
+
+        // Campos de estado de la cuenta
+        student.setEnabled(dto.getEnabled());
+        student.setAccountNotExpired(dto.getAccountNotExpired());
+        student.setAccountNotLocked(dto.getAccountNotLocked());
+        student.setCredentialNotExpired(dto.getCredentialNotExpired());
+
+        // Campos específicos de Student
+        student.setFirstName(dto.getFirstName());
+        student.setLastName(dto.getLastName());
+        student.setDni(dto.getDni());
+        student.setPhone(dto.getPhone());
+        student.setDateOfBirth(dto.getDateOfBirth());
+        student.setUniversity(dto.getUniversity());
+        student.setCareer(dto.getCareer());
+        student.setDegreeStatus(dto.getDegreeStatus());
+        student.setLinkedinUrl(dto.getLinkedinUrl());
+        student.setDescription(dto.getDescription());
+
+        // Address (asume una actualización completa de la dirección)
+        student.setAddress(dto.getAddress());
+    }
+
     public void patchStudentFromDto(RequestStudentUpdateDTO dto, Student student) {
         if (dto == null || student == null) return;
 
