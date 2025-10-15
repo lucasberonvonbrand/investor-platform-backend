@@ -2,7 +2,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Investor } from '../../models/investor.model';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class InvestorService {
@@ -15,16 +15,9 @@ export class InvestorService {
   constructor(private http: HttpClient) {}
 
   loadAll(): Observable<Investor[]> {
-    return new Observable((subscriber) => {
-      this.http.get<Investor[]>(this.apiUrl).subscribe({
-        next: (data) => {
-          this._investors.set(data ?? []);
-          subscriber.next(data ?? []);
-          subscriber.complete();
-        },
-        error: (err) => subscriber.error(err)
-      });
-    });
+    return this.http.get<Investor[]>(this.apiUrl).pipe(
+      tap(data => this._investors.set(data ?? []))
+    );
   }
 
   // 🔹 nuevo
@@ -33,30 +26,16 @@ export class InvestorService {
   }
 
   create(investorData: Partial<Investor>): Observable<Investor> {
-    return new Observable((subscriber) => {
-      this.http.post<Investor>(this.apiUrl, investorData).subscribe({
-        next: (created) => {
-          this._investors.update(list => [...list, created]);
-          subscriber.next(created);
-          subscriber.complete();
-        },
-        error: (err) => subscriber.error(err)
-      });
-    });
+    return this.http.post<Investor>(this.apiUrl, investorData).pipe(
+      tap(created => this._investors.update(list => [...list, created]))
+    );
   }
 
   // 🔹 nuevo
   update(id: number, investorData: Partial<Investor>): Observable<Investor> {
-    return new Observable((subscriber) => {
-      this.http.put<Investor>(`${this.apiUrl}/${id}`, investorData).subscribe({
-        next: (updated) => {
-          this._investors.update(list => list.map(i => (i as any).id === id ? updated : i));
-          subscriber.next(updated);
-          subscriber.complete();
-        },
-        error: (err) => subscriber.error(err)
-      });
-    });
+    return this.http.put<Investor>(`${this.apiUrl}/${id}`, investorData).pipe(
+      tap(updated => this._investors.update(list => list.map(i => i.id === id ? updated : i)))
+    );
   }
 
   // 🔹 opcionales (si tu backend los tiene; si no, el componente hace fallback con update)
@@ -65,5 +44,12 @@ export class InvestorService {
   }
   deactivate(id: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${id}/deactivate`, {});
+  }
+
+  // 🔹 nuevo
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+      tap(() => this._investors.update(list => list.filter(i => i.id !== id)))
+    );
   }
 }

@@ -16,6 +16,7 @@ export interface IMyProject {
   fundingGoal: number | null;
   fundingRaised: number | null;
   owner?: string | null;
+  ownerId?: number;
   category?: string | null;
   university?: string | null;
   tags?: string[];
@@ -28,8 +29,13 @@ export interface IContract {
   title: string;
   amount: number;
   status: 'borrador' | 'activo' | 'finalizado' | 'cancelado';
+  currency?: 'USD' | 'ARS' | 'CNY';
+  profit1Year?: number;
+  profit2Years?: number;
+  profit3Years?: number;
   startDate?: string | null;
   endDate?: string | null;
+  clauses?: string | null;
 }
 
 export interface IChatMessage {
@@ -49,15 +55,24 @@ export class ProjectsMasterService {
   // getProjectById(id: number): Observable<IMyProject> {
   //   return this.http.get<IMyProject>(`/api/projects/${id}`);
   // }
-  // getContracts(projectId: number): Observable<IContract[]> {
-  //   return this.http.get<IContract[]>(`/api/projects/${projectId}/contracts`);
-  // }
-  // upsertContract(dto: Partial<IContract> & { projectId: number }): Observable<IContract> {
-  //   return dto.id
-  //     ? this.http.put<IContract>(`/api/contracts/${dto.id}`, dto)
-  //     : this.http.post<IContract>(`/api/contracts`, dto);
-  // }
-  // getChat(projectId: number): Observable<IChatMessage[]> {
+  getContracts(projectId: number): Observable<IContract[]> {
+    return this.http.get<IContract[]>(`/api/contracts/by-project/${projectId}`);
+  }
+  upsertContract(dto: Partial<IContract> & { projectId: number; createdByInvestorId?: number }): Observable<IContract> {
+    return dto.id
+      ? this.http.put<IContract>(`/api/contracts/${dto.id}`, dto)
+      : this.http.post<IContract>(`/api/contracts`, dto);
+  }
+
+  signContract(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.post<IContract>(`/api/contracts/${contractId}/sign`, { studentId });
+  }
+
+  cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
+    return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
+  }
+
+  // getChat(projectId: number): Observable<IChatMessage[]> { // MOCK
   //   return this.http.get<IChatMessage[]>(`/api/projects/${projectId}/chat`);
   // }
   // sendMessage(msg: Omit<IChatMessage, 'id' | 'createdAt'>): Observable<IChatMessage> {
@@ -78,6 +93,7 @@ export class ProjectsMasterService {
       fundingGoal: 10000,
       fundingRaised: 4200,
       owner: 'Equipo IoT',
+      ownerId: 1, // ID de ejemplo para el dueño
       category: 'IoT',
       university: 'UNLAM',
       tags: ['iot', 'sensors'],
@@ -100,30 +116,30 @@ export class ProjectsMasterService {
     return of(p as IMyProject).pipe(delay(200));
   }
 
-  getContracts(projectId: number): Observable<IContract[]> {
-    return of(this._contracts.filter(c => c.projectId === projectId)).pipe(delay(200));
-  }
+  // getContracts(projectId: number): Observable<IContract[]> {
+  //   return of(this._contracts.filter(c => c.projectId === projectId)).pipe(delay(200));
+  // }
 
-  upsertContract(dto: Partial<IContract> & { projectId: number }): Observable<IContract> {
-    if (dto.id) {
-      const idx = this._contracts.findIndex(c => c.id === dto.id);
-      if (idx >= 0) this._contracts[idx] = { ...this._contracts[idx], ...dto } as IContract;
-      return of(this._contracts[idx]).pipe(delay(150));
-    } else {
-      const newId = Math.max(0, ...this._contracts.map(c => c.id)) + 1;
-      const created: IContract = {
-        id: newId,
-        title: dto.title || 'Sin título',
-        amount: dto.amount ?? 0,
-        status: (dto.status as IContract['status']) || 'borrador',
-        startDate: dto.startDate ?? null,
-        endDate: dto.endDate ?? null,
-        projectId: dto.projectId,
-      };
-      this._contracts.unshift(created);
-      return of(created).pipe(delay(150));
-    }
-  }
+  // upsertContract(dto: Partial<IContract> & { projectId: number }): Observable<IContract> {
+  //   if (dto.id) {
+  //     const idx = this._contracts.findIndex(c => c.id === dto.id);
+  //     if (idx >= 0) this._contracts[idx] = { ...this._contracts[idx], ...dto } as IContract;
+  //     return of(this._contracts[idx]).pipe(delay(150));
+  //   } else {
+  //     const newId = Math.max(0, ...this._contracts.map(c => c.id)) + 1;
+  //     const created: IContract = {
+  //       id: newId,
+  //       title: dto.title || 'Sin título',
+  //       amount: dto.amount ?? 0,
+  //       status: (dto.status as IContract['status']) || 'borrador',
+  //       startDate: dto.startDate ?? null,
+  //       endDate: dto.endDate ?? null,
+  //       projectId: dto.projectId,
+  //     };
+  //     this._contracts.unshift(created);
+  //     return of(created).pipe(delay(150));
+  //   }
+  // }
 
   getChat(projectId: number): Observable<IChatMessage[]> {
     return this._chat$.pipe(map(list => list.filter(m => m.projectId === projectId)));

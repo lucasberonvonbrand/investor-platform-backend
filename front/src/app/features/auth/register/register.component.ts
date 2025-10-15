@@ -1,103 +1,43 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
-import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from "@angular/forms";
-import { Router, RouterLink } from "@angular/router";
-import { AuthService } from "../login/auth.service";
-
-function match(field: string, confirmField: string) {
-  return (group: AbstractControl): ValidationErrors | null => {
-    const a = group.get(field)?.value;
-    const b = group.get(confirmField)?.value;
-    return a && b && a !== b ? { mismatch: true } : null;
-  };
-}
+import { RouterLink } from "@angular/router";
 
 @Component({
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   template: `
-  <div class="min-h-screen grid place-items-center p-6 bg-gray-50 dark:bg-black">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()"
-          class="bg-white/90 dark:bg-gray-900/80 rounded-2xl shadow-xl p-6 w-full max-w-md space-y-4 backdrop-blur">
-      <h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 text-center">Crear cuenta</h2>
+  <div class="min-h-screen grid place-items-center p-6 bg-gray-100 dark:bg-gray-900">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl space-y-6 backdrop-blur text-center">
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Crear una cuenta</h2>
+      <p class="text-lg text-gray-500 dark:text-gray-400">Para continuar, por favor selecciona tu rol:</p>
 
-      <input type="text" placeholder="Usuario" formControlName="username"
-             class="w-full border rounded-lg p-3 dark:bg-gray-800 dark:border-gray-700"
-             [class.border-red-500]="invalid('username')"/>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        <!-- Botón Estudiante -->
+        <a routerLink="/create-student"
+           class="group flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-transparent hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-600 transition-all duration-300 transform hover:-translate-y-1">
+          <i class="pi pi-user text-5xl text-blue-500 mb-3"></i>
+          <span class="text-xl font-semibold text-gray-800 dark:text-gray-100">Soy Estudiante</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400 mt-1">Quiero crear proyectos</span>
+        </a>
 
-      <input type="email" placeholder="Email" formControlName="email"
-             class="w-full border rounded-lg p-3 dark:bg-gray-800 dark:border-gray-700"
-             [class.border-red-500]="invalid('email')"/>
-
-      <input [type]="showPwd ? 'text':'password'" placeholder="Contraseña" formControlName="password"
-             class="w-full border rounded-lg p-3 dark:bg-gray-800 dark:border-gray-700"
-             [class.border-red-500]="invalid('password')"/>
-      <input [type]="showPwd ? 'text':'password'" placeholder="Confirmar contraseña" formControlName="confirm"
-             class="w-full border rounded-lg p-3 dark:bg-gray-800 dark:border-gray-700"
-             [class.border-red-500]="form.hasError('mismatch') && (form.touched || form.dirty)"/>
-
-      <label class="flex items-center gap-2 text-sm">
-        <input type="checkbox" (change)="showPwd = !showPwd"> Mostrar contraseña
-      </label>
-
-      <button class="w-full bg-gray-900 text-white rounded-lg p-3 disabled:opacity-60"
-              [disabled]="form.invalid || loading()">
-        <span *ngIf="!loading()">Registrarse</span>
-        <span *ngIf="loading()">Creando…</span>
-      </button>
-
-      <p *ngIf="ok()" class="text-green-600 text-sm text-center">{{ msg() }}</p>
-      <p *ngIf="error()" class="text-red-600 text-sm text-center">{{ msg() }}</p>
+        <!-- Botón Inversor -->
+        <a routerLink="/create-investor"
+           class="group flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-700 rounded-lg border-2 border-transparent hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-gray-600 transition-all duration-300 transform hover:-translate-y-1">
+          <i class="pi pi-briefcase text-5xl text-purple-500 mb-3"></i>
+          <span class="text-xl font-semibold text-gray-800 dark:text-gray-100">Soy Inversor</span>
+          <span class="text-sm text-gray-500 dark:text-gray-400 mt-1">Quiero financiar proyectos</span>
+        </a>
+      </div>
 
       <div class="text-center text-sm">
-        <a routerLink="/auth/login" class="underline">Ya tengo cuenta</a>
+        <p class="text-gray-500 dark:text-gray-400 mt-6">
+          ¿Ya tienes una cuenta? <a routerLink="/auth/login" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Inicia sesión aquí</a>
+        </p>
       </div>
-    </form>
+    </div>
   </div>
   `,
 })
 export class RegisterComponent {
-  private fb = inject(FormBuilder);
-  private auth = inject(AuthService);
-  private router = inject(Router);
-
-  loading = signal(false);
-  ok = signal(false);
-  error = signal(false);
-  msg = signal("");
-  showPwd = false;
-
-  form = this.fb.group({
-    username: ["", [Validators.required, Validators.minLength(3)]],
-    email: ["", [Validators.required, Validators.email]],
-    password: ["", [Validators.required, Validators.minLength(6)]],
-    confirm: ["", [Validators.required]],
-  }, { validators: match("password", "confirm") });
-
-  invalid(ctrl: string) {
-    const c = this.form.get(ctrl)!;
-    return (c.touched || c.dirty) && c.invalid;
-  }
-
-  onSubmit() {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
-    this.loading.set(true); this.ok.set(false); this.error.set(false); this.msg.set("");
-
-    const { username, email, password } = this.form.getRawValue();
-    this.auth.register({ username: username!, email: email!, password: password! }).subscribe({
-      next: (res) => {
-        if (res.status) {
-          this.ok.set(true);
-          this.msg.set(res.message || "Cuenta creada. Iniciá sesión.");
-          // opcional: redirigir automáticamente
-          setTimeout(() => this.router.navigateByUrl("/auth/login"), 1000);
-        } else {
-          this.error.set(true);
-          this.msg.set(res.message || "No se pudo registrar.");
-        }
-      },
-      error: () => { this.error.set(true); this.msg.set("Error de comunicación."); },
-      complete: () => this.loading.set(false),
-    });
-  }
+  // El componente ahora es puramente visual, la navegación se maneja con routerLink en la plantilla.
 }

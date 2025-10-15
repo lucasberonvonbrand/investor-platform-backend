@@ -3,12 +3,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
 import { StudentService } from '../../../core/services/students.service';
 import { DegreeStatus, University, Province, Student } from '../../../models/student.model';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+
+// PrimeNG
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule],
   templateUrl: './students-form.component.html',
   styleUrls: ['./students-form.component.scss']
 })
