@@ -77,7 +77,7 @@
 
           <div class="field">
             <label for="university" class="font-medium">Universidad <span class="text-red-500">*</span></label>
-            <select id="university" formControlName="university" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="university" formControlName="university" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona una universidad</option>
               <option *ngFor="let uni of universities" [value]="uni">{{ uni }}</option>
             </select>
@@ -92,7 +92,7 @@
 
           <div class="field">
             <label for="degreeStatus" class="font-medium">Estado de la Carrera <span class="text-red-500">*</span></label>
-            <select id="degreeStatus" formControlName="degreeStatus" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="degreeStatus" formControlName="degreeStatus" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona un estado</option>
               <option *ngFor="let status of degreeStatuses" [value]="status">{{ status }}</option>
             </select>
@@ -130,7 +130,7 @@
 
           <div class="field md:col-span-2">
             <label for="province" class="font-medium">Provincia <span class="text-red-500">*</span></label>
-            <select id="province" formControlName="province" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="province" formControlName="province" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona una provincia</option>
               <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
             </select>
@@ -139,8 +139,11 @@
 
         </div>
 
-        <div class="mt-8 flex justify-end">
-          <button pButton type="submit" label="Crear Cuenta" class="w-full md:w-auto" [disabled]="!form.valid"></button>
+        <div class="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <a routerLink="/auth/login" class="font-medium text-primary-600 hover:underline dark:text-primary-500 text-sm">
+            ‹ Volver a Iniciar Sesión
+          </a>
+          <button pButton type="submit" label="Crear Cuenta" class="w-full md:w-auto" [disabled]="!form.valid || showModal()"></button>
         </div>
       </form>
     </div>

@@ -43,6 +43,9 @@ export interface Investor {
   contactPerson: string;
   phone: string;
   webSite?: string;
+  linkedinUrl?: string;
+  description?: string;
+  photoUrl?: string;
   address?: Address;
   enabled?: boolean;
   accountNotExpired?: boolean;

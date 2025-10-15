@@ -108,3 +108,16 @@ body {
     transition: none !important;
   }
 }
+
+/* ===== Colores de Foco para Formularios de Registro ===== */
+/* Estudiantes (azul) */
+app-student-form .p-inputtext:focus {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Inversores (púrpura) */
+app-investor-form .p-inputtext:focus {
+  border-color: #a855f7; /* purple-500 */
+  box-shadow: 0 0 0 1px #a855f7;
+}
