@@ -22,8 +22,10 @@ public class Role {
     private Long id;
     private String role;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-    @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "role_permissions", 
+               joinColumns = @JoinColumn(name = "role_id"), 
+               inverseJoinColumns = @JoinColumn(name = "permission_id"))
     private Set<Permission> permissionsList = new HashSet<>();
 
 }

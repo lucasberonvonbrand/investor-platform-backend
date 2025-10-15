@@ -1,6 +1,7 @@
 package com.example.gestor_inversores.controller;
 
 import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateByAdminDTO;
 import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
 import com.example.gestor_inversores.service.investor.IInvestorService;
@@ -32,6 +33,14 @@ public class InvestorController {
     public ResponseEntity<ResponseInvestorDTO> createInvestor(@Valid @RequestBody RequestInvestorDTO requestDTO) {
         ResponseInvestorDTO savedInvestor = investorService.save(requestDTO);
         return ResponseEntity.ok(savedInvestor);
+    }
+
+    @PutMapping("/update-by-admin/{id}")
+    public ResponseEntity<ResponseInvestorDTO> updateByAdmin(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestInvestorUpdateByAdminDTO dto) {
+        ResponseInvestorDTO updatedInvestor = investorService.updateByAdmin(id, dto);
+        return ResponseEntity.ok(updatedInvestor);
     }
 
     @PatchMapping("/{id}")

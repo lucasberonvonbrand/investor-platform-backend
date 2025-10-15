@@ -9,7 +9,7 @@ import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
 import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
-import com.example.gestor_inversores.service.role.RoleService;
+import com.example.gestor_inversores.service.role.IRoleService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,7 +30,7 @@ public class StudentService implements IStudentService {
     private final IStudentRepository studentRepository;
     private final IUserRepository userRepository;
     private final IProjectRepository projectRepository;
-    private final RoleService roleService;
+    private final IRoleService roleService; // Cambiado a la interfaz para desacoplar
     private final BCryptPasswordEncoder passwordEncoder;
     private final StudentMapper mapper;
 
@@ -63,9 +63,9 @@ public class StudentService implements IStudentService {
         student.setAccountNotLocked(true);
         student.setCredentialNotExpired(true);
 
-        // Asignar rol STUDENT (id=3)
-        Role studentRole = roleService.findById(3L)
-                .orElseThrow(() -> new RuntimeException("Rol STUDENT no encontrado"));
+        // Asignar rol STUDENT por nombre
+        Role studentRole = roleService.findByRole("STUDENT")
+                .orElseThrow(() -> new RoleNotFoundException("Rol STUDENT no encontrado. Asegúrese de que esté creado en la base de datos."));
         student.setRolesList(Set.of(studentRole));
 
         // Encriptar contraseña
@@ -78,6 +78,18 @@ public class StudentService implements IStudentService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             throw new CreateException("No se pudo guardar el estudiante");
         }
+    }
+
+    @Override
+    @Transactional
+    public ResponseStudentDTO updateByAdmin(Long id, RequestStudentUpdateByAdminDTO dto) {
+        Student studentToUpdate = studentRepository.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + id + " no encontrado para actualizar"));
+
+        mapper.updateStudentFromAdminDto(dto, studentToUpdate);
+
+        Student updatedStudent = studentRepository.save(studentToUpdate);
+        return mapper.studentToResponseStudentDTO(updatedStudent);
     }
 
     @Transactional

@@ -1,11 +1,14 @@
 package com.example.gestor_inversores.service.role;
 
+import com.example.gestor_inversores.exception.RoleAlreadyExistsException;
+import com.example.gestor_inversores.exception.RoleNotFoundException;
 import com.example.gestor_inversores.model.Permission;
 import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.repository.IRoleRepository;
 import com.example.gestor_inversores.service.permission.IPermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,12 +31,20 @@ public class RoleService implements IRoleService {
 
     @Override
     public Optional<Role> findById(Long id) {
-        return roleRepository.findById(id);
+        return Optional.ofNullable(roleRepository.findById(id).orElseThrow(() -> new RoleNotFoundException("No se encontró el rol con el id: " + id)));
+    }
+
+    @Override
+    public Optional<Role> findByRole(String role) { // <-- AÑADIDO
+        return roleRepository.findByRole(role);
     }
 
     @Override
     public Role save(Role role) {
-        // Mapear los permisos existentes
+        roleRepository.findByRole(role.getRole()).ifPresent(r -> {
+            throw new RoleAlreadyExistsException("Ya existe un rol con el nombre: " + role.getRole());
+        });
+
         Set<Permission> permissionList = new HashSet<>();
         for (Permission per : role.getPermissionsList()) {
             permissionService.findById(per.getId()).ifPresent(permissionList::add);
@@ -44,22 +55,15 @@ public class RoleService implements IRoleService {
 
     @Override
     public Role update(Role roleUpdate) {
-        Optional<Role> roleOpt = roleRepository.findById(roleUpdate.getId());
-        if (roleOpt.isEmpty()) {
-            return null; // el controller puede manejar el notFound
-        }
+        Role role = roleRepository.findById(roleUpdate.getId())
+                .orElseThrow(() -> new RoleNotFoundException("No se encontró el rol con el id: " + roleUpdate.getId() + " para actualizar"));
 
-        Role role = roleOpt.get();
-
-        // Actualizar nombre si viene
         if (roleUpdate.getRole() != null) {
             role.setRole(roleUpdate.getRole());
         }
 
-        // Actualizar permisos
         if (roleUpdate.getPermissionsList() != null) {
             Set<Permission> updatedPermissions = new HashSet<>(role.getPermissionsList());
-
             for (Permission per : roleUpdate.getPermissionsList()) {
                 permissionService.findById(per.getId()).ifPresent(p -> {
                     if (updatedPermissions.contains(p)) {
@@ -69,7 +73,6 @@ public class RoleService implements IRoleService {
                     }
                 });
             }
-
             role.setPermissionsList(updatedPermissions);
         }
 
@@ -77,7 +80,11 @@ public class RoleService implements IRoleService {
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
-        roleRepository.deleteById(id);
+        Role role = roleRepository.findById(id)
+                .orElseThrow(() -> new RoleNotFoundException("No se encontró el rol con el id: " + id + " para eliminar"));
+        role.getPermissionsList().clear();
+        roleRepository.delete(role);
     }
 }

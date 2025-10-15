@@ -2,6 +2,7 @@ package com.example.gestor_inversores.mapper;
 
 import com.example.gestor_inversores.dto.AddressDTO;
 import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateByAdminDTO;
 import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
 import com.example.gestor_inversores.model.Address;
@@ -75,6 +76,29 @@ public class InvestorMapper {
         }
 
         return dto;
+    }
+
+    public void updateInvestorFromAdminDto(RequestInvestorUpdateByAdminDTO dto, Investor investor) {
+        if (dto == null || investor == null) return;
+
+        // Campos de User
+        investor.setUsername(dto.getUsername());
+        investor.setEmail(dto.getEmail());
+
+        // Campos de estado de la cuenta
+        investor.setEnabled(dto.getEnabled());
+        investor.setAccountNotExpired(dto.getAccountNotExpired());
+        investor.setAccountNotLocked(dto.getAccountNotLocked());
+        investor.setCredentialNotExpired(dto.getCredentialNotExpired());
+
+        // Campos específicos de Investor
+        investor.setCuit(dto.getCuit());
+        investor.setContactPerson(dto.getContactPerson());
+        investor.setPhone(dto.getPhone());
+        investor.setWebSite(dto.getWebSite());
+
+        // Address (asume una actualización completa de la dirección)
+        investor.setAddress(dto.getAddress());
     }
 
     public void patchInvestorFromDto(RequestInvestorUpdateDTO dto, Investor investor) {

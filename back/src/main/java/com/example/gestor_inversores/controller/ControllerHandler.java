@@ -27,7 +27,8 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
             InvestorNotFoundException.class, StudentNotFoundException.class,
             UserNotFoundException.class, EmailNotFoundException.class,
             ProjectNotFoundException.class, ContractNotFoundException.class,
-            EarningNotFoundException.class
+            EarningNotFoundException.class, RoleNotFoundException.class, // Añadida
+            PermissionNotFoundException.class // Añadida
     })
     public ResponseEntity<ApiError> handleNotFoundExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("Recurso no encontrado: " + ex.getMessage(), HttpStatus.NOT_FOUND, LocalDateTime.now());
@@ -39,7 +40,9 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
             UsernameAlreadyExistsException.class, EmailAlreadyExistsException.class,
             DniAlreadyExistsException.class, CuitAlreadyExistsException.class,
             ExistingProjectException.class, ContractAlreadySignedException.class,
-            ContractCannotBeModifiedException.class, InvalidContractOperationException.class
+            ContractCannotBeModifiedException.class, InvalidContractOperationException.class,
+            RoleAlreadyExistsException.class, // Añadida
+            PermissionAlreadyExistsException.class // Añadida
     })
     public ResponseEntity<ApiError> handleConflictExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("Conflicto: " + ex.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now());
