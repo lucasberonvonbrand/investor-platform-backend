@@ -8,6 +8,7 @@ import { Button } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
 import { Avatar } from 'primeng/avatar';
 
+import { ChatbotComponent } from '../features/chatbot/chatbot.component';
 import { AuthService } from '../features/auth/login/auth.service';
 
 import { StudentService } from '../core/services/students.service';
@@ -25,7 +26,7 @@ import { InvestorService } from '../core/services/investors.service';
     Menu,
     Button,
     Avatar,
-    
+    ChatbotComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss']
