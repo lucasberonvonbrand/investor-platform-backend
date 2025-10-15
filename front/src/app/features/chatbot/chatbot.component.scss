@@ -18,7 +18,12 @@
     height: 40px;
   }
   &.open {
-    background: #d32f2f;
+    background: #0078d4; // Cambiado a azul cuando está abierto
+  }
+  .minimize-icon {
+    color: white;
+    font-size: 2.5rem;
+    line-height: 1;
   }
 }
 
@@ -27,6 +32,7 @@
   bottom: 110px;
   right: 32px;
   width: 320px;
+  max-height: 500px; /* Altura máxima para la ventana del chat */
   max-width: 90vw;
   background: #fff;
   border-radius: 12px;
@@ -53,20 +59,57 @@
     .close-btn {
       background: transparent;
       border: none;
-      color: #fff;
       font-size: 1.2rem;
       cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #d32f2f;
+      }
     }
   }
   .chat-body {
     padding: 16px;
-    min-height: 80px;
+    flex: 1;
+    overflow-y: auto;
+    height: 300px; /* Altura fija para el cuerpo del chat */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
     .message {
-      background: #f1f1f1;
       padding: 8px 12px;
-      border-radius: 8px;
-      margin-bottom: 8px;
+      border-radius: 12px;
       font-size: 0.95rem;
+      max-width: 80%;
+      &.received {
+        background: #f1f1f1;
+        align-self: flex-start;
+      }
+      &.sent {
+        background: #dcf8c6;
+        align-self: flex-end;
+      }
+    }
+    .preset-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      .preset-btn {
+        background-color: #eef;
+        border: 1px solid #cce;
+        border-radius: 16px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+        &:hover {
+          background-color: #ddf;
+        }
+      }
     }
   }
   .chat-footer {
