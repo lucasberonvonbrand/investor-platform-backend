@@ -2,10 +2,10 @@
   position: fixed;
   bottom: 32px;
   right: 32px;
-  background: #0078d4;
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
+  background: #f0f0f0; /* Cambiado a gris claro para que el ícono contraste */
+  border-radius: 12px; /* Cambiado a cuadrado con bordes redondeados */
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,15 +14,20 @@
   transition: box-shadow 0.2s;
   box-shadow: 0 4px 16px rgba(0,0,0,0.2);
   .chat-icon {
-    width: 40px;
-    height: 40px;
+    width: 56px;
+    height: 56px;
+    /* Se quita el filtro para mostrar los colores originales de la imagen */
   }
   &.open {
-    background: #0078d4; // Cambiado a azul cuando está abierto
+    background: #f0f0f0; /* Se mantiene gris claro cuando está abierto */
+  }
+  .close-icon {
+    color: white;
+    font-size: 1.5rem;
   }
   .minimize-icon {
-    color: white;
-    font-size: 2.5rem;
+    color: #333; /* Cambiado a oscuro para ser visible */
+    font-size: 2.5rem; /* Hago el guion más grande y grueso */
     line-height: 1;
   }
 }
@@ -131,8 +136,4 @@
       cursor: pointer;
     }
   }
-}h2 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 24px;
 }

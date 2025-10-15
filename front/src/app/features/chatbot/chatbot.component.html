@@ -1,6 +1,7 @@
 <div *ngIf="shouldShowChatbot">
   <div class="chat-fab" (click)="toggleChat()" [class.open]="isChatOpen">
-    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen">
+    <!-- <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen"> -->
+    <img src="/assets/images/chatbot-icon.PNG" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen">
     <span class="minimize-icon" *ngIf="isChatOpen">—</span>
   </div>
   <div class="chat-window" [class.open]="isChatOpen">
