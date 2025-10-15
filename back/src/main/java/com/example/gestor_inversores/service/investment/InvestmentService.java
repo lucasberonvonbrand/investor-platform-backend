@@ -7,6 +7,7 @@ import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.Currency;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import com.example.gestor_inversores.model.enums.ContractStatus;
+import com.example.gestor_inversores.model.enums.ProjectStatus;
 import com.example.gestor_inversores.repository.*;
 import com.example.gestor_inversores.service.contract.ContractService;
 import com.example.gestor_inversores.service.currency.CurrencyConversionService;
@@ -69,7 +70,6 @@ public class InvestmentService implements IInvestmentService {
 
         Investment updatedInvestment = investmentRepo.save(inv);
 
-        // ⚡ Auto-cancelar contrato si inversión cancelada
         autoCancelContractIfNeeded(updatedInvestment);
 
         return mapper.toResponse(updatedInvestment);
@@ -121,7 +121,6 @@ public class InvestmentService implements IInvestmentService {
         Investment inv = investmentRepo.findById(id)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada con ID: " + id));
 
-        // 1. Revertir impacto financiero si ya fue recibida
         if (inv.getStatus() == InvestmentStatus.RECEIVED) {
             Project project = inv.getProject();
             BigDecimal amountInUSD = inv.getAmount();
@@ -132,19 +131,16 @@ public class InvestmentService implements IInvestmentService {
                         .multiply(inv.getAmount());
             }
             BigDecimal newCurrentGoal = project.getCurrentGoal().subtract(amountInUSD);
-            project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO)); // Evitar negativos
+            project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO));
             projectRepo.save(project);
         }
 
-        // 2. Poner la inversión en un estado final y claro
         inv.setStatus(InvestmentStatus.CANCELLED);
         inv.setDeleted(true);
         inv.setDeletedAt(LocalDate.now());
 
-        // 3. Asegurar que el contrato asociado se cancele
         autoCancelContractIfNeeded(inv);
 
-        // 4. Guardar y retornar
         return mapper.toResponse(investmentRepo.save(inv));
     }
 
@@ -156,8 +152,10 @@ public class InvestmentService implements IInvestmentService {
         Student student = studentRepo.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD
-        Long projectOwnerId = inv.getProject().getOwner().getId();
+        Project project = projectRepo.findById(inv.getProject().getIdProject())
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto asociado a la inversión no fue encontrado."));
+
+        Long projectOwnerId = project.getOwner().getId();
         if (!projectOwnerId.equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
         }
@@ -166,12 +164,6 @@ public class InvestmentService implements IInvestmentService {
             throw new UpdateException("Esta inversión ya fue procesada y no se puede modificar nuevamente.");
         }
 
-        inv.setStatus(InvestmentStatus.RECEIVED);
-        inv.setConfirmedBy(student);
-        inv.setConfirmedAt(LocalDate.now());
-
-        // Ajuste del currentGoal
-        Project project = inv.getProject();
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
             amountInUSD = currencyConversionService
@@ -179,14 +171,34 @@ public class InvestmentService implements IInvestmentService {
                     .getRate()
                     .multiply(inv.getAmount());
         }
-        BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
 
+        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
+
+        if (amountInUSD.subtract(remainingBudget).compareTo(new BigDecimal("0.01")) > 0) {
+            throw new BusinessException(String.format(
+                    "No se puede confirmar la inversión. El monto (%.2f USD) excede el capital restante necesario para el proyecto (%.2f USD).",
+                    amountInUSD, remainingBudget
+            ));
+        }
+
+        inv.setStatus(InvestmentStatus.RECEIVED);
+        inv.setConfirmedBy(student);
+        inv.setConfirmedAt(LocalDate.now());
+
+        BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
         project.setCurrentGoal(newCurrentGoal);
+
+        boolean justFunded = false;
+        if (project.getStatus() == ProjectStatus.PENDING_FUNDING &&
+            newCurrentGoal.compareTo(project.getBudgetGoal()) >= 0) {
+            project.setStatus(ProjectStatus.IN_PROGRESS);
+            justFunded = true;
+        }
+
         projectRepo.save(project);
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        // Notificación al inversor
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("¡Tu inversión para el proyecto '%s' ha sido confirmada!", savedInvestment.getProject().getName());
         String body = String.format(
@@ -202,6 +214,21 @@ public class InvestmentService implements IInvestmentService {
         );
         mailService.sendEmail(toInvestor, subject, body);
 
+        if (justFunded) {
+            Student owner = project.getOwner();
+            String toOwner = owner.getEmail();
+            String ownerSubject = String.format("¡Felicidades! Tu proyecto '%s' ha sido financiado", project.getName());
+            String ownerBody = String.format(
+                "Hola %s,\n\n¡Excelentes noticias! Tu proyecto '%s' ha alcanzado su meta de financiación de %.2f USD y su estado ahora es 'EN PROGRESO'.\n\n" +
+                "Es hora de empezar a trabajar para hacerlo realidad.\n\n" +
+                "¡Mucho éxito!,\nEl equipo de ProyPlus",
+                owner.getFirstName(),
+                project.getName(),
+                project.getBudgetGoal()
+            );
+            mailService.sendEmail(toOwner, ownerSubject, ownerBody);
+        }
+
         return mapper.toResponse(savedInvestment);
     }
 
@@ -213,7 +240,6 @@ public class InvestmentService implements IInvestmentService {
         Student student = studentRepo.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD
         Long projectOwnerId = inv.getProject().getOwner().getId();
         if (!projectOwnerId.equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
@@ -229,10 +255,8 @@ public class InvestmentService implements IInvestmentService {
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        // Auto-cancelar contrato
         autoCancelContractIfNeeded(savedInvestment);
 
-        // Notificación al inversor
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("Alerta sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
         String body = String.format(
@@ -251,43 +275,87 @@ public class InvestmentService implements IInvestmentService {
         return mapper.toResponse(savedInvestment);
     }
 
+    @Override
+    public ResponseInvestmentDTO rejectOverfunded(Long investmentId, Long studentId) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Student student = studentRepo.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        Long projectOwnerId = inv.getProject().getOwner().getId();
+        if (!projectOwnerId.equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
+            throw new UpdateException("Esta inversión solo puede ser rechazada si está en estado 'IN_PROGRESS'. Estado actual: " + inv.getStatus());
+        }
+
+        inv.setStatus(InvestmentStatus.CANCELLED);
+        inv.setConfirmedBy(student);
+        inv.setConfirmedAt(LocalDate.now());
+
+        Investment savedInvestment = investmentRepo.save(inv);
+
+        autoCancelContractIfNeeded(savedInvestment);
+
+        String toInvestor = savedInvestment.getGeneratedBy().getEmail();
+        String subject = String.format("Acción requerida sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
+        String body = String.format(
+                "Hola %s,\n\nTe informamos que tu inversión de %.2f %s para el proyecto '%s' no ha podido ser aceptada por el estudiante %s %s, debido a que el proyecto ya había alcanzado su meta de financiación.\n\n" +
+                "El contrato asociado ha sido cancelado automáticamente. Por favor, ponte en contacto con el estudiante para coordinar la devolución de los fondos que puedas haber enviado.\n\n" +
+                "Lamentamos los inconvenientes.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                savedInvestment.getGeneratedBy().getUsername(),
+                savedInvestment.getAmount(),
+                savedInvestment.getCurrency(),
+                savedInvestment.getProject().getName(),
+                student.getFirstName(),
+                student.getLastName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return mapper.toResponse(savedInvestment);
+    }
+
     public ResponseInvestmentDTO returnInvestment(Long investmentId) {
         Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
 
+        // 🛡️ VALIDACIÓN DE SEGURIDAD
+        if (inv.getProject().getStatus() != ProjectStatus.CANCELLED) {
+            throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos que han sido cancelados.");
+        }
+
         if (inv.getStatus() != InvestmentStatus.RECEIVED) {
-            throw new UpdateException("Solo inversiones RECEIVED pueden iniciar el proceso de devolución.");
+            throw new UpdateException("Solo inversiones que ya han sido recibidas pueden iniciar el proceso de devolución.");
         }
 
         inv.setStatus(InvestmentStatus.PENDING_RETURN);
-        inv.setConfirmedAt(LocalDate.now()); // La fecha de inicio de la devolución
+        inv.setConfirmedAt(LocalDate.now());
 
         return mapper.toResponse(investmentRepo.save(inv));
     }
 
     @Override
     public ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto) {
-        // 1. Buscar entidades
         Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
         Investor investor = investorRepo.findById(dto.getInvestorId())
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 2. Validación de Seguridad: Asegurarse de que el inversor es el dueño de la inversión
         if (!inv.getGeneratedBy().getId().equals(investor.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para confirmar la devolución de esta inversión.");
         }
 
-        // 3. Validación de Estado: Solo se pueden confirmar devoluciones pendientes
         if (inv.getStatus() != InvestmentStatus.PENDING_RETURN) {
             throw new UpdateException("Esta devolución no puede ser confirmada en su estado actual.");
         }
 
-        // 4. Actualizar estado de la inversión
         inv.setStatus(InvestmentStatus.RETURNED);
         inv.setConfirmedAt(LocalDate.now());
 
-        // 5. Lógica Financiera: Descontar el dinero del presupuesto del proyecto
         Project project = inv.getProject();
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
@@ -298,12 +366,11 @@ public class InvestmentService implements IInvestmentService {
         }
         BigDecimal newCurrentGoal = project.getCurrentGoal().subtract(amountInUSD);
 
-        project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO)); // Evitar negativos
+        project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO));
         projectRepo.save(project);
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        // 6. Notificar al estudiante
         Student student = project.getOwner();
         String toStudent = student.getEmail();
         String subject = String.format("Devolución confirmada para tu proyecto '%s'", project.getName());
@@ -319,13 +386,9 @@ public class InvestmentService implements IInvestmentService {
         );
         mailService.sendEmail(toStudent, subject, body);
 
-        // 7. Retornar DTO
         return mapper.toResponse(savedInvestment);
     }
 
-    // -------------------
-    // 🔹 Método interno para auto-cancelar contrato
-    // -------------------
     private void autoCancelContractIfNeeded(Investment inv) {
         if (inv.getContract() != null &&
                 (inv.getStatus() == InvestmentStatus.NOT_RECEIVED || inv.getStatus() == InvestmentStatus.CANCELLED)) {
@@ -337,7 +400,7 @@ public class InvestmentService implements IInvestmentService {
 
                 ContractAction action = ContractAction.builder()
                         .contract(contract)
-                        .student(inv.getConfirmedBy()) // puede ser null si no hubo estudiante
+                        .student(inv.getConfirmedBy()) 
                         .status(ContractStatus.CANCELLED)
                         .actionDate(LocalDate.now())
                         .build();

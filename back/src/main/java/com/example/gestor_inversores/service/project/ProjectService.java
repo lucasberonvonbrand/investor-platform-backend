@@ -1,4 +1,3 @@
-
 package com.example.gestor_inversores.service.project;
 
 import com.example.gestor_inversores.dto.RequestProjectDTO;
@@ -8,13 +7,16 @@ import com.example.gestor_inversores.dto.ResponseProjectStudentDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ProjectMapper;
 import com.example.gestor_inversores.mapper.ProjectStudentMapper;
-import com.example.gestor_inversores.model.Project;
-import com.example.gestor_inversores.model.ProjectTag;
-import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.model.*;
+import com.example.gestor_inversores.model.enums.ContractStatus;
+import com.example.gestor_inversores.model.enums.ProjectStatus;
+import com.example.gestor_inversores.repository.IContractRepository;
+import com.example.gestor_inversores.repository.IInvestmentRepository;
 import com.example.gestor_inversores.repository.IProjectRepository;
 import com.example.gestor_inversores.repository.IProjectTagRepository;
-import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.repository.IStudentRepository;
+import com.example.gestor_inversores.service.ia.GeminiService;
+import com.example.gestor_inversores.service.mail.IMailService;
 import com.example.gestor_inversores.service.student.IStudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,8 +25,10 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,46 +41,36 @@ public class ProjectService implements IProjectService {
     private final IStudentService studentService;
     private final IProjectTagRepository projectTagRepository;
     private final GeminiService geminiService;
-    private final IStudentRepository studentRepository; // Inyectado para uso interno
-
-    /* @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
-        this.projectRepository = projectRepository;
-        this.studentService = studentService;
-        this.studentRepository = studentRepository;
-    } */
+    private final IStudentRepository studentRepository;
+    private final IContractRepository contractRepository;
+    private final IInvestmentRepository investmentRepository;
+    private final IMailService mailService;
 
     @Transactional
     @Override
     public ResponseProjectDTO save(RequestProjectDTO projectDTO) {
 
-        // Validar nombre duplicado
         if (projectRepository.existsByNameAndDeletedFalse(projectDTO.getName())) {
             throw new ExistingProjectException("There is already a project with that name");
         }
 
-        // Validar fechas
         if (projectDTO.getEstimatedEndDate().isBefore(projectDTO.getStartDate())) {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
-        // Obtener estudiante dueño del proyecto
         Student owner = studentRepository.findById(projectDTO.getOwnerId())
                 .orElseThrow(() -> new StudentNotFoundException("The student was not found"));
 
-        // Mapear DTO a entidad
         Project project = ProjectMapper.requestProjectToProject(projectDTO, owner);
         project.setCurrentGoal(BigDecimal.ZERO);
         project.setCreatedAt(LocalDateTime.now());
+        project.setStatus(ProjectStatus.PENDING_FUNDING);
 
-        // Agregar dueño y relación bidireccional
         project.getStudents().add(owner);
         owner.getProjectsList().add(project);
 
-        // Agregar estudiantes adicionales (si los hay)
         if (projectDTO.getStudentIds() != null) {
             for (Long studentId : projectDTO.getStudentIds()) {
-                // Evitar agregar al dueño dos veces
                 if (studentId.equals(owner.getId())) continue;
 
                 Student student = studentRepository.findById(studentId)
@@ -89,14 +83,11 @@ public class ProjectService implements IProjectService {
         }
 
         String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription())).toUpperCase();
-        System.out.println("Esta es la respuesta de gemini " + selectedTag);
         String cleanedTag = selectedTag.trim();
-        System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
         ProjectTag tag = projectTagRepository.findByName(cleanedTag);
         project.setProjectTag(tag);
 
         Project savedProject;
-
         try {
             savedProject = projectRepository.save(project);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
@@ -105,7 +96,6 @@ public class ProjectService implements IProjectService {
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
     }
-
 
     @Transactional
     @Override
@@ -126,18 +116,14 @@ public class ProjectService implements IProjectService {
         updatedProject.setModifiedAt(LocalDateTime.now());
 
         Set<Long> studentIds = projectDTO.getStudentIds();
-
         if (Objects.nonNull(studentIds)) {
-
             Set<Student> studentsFromDTO = studentIds.stream()
                     .map(studentId -> studentRepository.findById(studentId)
                             .orElseThrow(() -> new StudentNotFoundException(
-                                    "Student with ID " + studentId + " not found"))
-                    )
+                                    "Student with ID " + studentId + " not found")))
                     .collect(Collectors.toSet());
 
             Set<Student> currentStudents = updatedProject.getStudents();
-
             Set<Student> studentsToRemove = currentStudents.stream()
                     .filter(current -> !studentsFromDTO.contains(current))
                     .collect(Collectors.toSet());
@@ -164,7 +150,6 @@ public class ProjectService implements IProjectService {
         }
 
         return ProjectMapper.projectToResponseProjectDTO(updatedProject);
-
     }
 
     @Override
@@ -180,18 +165,15 @@ public class ProjectService implements IProjectService {
     @Override
     public List<ResponseProjectDTO> getAllProjects(boolean active) {
         List<Project> projects;
-
         if (active) {
             projects = projectRepository.findByDeletedFalse();
         } else {
             projects = projectRepository.findByDeletedTrue();
         }
-
         return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
     }
-
 
     @Override
     public List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId) {
@@ -199,7 +181,7 @@ public class ProjectService implements IProjectService {
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
         return project.getStudents().stream()
-                .filter(s -> !s.getId().equals(project.getOwner().getId())) // excluye al owner
+                .filter(s -> !s.getId().equals(project.getOwner().getId()))
                 .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)
                 .toList();
     }
@@ -208,7 +190,6 @@ public class ProjectService implements IProjectService {
     public ResponseProjectDTO findById(Long id) {
         Project project = projectRepository.findByIdProjectAndDeletedFalse(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
-
         return ProjectMapper.projectToResponseProjectDTO(project);
     }
 
@@ -222,21 +203,17 @@ public class ProjectService implements IProjectService {
 
     @Override
     public List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active) {
-        // Verificar si existe algún proyecto con ese ownerId
         boolean ownerExists = projectRepository.existsByOwnerId(ownerId);
-
         if (!ownerExists) {
             throw new OwnerNotFoundException("El owner con id " + ownerId + " no existe");
         }
 
-        // Traer proyectos según el parámetro
         List<Project> projects;
         if (active) {
             projects = projectRepository.findByOwnerIdAndDeletedFalse(ownerId);
         } else {
             projects = projectRepository.findByOwnerIdAndDeletedTrue(ownerId);
         }
-
         return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
                 .toList();
@@ -256,8 +233,119 @@ public class ProjectService implements IProjectService {
         project.setModifiedAt(LocalDateTime.now());
 
         Project restored = projectRepository.save(project);
-
         return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
+
+    @Transactional
+    @Override
+    public ResponseProjectDTO completeProject(Long projectId, Long ownerId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no fue encontrado"));
+
+        if (!project.getOwner().getId().equals(ownerId)) {
+            throw new UnauthorizedOperationException("Solo el dueño del proyecto puede marcarlo como completado.");
+        }
+
+        if (project.getStatus() != ProjectStatus.IN_PROGRESS) {
+            throw new BusinessException("El proyecto solo puede completarse si está en estado 'IN_PROGRESS'.");
+        }
+
+        List<Contract> contracts = contractRepository.findByProject_IdProject(projectId);
+        boolean allContractsFinalized = contracts.stream().allMatch(contract ->
+                contract.getStatus() == ContractStatus.CLOSED ||
+                contract.getStatus() == ContractStatus.CANCELLED ||
+                contract.getStatus() == ContractStatus.REFUNDED
+        );
+
+        if (!allContractsFinalized) {
+            throw new BusinessException("No se puede completar el proyecto. Aún hay contratos activos o pendientes.");
+        }
+
+        project.setStatus(ProjectStatus.COMPLETED);
+        project.setEndDate(LocalDate.now());
+        project.setModifiedAt(LocalDateTime.now());
+
+        Project savedProject = projectRepository.save(project);
+
+        Student owner = savedProject.getOwner();
+        String toOwner = owner.getEmail();
+        String ownerSubject = String.format("¡Tu proyecto '%s' ha sido completado!", savedProject.getName());
+        String ownerBody = String.format(
+            "Hola %s,\n\n¡Felicidades! Has marcado tu proyecto '%s' como completado.\n\n" +
+            "Gracias por tu esfuerzo y dedicación. El ciclo de este proyecto en nuestra plataforma ha finalizado exitosamente.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            owner.getFirstName(),
+            savedProject.getName()
+        );
+        mailService.sendEmail(toOwner, ownerSubject, ownerBody);
+
+        return ProjectMapper.projectToResponseProjectDTO(savedProject);
+    }
+
+    @Transactional
+    @Override
+    public ResponseProjectDTO cancelProject(Long projectId, Long ownerId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no fue encontrado"));
+
+        if (!project.getOwner().getId().equals(ownerId)) {
+            throw new UnauthorizedOperationException("Solo el dueño del proyecto puede cancelarlo.");
+        }
+
+        if (project.getStatus() != ProjectStatus.IN_PROGRESS) {
+            throw new BusinessException("El proyecto solo puede cancelarse si está en estado 'IN_PROGRESS'.");
+        }
+
+        project.setStatus(ProjectStatus.CANCELLED);
+        project.setEndDate(LocalDate.now());
+        project.setModifiedAt(LocalDateTime.now());
+
+        List<Investment> allInvestments = investmentRepository.findByProject_IdProject(projectId);
+        Set<Investor> investorsToNotify = allInvestments.stream()
+                .map(Investment::getGeneratedBy)
+                .collect(Collectors.toSet());
+
+        for (Investor investor : investorsToNotify) {
+            List<Investment> investorSpecificInvestments = allInvestments.stream()
+                    .filter(inv -> inv.getGeneratedBy().equals(investor))
+                    .toList();
+
+            int investmentCount = investorSpecificInvestments.size();
+
+            Map<String, BigDecimal> sumsByCurrency = investorSpecificInvestments.stream()
+                    .collect(Collectors.groupingBy(
+                            inv -> inv.getCurrency().name(),
+                            Collectors.reducing(BigDecimal.ZERO, Investment::getAmount, BigDecimal::add)
+                    ));
+
+            String totalInvestedString = sumsByCurrency.entrySet().stream()
+                    .map(entry -> String.format("%.2f %s", entry.getValue(), entry.getKey()))
+                    .collect(Collectors.joining(" y "));
+
+            String investmentDetails;
+            if (investmentCount == 1) {
+                investmentDetails = String.format("tu inversión de %s", totalInvestedString);
+            } else {
+                investmentDetails = String.format("tus %d inversiones, que suman un total de %s", investmentCount, totalInvestedString);
+            }
+
+            String to = investor.getEmail();
+            String subject = String.format("Cancelación del Proyecto: '%s'", project.getName());
+            String body = String.format(
+                "Hola %s,\n\nTe informamos que el proyecto '%s' ha sido cancelado por el estudiante responsable.\n\n" +
+                "El siguiente paso es la devolución de %s.\n\n" +
+                "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante si tienes alguna duda.\n\n" +
+                "Lamentamos los inconvenientes.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                investor.getUsername(),
+                project.getName(),
+                investmentDetails
+            );
+            mailService.sendEmail(to, subject, body);
+        }
+
+        Project savedProject = projectRepository.save(project);
+        return ProjectMapper.projectToResponseProjectDTO(savedProject);
     }
 
     private String promptToGenerateTagSelection(String description) {
