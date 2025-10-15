@@ -1,0 +1,19 @@
+<div *ngIf="shouldShowChatbot">
+  <div class="chat-fab" (click)="toggleChat()" [class.open]="isChatOpen">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen">
+    <span class="close-icon" *ngIf="isChatOpen">❌</span>
+  </div>
+  <div class="chat-window" [class.open]="isChatOpen">
+    <div class="chat-header">
+      <h3>Asistente Virtual</h3>
+      <button class="close-btn" (click)="toggleChat()">❌</button>
+    </div>
+    <div class="chat-body">
+      <div class="message received">¡Hola! ¿En qué puedo ayudarte?</div>
+    </div>
+    <div class="chat-footer">
+      <input type="text" placeholder="Escribe tu mensaje..." />
+      <button>Enviar</button>
+    </div>
+  </div>
+</div>

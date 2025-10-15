@@ -7,6 +7,7 @@ import { Menu } from 'primeng/menu';
 import { Button } from 'primeng/button';
 import { Avatar } from 'primeng/avatar';
 
+import { ChatbotComponent } from '../features/chatbot/chatbot.component';
 import { AuthService } from '../features/auth/login/auth.service';
 
 @Component({
@@ -20,7 +21,7 @@ import { AuthService } from '../features/auth/login/auth.service';
     Menu,
     Button,
     Avatar,
-    
+    ChatbotComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss']
