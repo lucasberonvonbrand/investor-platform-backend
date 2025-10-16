@@ -61,6 +61,10 @@ export class StudentService {
     });
   }
 
+  updateByAdmin(id: number, payload: any): Observable<Student> {
+    return this.http.put<Student>(`${this.apiUrl}/update-by-admin/${id}`, payload);
+  }
+
   update(id: number, studentData: Partial<Student>): Observable<Student> {
     return new Observable((subscriber)=> {
       this.http.put<Student>(`${this.apiUrl}/${id}`, studentData).subscribe({

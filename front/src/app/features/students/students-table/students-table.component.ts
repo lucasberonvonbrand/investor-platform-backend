@@ -30,7 +30,7 @@ import { DegreeStatus } from '../../../models/student.model';
 import { StudentFormComponent } from '../students-form/students-form.component';
 
 interface IStudentView {
-  id: number;
+  id?: number;
   username: string;
   email: string;
 
@@ -65,7 +65,7 @@ interface IStudentView {
 
 @Component({
   standalone: true,
-  selector: 'app-estudiantes',
+  selector: 'app-students-table',
   imports: [
     CommonModule, FormsModule, StudentFormComponent,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
@@ -73,10 +73,10 @@ interface IStudentView {
     DialogModule, PasswordModule, CheckboxModule, MultiSelectModule, DividerModule, TooltipModule
   ],
   providers: [MessageService, ConfirmationService],
-  templateUrl: './students-table.component.html',   // 👈 corregido
-  styleUrls: ['./students-table.component.scss']    // 👈 corregido
+  templateUrl: './students-table.component.html',
+  styleUrls: ['./students-table.component.scss']
 })
-export class EstudiantesComponent implements OnInit {
+export class StudentsTableComponent implements OnInit {
   private studentsSvc = inject(StudentService);
   private rolesSvc = inject(RolesService);
   private toast = inject(MessageService);
@@ -109,6 +109,23 @@ export class EstudiantesComponent implements OnInit {
     { label: 'Completado', value: DegreeStatus.COMPLETED },
     { label: 'Suspendido', value: DegreeStatus.SUSPENDED },
     { label: 'Abandonado', value: DegreeStatus.ABANDONED }
+  ];
+  universityOptions = [
+    { label: 'UBA', value: 'UBA' }, { label: 'ITBA', value: 'ITBA' }, { label: 'UADE', value: 'UADE' },
+    { label: 'UAI', value: 'UAI' }, { label: 'UCES', value: 'UCES' }, { label: 'USAL', value: 'USAL' },
+    { label: 'Universidad Austral', value: 'AUSTRAL' }, { label: 'Torcuato di Tella', value: 'TORCUATO_DI_TELLA' },
+    { label: 'ISALUD', value: 'ISALUD' }, { label: 'UNLP', value: 'UNLP' }, { label: 'UNLaM', value: 'UNLAM' },
+    { label: 'UNGS', value: 'UNGS' }, { label: 'UNAHUR', value: 'UNAHUR' }, { label: 'UNLu', value: 'UNLu' },
+    { label: 'UNPAZ', value: 'UNPAZ' }, { label: 'UNMdP', value: 'UNMdP' }, { label: 'UNLZ', value: 'UNLZ' },
+    { label: 'UNC', value: 'UNC' }, { label: 'UCC', value: 'UCC' }, { label: 'UTN Córdoba', value: 'UTN_CORDOBA' },
+    { label: 'Univ. Católica de Córdoba', value: 'UNIVERSIDAD_CATOLICA_DE_CORDOBA' }, { label: 'UNR', value: 'UNR' },
+    { label: 'UCA Santa Fe', value: 'UCA_SANTA_FE' }, { label: 'UTN Santa Fe', value: 'UTN_SANTA_FE' },
+    { label: 'UNCuyo', value: 'UNCuyo' }, { label: 'UCC Mendoza', value: 'UCC_MENDOZA' },
+    { label: 'UTN Mendoza', value: 'UTN_MENDOZA' }, { label: 'UNER', value: 'UNER' }, { label: 'UCU', value: 'UCU' },
+    { label: 'UNT', value: 'UNT' }, { label: 'UCSE Tucumán', value: 'UCSE_TUCUMAN' },
+    { label: 'UTN Tucumán', value: 'UTN_TUCUMAN' }, { label: 'UNRN', value: 'UNRN' }, { label: 'UAI RN', value: 'UAI_RN' },
+    { label: 'UNSa', value: 'UNSa' }, { label: 'UCASAL', value: 'UCASAL' }, { label: 'UNaM', value: 'UNaM' },
+    { label: 'UCAMI', value: 'UCAMI' }, { label: 'UNNE', value: 'UNNE' }, { label: 'UCALCHA', value: 'UCALCHA' }
   ];
 
   ngOnInit(): void {
@@ -252,29 +269,28 @@ export class EstudiantesComponent implements OnInit {
       return;
     }
 
-    const body: any = {
-      username: this.formModel.username,
-      email: this.formModel.email,
-      enabled: this.formModel.enabled,
-      accountNotExpired: this.formModel.accountNotExpired,
-      accountNotLocked: this.formModel.accountNotLocked,
-      credentialNotExpired: this.formModel.credentialNotExpired,
-      roles: rolesById
-    };
-    if (this.formModel.password && this.formModel.password.trim() !== '') {
-      body.password = this.formModel.password;
-    }
-
     this.loading = true;
-    this.http.patch(`${this.apiUrl}/${this.formModel.id}`, body).subscribe({
+    // El formulario de edición de admin es un PUT/PATCH completo
+    const payload = {
+      ...this.formModel,
+      roles: rolesById,
+      password: (this.formModel.password && this.formModel.password.trim() !== '') ? this.formModel.password : undefined
+    };
+    // Quitamos el id del payload para que no vaya en el body
+    delete payload.id;
+    // Quitamos rolesList que es solo para la vista
+    delete (payload as any).rolesList;
+
+    this.studentsSvc.updateByAdmin(this.formModel.id!, payload).subscribe({
       next: () => {
         this.toast.add({ severity: 'success', summary: 'Estudiante', detail: 'Actualizado' });
         this.showDialog = false;
         this.reload();
       },
-      error: (err) => {
-        console.error(err);
-        this.toast.add({ severity: 'error', summary: 'Estudiante', detail: 'No se pudo actualizar' });
+      error: (err: any) => {
+        const detail = err?.error?.message || 'No se pudo actualizar';
+        console.error('Error updating student by admin:', err);
+        this.toast.add({ severity: 'error', summary: 'Estudiante', detail });
       },
       complete: () => (this.loading = false)
     });
@@ -284,6 +300,10 @@ export class EstudiantesComponent implements OnInit {
     this.confirm.confirm({
       message: `${enable ? '¿Activar' : '¿Desactivar'} ${row.username}?`,
       accept: () => {
+        if (row.id === undefined) {
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'ID de estudiante no encontrado.' });
+          return;
+        }
         const obs = enable ? this.studentsSvc.activate(row.id) : this.studentsSvc.deactivate(row.id);
         obs.subscribe({
           next: () => {
