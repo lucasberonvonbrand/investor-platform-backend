@@ -27,6 +27,8 @@ public interface IProjectService {
 
     ResponseProjectDTO activateProject(Long id);
 
+    ResponseProjectDTO completeProject(Long projectId, Long ownerId);
 
+    ResponseProjectDTO cancelProject(Long projectId, Long ownerId);
 
 }

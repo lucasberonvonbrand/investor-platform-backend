@@ -33,6 +33,13 @@ public class InvestmentController {
         return ResponseEntity.ok(service.markAsNotReceived(investmentId, dto.getStudentId()));
     }
 
+    @PutMapping("/reject-overfunded/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> rejectOverfunded(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(service.rejectOverfunded(investmentId, dto.getStudentId()));
+    }
+
     // 💡 --- ACCIONES DEL INVERSOR ---
     @PutMapping("/cancel/{id}")
     public ResponseEntity<ResponseInvestmentDTO> cancelByInvestor(@PathVariable Long id) {

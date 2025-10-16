@@ -11,9 +11,14 @@ import java.util.Optional;
 @Repository
 public interface IInvestmentRepository extends JpaRepository<Investment, Long> {
 
-    Optional<Investment> findByIdInvestmentAndDeletedFalse(Long idInvestment);
+    Optional<Investment> findByIdInvestmentAndDeletedFalse(Long id);
+
     List<Investment> findByDeletedFalse();
+
     List<Investment> findByDeletedFalseAndStatusIn(List<InvestmentStatus> statuses);
+
     List<Investment> findByProject_IdProjectAndDeletedFalseAndStatusIn(Long projectId, List<InvestmentStatus> statuses);
+
+    List<Investment> findByProject_IdProject(Long projectId);
 
 }

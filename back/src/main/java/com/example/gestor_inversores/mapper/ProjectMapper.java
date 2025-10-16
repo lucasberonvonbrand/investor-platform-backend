@@ -16,7 +16,6 @@ public class ProjectMapper {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .budgetGoal(dto.getBudgetGoal())
-                .status(dto.getStatus())
                 .startDate(dto.getStartDate())
                 .estimatedEndDate(dto.getEstimatedEndDate())
                 .owner(owner) // <--- owner agregado

@@ -26,6 +26,8 @@ public interface IInvestmentService {
 
     ResponseInvestmentDTO markAsNotReceived(Long investmentId, Long studentId);
 
+    ResponseInvestmentDTO rejectOverfunded(Long investmentId, Long studentId);
+
     // 💡 Nueva acción del inversor
     ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
 }

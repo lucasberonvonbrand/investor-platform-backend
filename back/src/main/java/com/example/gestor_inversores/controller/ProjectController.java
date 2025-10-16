@@ -76,5 +76,16 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.OK).body(restoredProject);
     }
 
+    @PutMapping("/complete/{projectId}")
+    public ResponseEntity<ResponseProjectDTO> completeProject(@PathVariable Long projectId, @RequestParam Long ownerId) {
+        ResponseProjectDTO responseProjectDTO = projectService.completeProject(projectId, ownerId);
+        return ResponseEntity.ok(responseProjectDTO);
+    }
+
+    @PutMapping("/cancel/{id}")
+    public ResponseEntity<ResponseProjectDTO> cancelProject(@PathVariable Long id, @RequestParam Long ownerId) {
+        ResponseProjectDTO responseProjectDTO = projectService.cancelProject(id, ownerId);
+        return ResponseEntity.ok(responseProjectDTO);
+    }
 
 }
