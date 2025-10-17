@@ -21,6 +21,8 @@ public class RequestContractDTO {
     @NotNull(message = "El ID del inversor creador es obligatorio")
     private Long createdByInvestorId;
 
+    private String textTitle;
+
     @NotNull(message = "El monto es obligatorio")
     @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
     @Digits(integer = 13, fraction = 2, message = "El formato del monto no es válido")
