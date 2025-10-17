@@ -91,6 +91,7 @@ public class ContractService implements IContractService {
         Contract contract = Contract.builder()
                 .project(project)
                 .createdByInvestor(investor)
+                .textTitle(dto.getTextTitle()) // <-- CAMPO AÑADIDO
                 .amount(dto.getAmount())
                 .currency(dto.getCurrency())
                 .status(ContractStatus.PENDING_STUDENT_SIGNATURE)

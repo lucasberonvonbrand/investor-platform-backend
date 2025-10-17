@@ -50,6 +50,9 @@ public class Contract {
 
     private LocalDate createdAt;
 
+    @Column(name = "text_title")
+    private String textTitle;
+
     /**
      * Porcentajes de ganancia según duración del proyecto
      */

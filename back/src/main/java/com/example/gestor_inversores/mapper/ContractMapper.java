@@ -23,6 +23,7 @@ public class ContractMapper {
                 .idContract(contract.getIdContract())
                 .projectId(contract.getProject() != null ? contract.getProject().getIdProject() : null)
                 .createdByInvestorId(contract.getCreatedByInvestor() != null ? contract.getCreatedByInvestor().getId() : null)
+                .textTitle(contract.getTextTitle()) // <-- CAMPO AÑADIDO
                 .amount(contract.getAmount())
                 .currency(contract.getCurrency())
                 .status(contract.getStatus())

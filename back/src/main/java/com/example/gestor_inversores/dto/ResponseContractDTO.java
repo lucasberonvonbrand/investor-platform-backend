@@ -20,6 +20,8 @@ public class ResponseContractDTO {
     private Long createdByInvestorId;
     private Long investmentId;
 
+    private String textTitle;
+
     private BigDecimal amount;
     private Currency currency;
     private ContractStatus status;
@@ -32,4 +34,3 @@ public class ResponseContractDTO {
 
     private List<ContractActionDTO> actions; // historial de acciones del estudiante
 }
-
