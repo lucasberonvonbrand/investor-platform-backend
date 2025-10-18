@@ -1,168 +1,116 @@
 import { Component,OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import {ReactiveFormsModule} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
+import { InvestorService } from '../../../core/services/investors.service';
+import { AuthService } from '../../auth/login/auth.service';
+import { Investor, Province } from '../../../models/investor.model';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 
 @Component({
   selector: 'app-investors-update',
   templateUrl: './investors-update-form.component.html',
   styleUrls: ['./investors-update-form.component.scss'], 
-  imports: [ReactiveFormsModule],
+  standalone: true,
+  imports: [
+    ReactiveFormsModule, CommonModule, ToastModule,
+    CardModule,
+    ButtonModule,
+    InputTextModule
+  ],
+  providers: [MessageService]
 })
 export class InvestorsUpdateComponent implements OnInit {
-  // Propiedad para el formulario reactivo, inicializada en ngOnInit ...
-  investorsUpdateForm!: FormGroup;
-  
-  // Propiedad para almacenar el archivo seleccionado (imagen o documento)
-  selectedFile: { file: File, url: string } | null = null;
+  investorsUpdateForm!: FormGroup;
+  investor!: Investor;
+  isLoading = false;
 
-  // Propiedades para la pantalla de carga
-  isLoading: boolean = false; 
-  progress: number = 0; 
+  provinces = Object.values(Province);
 
-  // Constructor: inyección de dependencias como FormBuilder
-  constructor(private fb: FormBuilder) {}
-
-/*
-  // Método del ciclo de vida de Angular: se ejecuta al iniciar el componente
-  ngOnInit(): void {
-    // ✅ INICIALIZACIÓN CORRECTA DEL FORMULARIO
-    this.configuracionForm = this.fb.group({
-      title: ['', Validators.required],
-      description: ['', Validators.required],
-      status: ['', Validators.required],
-      objective: ['', Validators.required],
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required],
-      creator: ['', Validators.required]
-    });
-  }
-*/
-
-usuario = {
-    nombre: 'Juan Pérez',
-    dni: '12345678',
-    fechaNacimiento: '1995-04-10',
-    facebook: 'https://facebook.com/juanperez'
-  };
-
+  constructor(
+    private fb: FormBuilder,
+    private investorService: InvestorService,
+    private auth: AuthService,
+    private router: Router,
+    private toast: MessageService
+  ) {}
 
 ngOnInit(): void {
-    // Cargar los datos del usuario en el formulario
+    this.buildForm({} as Investor);
+
+    const userId = this.auth.userId;
+    const role = this.auth.getUserRole();
+
+    if (role === 'ROLE_INVESTOR' && userId) {
+      this.isLoading = true;
+      this.investorService.getById(userId).subscribe({
+        next: (investor) => {
+          this.investor = investor;
+          this.buildForm(investor); // Re-construir el form con los datos
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Error cargando inversor:', err);
+          this.isLoading = false;
+          this.router.navigateByUrl('/configuracion');
+        }
+      });
+    } else {
+      this.router.navigateByUrl('/configuracion');
+    }
+  }
+
+  private buildForm(investor: Investor): void {
     this.investorsUpdateForm = this.fb.group({
-      nombre: [this.usuario.nombre, Validators.required],
-      //apellido: [this.usuario.apellido, Validators.required],
-      dni: [this.usuario.dni, Validators.required],
-      fechaNacimiento: [this.usuario.fechaNacimiento, Validators.required],
-      facebook: [this.usuario.facebook],
+      username: [investor.username ?? '', [Validators.required, Validators.maxLength(50)]],
+      email: [investor.email ?? '', [Validators.required, Validators.email]],
+      photoUrl: [(investor as any).photoUrl ?? ''],
+      cuit: [investor.cuit ?? '', [Validators.required, Validators.pattern('^[0-9]+$'), Validators.minLength(11), Validators.maxLength(11)]],
+      contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+      phone: [investor.phone ?? '', [Validators.required, Validators.pattern('\\+?\\d{8,15}')]],
+      webSite: [investor.webSite ?? '', Validators.maxLength(100)],
+      address: this.fb.group({
+        street: [investor.address?.street ?? '', Validators.required],
+        number: [investor.address?.number ?? null, Validators.required],
+        city: [investor.address?.city ?? '', Validators.required],
+        province: [investor.address?.province ?? '', Validators.required],
+        postalCode: [investor.address?.postalCode ?? null, Validators.required]
+      })
     });
   }
 
   guardar() {
     if (this.investorsUpdateForm.valid) {
-      console.log('Datos guardados:', this.investorsUpdateForm.value);
-      alert('Perfil actualizado con éxito ✅');
+      this.isLoading = true;
+      if (!this.investor?.id) {
+        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al inversor para actualizar.' });
+        this.isLoading = false;
+        return;
+      }
+      this.investorService.update(this.investor.id, this.investorsUpdateForm.value).subscribe({
+        next: (updated) => {
+          console.log('Perfil de inversor actualizado:', updated);
+          this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente.' });
+          this.isLoading = false;
+        },
+        error: (err) => {
+          console.error('Error actualizando perfil:', err);
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil.' });
+          this.isLoading = false;
+        }
+      });
     } else {
-      alert('Por favor, completa los campos requeridos ❌');
+      this.investorsUpdateForm.markAllAsTouched();
+      this.toast.add({ severity: 'warn', summary: 'Atención', detail: 'Por favor, completa todos los campos requeridos.' });
     }
   }
 
   cancelar() {
-    if (this.investorsUpdateForm.valid) {
-      console.log('Datos guardados:', this.investorsUpdateForm.value);
-      alert('Perfil actualizado con éxito ✅');
-    } 
+    this.router.navigateByUrl('/proyectos-panel');
   }
-
-/*
-  onFileSelect(event: any) {
-    const file: File = event.target.files[0];
-    if (file) {
-      this.selectedFile = {
-        file: file,
-        url: URL.createObjectURL(file)
-      };
-    }
-  }
-
-  onFileDrop(event: DragEvent) {
-    event.preventDefault();
-    const file = event.dataTransfer?.files[0];
-    if (file) {
-      this.selectedFile = {
-        file: file,
-        url: URL.createObjectURL(file)
-      };
-    }
-  }
-
-  onDragOver(event: DragEvent) {
-    event.preventDefault();
-  }
-*/
-/*
-  onSubmit() {
-    if (this.projectForm.valid) {
-      const formData = new FormData();
-      formData.append('title', this.projectForm.value.title);
-      formData.append('description', this.projectForm.value.description);
-      formData.append('status', this.projectForm.value.status);
-      formData.append('objective', this.projectForm.value.objective);
-      formData.append('startDate', this.projectForm.value.startDate);
-      formData.append('endDate', this.projectForm.value.endDate);
-      formData.append('creator', this.projectForm.value.creator);
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile.file, this.selectedFile.file.name);
-      }
-
-      this.isLoading = true; 
-      this.progress = 0; 
-
-      const interval = setInterval(() => {
-        this.progress += 10;
-        if (this.progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            this.isLoading = false; 
-            this.projectForm.reset(); 
-          }, 500);
-        }
-      }, 300); 
-    }
-  }
-*/
-
-
-
-
 }
-
-
-      /////////////////////////////////////////////////////////////////////////////////////////
-      /** Método para manejar el envío del formulario
-      onSubmit() {
-      Verifica si el formulario es válido (todos los campos requeridos están llenos)
-      if (this.projectForm.valid) {
-      const formData = new FormData();
-      
-      Agrega cada campo del formulario al objeto FormData
-      formData.append('title', this.projectForm.value.title);
-      formData.append('description', this.projectForm.value.description);
-      formData.append('status', this.projectForm.value.status);
-      formData.append('objective', this.projectForm.value.objective);
-      formData.append('startDate', this.projectForm.value.startDate);
-      formData.append('endDate', this.projectForm.value.endDate);
-      formData.append('creator', this.projectForm.value.creator);
-
-      Si hay un archivo seleccionado, lo agrega a FormData
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile.file, this.selectedFile.file.name);
-      }
-      
-      Muestra los datos que se enviarían (para depuración)
-      console.log('Form data to be sent:', formData);
-      
-      Aquí puedes agregar la lógica para enviar formData a tu API
-      Por ejemplo, usando un servicio de HttpClient:
-       this.miServicio.crearProyecto(formData).subscribe(respuesta => { ... }); 
-       */

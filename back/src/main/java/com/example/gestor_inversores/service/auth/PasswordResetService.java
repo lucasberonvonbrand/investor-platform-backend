@@ -1,12 +1,13 @@
 package com.example.gestor_inversores.service.auth;
 
+import com.example.gestor_inversores.dto.PasswordResetRequestDTO;
+import com.example.gestor_inversores.dto.PasswordResetRequestEmailDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.model.PasswordResetToken;
 import com.example.gestor_inversores.model.User;
 import com.example.gestor_inversores.repository.IPasswordResetTokenRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,23 +19,18 @@ import java.util.Base64;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class PasswordResetService implements IPasswordResetService {
 
-    @Autowired
-    private IUserRepository userRepository;
-
-    @Autowired
-    private IPasswordResetTokenRepository tokenRepository;
-
-    @Autowired
-    private JavaMailSender mailSender;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final IUserRepository userRepository;
+    private final IPasswordResetTokenRepository tokenRepository;
+    private final JavaMailSender mailSender;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
-    public void createPasswordResetToken(String email) {
+    public void createPasswordResetToken(PasswordResetRequestEmailDTO dto) {
+        String email = dto.getEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EmailNotFoundException("No se encontró un usuario con ese correo."));
 
@@ -54,7 +50,7 @@ public class PasswordResetService implements IPasswordResetService {
         // Guardar token en DB
         try {
             tokenRepository.save(resetToken);
-        } catch (DataIntegrityViolationException ex) {
+        } catch (Exception ex) {
             throw new InvalidTokenException("Error generando token único, intenta de nuevo.");
         }
 
@@ -68,8 +64,8 @@ public class PasswordResetService implements IPasswordResetService {
 
     @Override
     @Transactional
-    public void resetPassword(String token, String newPassword) {
-        PasswordResetToken resetToken = tokenRepository.findByToken(token);
+    public void resetPassword(PasswordResetRequestDTO dto) {
+        PasswordResetToken resetToken = tokenRepository.findByToken(dto.getToken());
         if (resetToken == null) throw new InvalidTokenException("Token inválido.");
 
         if (resetToken.isExpired()) {
@@ -77,11 +73,8 @@ public class PasswordResetService implements IPasswordResetService {
             throw new ExpiredTokenException("El token ha expirado. Por favor, solicita uno nuevo.");
         }
 
-        if (newPassword.length() < 6)
-            throw new InvalidPasswordException("La contraseña debe tener al menos 6 caracteres.");
-
         User user = resetToken.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         userRepository.save(user);
 
         tokenRepository.delete(resetToken);

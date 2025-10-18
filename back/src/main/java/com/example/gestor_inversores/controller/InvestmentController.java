@@ -1,9 +1,11 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.*;
+import com.example.gestor_inversores.dto.RequestContractActionByStudentDTO;
+import com.example.gestor_inversores.dto.RequestInvestmentActionByInvestorDTO;
+import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
 import com.example.gestor_inversores.service.investment.IInvestmentService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,62 +13,69 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/investments")
+@RequiredArgsConstructor
 public class InvestmentController {
 
-    @Autowired
-    private IInvestmentService service;
+    private final IInvestmentService service;
 
-    @PutMapping("/details/{id}")
-    public ResponseInvestmentDTO updateDetails(
-            @PathVariable Long id,
-            @RequestBody @Valid RequestInvestmentDetailsDTO dto) {
-
-        return service.updateDetails(id, dto);
+    // 💡 --- ACCIONES DEL ESTUDIANTE ---
+    @PutMapping("/confirm-receipt/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> confirmReceipt(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(service.confirmReceipt(investmentId, dto.getStudentId()));
     }
 
-    @PutMapping("/confirm/{id}")
-    public ResponseInvestmentDTO confirmByStudent(
-            @PathVariable Long id,
-            @RequestBody @Valid RequestInvestmentStatusDTO dto) {
-
-        return service.confirmByStudent(id, dto.getConfirmedByStudentId(), dto.getStatus());
+    @PutMapping("/mark-not-received/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> markAsNotReceived(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(service.markAsNotReceived(investmentId, dto.getStudentId()));
     }
 
+    @PutMapping("/reject-overfunded/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> rejectOverfunded(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(service.rejectOverfunded(investmentId, dto.getStudentId()));
+    }
+
+    // 💡 --- ACCIONES DEL INVERSOR ---
     @PutMapping("/cancel/{id}")
-    public ResponseInvestmentDTO cancelByInvestor(
-            @PathVariable Long id) {
-        return service.cancelByInvestor(id);
+    public ResponseEntity<ResponseInvestmentDTO> cancelByInvestor(@PathVariable Long id) {
+        return ResponseEntity.ok(service.cancelByInvestor(id));
     }
 
-    @PostMapping
-    public ResponseInvestmentDTO create(@RequestBody @Valid RequestInvestmentDTO dto) {
-        return service.create(dto);
+    @PutMapping("/confirm-refund/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> confirmRefund(
+            @PathVariable("id") Long investmentId,
+            @Valid @RequestBody RequestInvestmentActionByInvestorDTO dto) {
+        return ResponseEntity.ok(service.confirmRefund(investmentId, dto));
     }
 
+    // 💡 --- CONSULTAS ---
     @GetMapping("/{id}")
-    public ResponseInvestmentDTO getById(@PathVariable Long id) {
-        return service.getById(id);
+    public ResponseEntity<ResponseInvestmentDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getById(id));
     }
 
     @GetMapping
-    public List<ResponseInvestmentDTO> getAll() {
-        return service.getAll();
+    public ResponseEntity<List<ResponseInvestmentDTO>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
 
-    //Para ver todos las inversiones que estan en estado IN_PROGRESS, RECEIVED, NOT_RECEIVED y deleted != 1
     @GetMapping("/actives")
-    public List<ResponseInvestmentDTO> getActiveForStudents() {
-        return service.getActiveForStudents();
+    public ResponseEntity<List<ResponseInvestmentDTO>> getActiveForStudents() {
+        return ResponseEntity.ok(service.getActiveForStudents());
     }
 
-    //Para ver las inversiones activas por proyecto (para que el estudiante pueda ver las inversiones actuales de su proyecto)
     @GetMapping("/investments-by-project/{projectId}")
-    public List<ResponseInvestmentDTO> getActiveByProjectForStudents(@PathVariable Long projectId) {
-        return service.getActiveByProjectForStudents(projectId);
+    public ResponseEntity<List<ResponseInvestmentDTO>> getActiveByProjectForStudents(@PathVariable Long projectId) {
+        return ResponseEntity.ok(service.getActiveByProjectForStudents(projectId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseInvestmentDTO delete(@PathVariable Long id) {
-        return service.delete(id);
+    public ResponseEntity<ResponseInvestmentDTO> delete(@PathVariable Long id) {
+        return ResponseEntity.ok(service.delete(id));
     }
 }

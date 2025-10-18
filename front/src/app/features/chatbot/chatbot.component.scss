@@ -1,0 +1,139 @@
+.chat-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  background: #f0f0f0; /* Cambiado a gris claro para que el ícono contraste */
+  border-radius: 12px; /* Cambiado a cuadrado con bordes redondeados */
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  .chat-icon {
+    width: 56px;
+    height: 56px;
+    /* Se quita el filtro para mostrar los colores originales de la imagen */
+  }
+  &.open {
+    background: #f0f0f0; /* Se mantiene gris claro cuando está abierto */
+  }
+  .close-icon {
+    color: white;
+    font-size: 1.5rem;
+  }
+  .minimize-icon {
+    color: #333; /* Cambiado a oscuro para ser visible */
+    font-size: 2.5rem; /* Hago el guion más grande y grueso */
+    line-height: 1;
+  }
+}
+
+.chat-window {
+  position: fixed;
+  bottom: 110px;
+  right: 32px;
+  width: 320px;
+  max-height: 500px; /* Altura máxima para la ventana del chat */
+  max-width: 90vw;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.2);
+  display: none;
+  flex-direction: column;
+  z-index: 1001;
+  &.open {
+    display: flex;
+  }
+  .chat-header {
+    background: #0078d4;
+    color: #fff;
+    padding: 12px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #d32f2f;
+      }
+    }
+  }
+  .chat-body {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+    height: 300px; /* Altura fija para el cuerpo del chat */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .message {
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      max-width: 80%;
+      &.received {
+        background: #f1f1f1;
+        align-self: flex-start;
+      }
+      &.sent {
+        background: #dcf8c6;
+        align-self: flex-end;
+      }
+    }
+    .preset-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      .preset-btn {
+        background-color: #eef;
+        border: 1px solid #cce;
+        border-radius: 16px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+        &:hover {
+          background-color: #ddf;
+        }
+      }
+    }
+  }
+  .chat-footer {
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+  }
+}

@@ -4,8 +4,9 @@ import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Address;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.model.enums.Province;
 import com.example.gestor_inversores.service.role.IRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,10 +14,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class StudentMapper {
 
-    @Autowired
-    private IRoleService roleService;
+    private final IRoleService roleService;
+    private final AddressMapper addressMapper;
 
     public Student requestStudentDTOToStudent(RequestStudentDTO dto) {
         if (dto == null) return null;
@@ -43,18 +45,13 @@ public class StudentMapper {
 
         // Address
         if (dto.getAddress() != null) {
-            student.setAddress(dto.getAddress().toEntity());
+            student.setAddress(addressMapper.toEntity(dto.getAddress()));
         }
-
-        /**
-        // Roles (se asignan en el Service, no aquí)
-        student.setRolesList(new HashSet<>());
-         **/
 
         return student;
     }
 
-    public static ResponseStudentDTO studentToResponseStudentDTO(Student student) {
+    public ResponseStudentDTO studentToResponseStudentDTO(Student student) {
         if (student == null) return null;
 
         ResponseStudentDTO dto = new ResponseStudentDTO();
@@ -79,13 +76,7 @@ public class StudentMapper {
         dto.setDescription(student.getDescription());
 
         if (student.getAddress() != null) {
-            AddressDTO addressDTO = new AddressDTO();
-            addressDTO.setStreet(student.getAddress().getStreet());
-            addressDTO.setNumber(student.getAddress().getNumber());
-            addressDTO.setCity(student.getAddress().getCity());
-            addressDTO.setProvince(student.getAddress().getProvince().name());
-            addressDTO.setPostalCode(student.getAddress().getPostalCode());
-            dto.setAddress(addressDTO);
+            dto.setAddress(addressMapper.fromEntity(student.getAddress()));
         }
 
         if (student.getProjectsList() != null) {
@@ -107,6 +98,35 @@ public class StudentMapper {
         }
 
         return dto;
+    }
+
+    public void updateStudentFromAdminDto(RequestStudentUpdateByAdminDTO dto, Student student) {
+        if (dto == null || student == null) return;
+
+        // Campos de User
+        student.setUsername(dto.getUsername());
+        student.setEmail(dto.getEmail());
+
+        // Campos de estado de la cuenta
+        student.setEnabled(dto.getEnabled());
+        student.setAccountNotExpired(dto.getAccountNotExpired());
+        student.setAccountNotLocked(dto.getAccountNotLocked());
+        student.setCredentialNotExpired(dto.getCredentialNotExpired());
+
+        // Campos específicos de Student
+        student.setFirstName(dto.getFirstName());
+        student.setLastName(dto.getLastName());
+        student.setDni(dto.getDni());
+        student.setPhone(dto.getPhone());
+        student.setDateOfBirth(dto.getDateOfBirth());
+        student.setUniversity(dto.getUniversity());
+        student.setCareer(dto.getCareer());
+        student.setDegreeStatus(dto.getDegreeStatus());
+        student.setLinkedinUrl(dto.getLinkedinUrl());
+        student.setDescription(dto.getDescription());
+
+        // Address (asume una actualización completa de la dirección)
+        student.setAddress(dto.getAddress());
     }
 
     public void patchStudentFromDto(RequestStudentUpdateDTO dto, Student student) {
@@ -133,13 +153,20 @@ public class StudentMapper {
             Address address = student.getAddress();
 
             if (address == null) {
-                address = addressDTO.toEntity();
+                address = addressMapper.toEntity(addressDTO);
                 student.setAddress(address);
             } else {
+                // NOTA: Esta lógica de parcheo manual podría moverse al AddressMapper en el futuro
                 if (addressDTO.getStreet() != null) address.setStreet(addressDTO.getStreet());
                 if (addressDTO.getNumber() > 0) address.setNumber(addressDTO.getNumber());
                 if (addressDTO.getCity() != null) address.setCity(addressDTO.getCity());
-                if (addressDTO.getProvince() != null) address.setProvince(com.example.gestor_inversores.model.enums.Province.valueOf(addressDTO.getProvince()));
+                if (addressDTO.getProvince() != null) {
+                    try {
+                        address.setProvince(Province.valueOf(addressDTO.getProvince().toUpperCase()));
+                    } catch (IllegalArgumentException e) {
+                        // Ignorar provincia inválida en un parcheo
+                    }
+                }
                 if (addressDTO.getPostalCode() > 0) address.setPostalCode(addressDTO.getPostalCode());
             }
         }
@@ -163,8 +190,4 @@ public class StudentMapper {
                         .build()
                 ).collect(Collectors.toList());
     }
-
-
-
-
 }

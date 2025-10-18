@@ -1,126 +1,82 @@
-<div class="container">
-  <div class="form-card">
-    <div class="header">
-      <img src="https://www.svgrepo.com/show/436186/edit-tool-pencil.svg" alt="Perfil Logo" class="logo">
-      <div class="user-icon">👤</div>
-    </div>
-    <h2>Perfil</h2>
+<p-toast></p-toast>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+  <div class="w-full max-w-4xl">
+    <p-card>
+      <ng-template pTemplate="title">
+        <div class="flex items-center gap-3">
+          <i class="pi pi-user-edit text-2xl"></i>
+          <span>Editar Perfil de Inversor</span>
+        </div>
+      </ng-template>
 
-    <form [formGroup]="investorsUpdateForm" (ngSubmit)="guardar()">
-      <div class="form-group">
-        <label for="configuracionUsername">Username</label>
-        <input type="text" id="configuracionUsername" placeholder="Enter project title" formControlName="Username">
-      </div>
-      <div class="form-group">
-        <label for="configuracionEmail">E-mail</label>
-        <input type="text" id="configuracionEmail" placeholder="Enter project title" formControlName="Email">
-      </div>
-      <!--
-      
-      <div class="form-group">
-        <label for="configuracionApellido">Apellido</label>
-        <input type="text" id="configuracionApellido" placeholder="Enter project title" formControlName="Apellido">
-      </div>
-      -->
-      <div class="form-group">
-        <label for="configuracionCuit">CUIT</label>
-        <input type="number" id="configuracionCuit" placeholder="Enter project title" formControlName="Cuit">
-      </div>
-      <div class="form-group">
-        <label for="configuracionNombre">Nombre</label>
-        <input type="text" id="configuracionNombre" placeholder="Enter project title" formControlName="Nombre">
-      </div>
-      <div class="form-group">
-        <label for="configuracionTelefono">Telefono</label>
-        <input type="number" id="configuracionTelefono" placeholder="Enter project title" formControlName="Telefono">
-      </div>
-      <!--
-      <div class="form-group">
-        <label for="configuracionFechaNacimiento">Fecha de nacimiento</label>
-        <input type="date" id="configuracionFechaNacimiento" placeholder="Enter project title" formControlName="FechaNacimiento">
-      </div>
-      -->
-      <div class="form-group">
-        <label for="configuracionPaginaWeb">Pagina web</label>
-        <input type="url" id="configuracionPaginaWeb" placeholder="https://google.com" formControlName="PaginaWeb">
-      </div>    
+      <form [formGroup]="investorsUpdateForm" (ngSubmit)="guardar()">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      <div class="actions">
-        <button type="submit" class="create-button" [disabled]="!investorsUpdateForm.valid" (click)="guardar()">Guardar Cambios</button>
-        <button type="button" class="cancel-button" [disabled]="!investorsUpdateForm.valid" (click)="cancelar()">Cancelar</button>
-      </div>    
+          <div class="field">
+            <label for="username">Usuario</label>
+            <input id="username" type="text" pInputText formControlName="username" class="w-full" />
+          </div>
 
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" pInputText formControlName="email" class="w-full" />
+          </div>
 
-      <!-- 
-      <div class="form-group">
-        <label for="projectStatus">Estado</label>
-        <select id="projectStatus" formControlName="status">
-          <option value="" disabled selected>Seleccione un estado</option>
-          <option value="IN_PROGRESS">En progreso</option>
-          <option value="PENDING_FUNDING">Financiamiento pendiente</option>
-          <option value="COMPLETED">Completado</option>
-        </select>
-      </div>
-      -->
-      <!-- 
-      <div class="form-group">
-        <label for="projectObjective">**Objetivo**</label>
-        <textarea id="projectObjective" placeholder="Define el objetivo del proyecto" formControlName="objective"></textarea>
-      </div>
-      <div class="form-group">
-        <label for="startDate">**Fecha de Inicio Estimada**</label>
-        <input type="date" id="startDate" formControlName="startDate">
-      </div>
-      <div class="form-group">
-        <label for="endDate">**Fecha de Finalización Estimada**</label>
-        <input type="date" id="endDate" formControlName="endDate">
-      </div>
-      <div class="form-group">
-        <label for="creatorName">**Creador**</label>
-        <input type="text" id="creatorName" placeholder="Nombre del creador" formControlName="creator">
-      </div>
-      -->
-      <!-- 
-      <div class="form-group">
-        <label>Subir archivos & Fotos</label>
-        <div class="upload-section">
-          <div class="drop-zone" (click)="fileInput.click()" (drop)="onFileDrop($event)" (dragover)="onDragOver($event)">
-            <div class="drop-zone-content">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="icon">
-                <path d="M16 11H8V8h8v3zm-4 7h-2v2h2v-2zm8 0h-2v2h2v-2zm-6 0h-2v2h2v-2zm-6 0h-2v2h2v-2zM4 18h2v2H4v-2zm0-4h2v2H4v-2zm0-4h2v2H4v-2zm0-4h2v2H4V6zm4 0h2v2H8V6zm4 0h2v2h-2V6zm4 0h2v2h-2V6zm4 0h2v2h-2V6zM6 4h12v2H6V4zm-2 0h2v2H4V4zm0 14h2v2H4v-2z"/>
-              </svg>
-              <p>Arrastre o haga click aqui para subir</p>
+          <div class="field md:col-span-2">
+            <label for="photoUrl">URL de Foto/Logo</label>
+            <input id="photoUrl" type="text" pInputText formControlName="photoUrl" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="cuit">CUIT</label>
+            <input id="cuit" type="text" pInputText formControlName="cuit" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="contactPerson">Persona de Contacto</label>
+            <input id="contactPerson" type="text" pInputText formControlName="contactPerson" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="phone">Teléfono</label>
+            <input id="phone" type="text" pInputText formControlName="phone" class="w-full" />
+          </div>
+
+          <div class="field">
+            <label for="webSite">Sitio Web</label>
+            <input id="webSite" type="text" pInputText formControlName="webSite" class="w-full" />
+          </div>
+
+          <div formGroupName="address" class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 border p-4 rounded-lg mt-2">
+            <h3 class="md:col-span-3 font-semibold text-lg mb-2">Dirección</h3>
+            <div class="field">
+              <label for="street">Calle</label>
+              <input id="street" type="text" pInputText formControlName="street" class="w-full" />
             </div>
-            <input type="file" #fileInput (change)="onFileSelect($event)" multiple hidden>
-          </div>
-          <div class="file-preview">
-            <p *ngIf="!selectedFile">File Preview</p>
-            <img [src]="selectedFile.url" *ngIf="selectedFile" alt="Preview" class="preview-image">
+            <div class="field">
+              <label for="number">Número</label>
+              <input id="number" type="number" pInputText formControlName="number" class="w-full" />
+            </div>
+            <div class="field">
+              <label for="postalCode">Código Postal</label>
+              <input id="postalCode" type="text" pInputText formControlName="postalCode" class="w-full" />
+            </div>
+            <div class="field">
+              <label for="city">Ciudad</label>
+              <input id="city" type="text" pInputText formControlName="city" class="w-full" />
+            </div>
+            <div class="field md:col-span-2">
+              <label for="province">Provincia</label>
+              <input id="province" type="text" pInputText formControlName="province" class="w-full" />
+            </div>
           </div>
         </div>
-      </div>
-      <div class="actions">
-        <button type="button" class="cancel-button">Cancelar</button>
-        <button type="submit" class="create-button" [disabled]="!projectForm.valid" (click)="onSubmit()">Crear</button>
-      </div> -->
-    </form>
 
-
-    <!-- 
-
-
-    <div class="loading-overlay" *ngIf="isLoading">
-      <div class="loading-content">
-        <h3>Creando proyecto...</h3>
-        <p>Por favor espere mientras se procesa la información.</p>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" [style.width]="progress + '%'"></div>
+        <div class="flex justify-end gap-2 mt-6">
+          <button pButton type="button" label="Cancelar" class="p-button-text" (click)="cancelar()"></button>
+          <button pButton type="submit" label="Guardar Cambios" icon="pi pi-check" [loading]="isLoading" [disabled]="investorsUpdateForm.invalid || isLoading"></button>
         </div>
-        <p class="progress-text">{{ progress }}%</p>
-      </div>
-    </div>
-    
-
-    -->
+      </form>
+    </p-card>
   </div>
-</div>
+    </div>

@@ -13,8 +13,8 @@ import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-
 import { IMyProject, MyProjectsService } from '../../../core/services/my-projects.service';
+import { Router } from '@angular/router';
 
 @Component({
   standalone: true,
@@ -31,6 +31,7 @@ import { IMyProject, MyProjectsService } from '../../../core/services/my-project
 export class MyProjectsPanelComponent implements OnInit {
   private svc = inject(MyProjectsService);
   private toast = inject(MessageService);
+  private router = inject(Router);
 
   /** Incluir también proyectos donde soy asignado (miembro/estudiante) */
   @Input() includeAssigned = true;
@@ -48,7 +49,7 @@ export class MyProjectsPanelComponent implements OnInit {
   // vista
   viewMode: 'cards' | 'table' = 'cards';
 
-  // detalle
+  // detalle (ya no se usa el diálogo; mantenemos por compatibilidad UI si tenés botones que lo abren)
   showDetail = false;
   selected: IMyProject | null = null;
 
@@ -69,13 +70,9 @@ export class MyProjectsPanelComponent implements OnInit {
 
   reload(): void {
     this.loading = true;
-    this.svc.getMine({ includeAssigned: this.includeAssigned }).subscribe({
+    this.svc.getMine().subscribe({
       next: (list) => {
-        this.projects = (list || []).map(p => ({
-          ...p,
-          category: p.category ?? '—',
-          status: p.status ?? 'IN_PROGRESS'
-        }));
+        this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
         this.applyFilters();
         this.computeKpis();
         this.buildRecommended();
@@ -154,8 +151,11 @@ export class MyProjectsPanelComponent implements OnInit {
     this.persistFavs();
   }
 
-  // UI
-  openDetail(p: IMyProject) { this.selected = p; this.showDetail = true; }
+  // ===== Navegar al detalle maestro =====
+  openDetail(p: IMyProject) {
+    if (!p?.id) return;
+    this.router.navigate(['/proyectos-maestro', p.id]);
+  }
 
   // tags colores
   private readonly tagPalette: Array<{bg: string; fg: string}> = [

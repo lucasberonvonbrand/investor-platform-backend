@@ -16,6 +16,7 @@ import { UsersService, IUser } from '../../core/services/users.service';
 import { StudentService } from '../../core/services/students.service';
 import { InvestorService } from '../../core/services/investors.service';
 import { ProjectsService, IProject } from '../../core/services/projects.service';
+import { InvestmentsService, IContractLite } from '../../core/services/investments.service';
 
 type AnyObj = Record<string, any>;
 
@@ -32,6 +33,7 @@ export class PanelComponent implements OnInit {
   private studentsSvc = inject(StudentService);
   private investorsSvc = inject(InvestorService);
   private projectsSvc = inject(ProjectsService);   // 👈 Proyectos (línea de tiempo)
+  private investmentsSvc = inject(InvestmentsService);
   private toast = inject(MessageService);
 
   loading = false;
@@ -47,7 +49,12 @@ export class PanelComponent implements OnInit {
     activeStudents: 0,
     inactiveStudents: 0,
     activeInvestors: 0,
-    inactiveInvestors: 0
+    inactiveInvestors: 0,
+    fundedProjects: 0,
+    totalInvested: 0,
+    totalInvestedARS: 0,
+    totalInvestedCNY: 0,
+    activeContracts: 0,
   };
 
   users: IUser[] = [];
@@ -56,6 +63,7 @@ export class PanelComponent implements OnInit {
 
   // ===== Proyectos & Timeline =====
   projects: IProject[] = [];
+  contracts: IContractLite[] = [];
   projectsTimelineData!: ChartData<'line'>;
   projectsLineOptions: ChartOptions = {
     responsive: true,
@@ -72,6 +80,8 @@ export class PanelComponent implements OnInit {
   studentsByDegreeData!: ChartData<'doughnut'>;
   usersByRoleData!: ChartData<'bar'>;
   universitiesData!: ChartData<'bar'>;
+  projectsByStatusData!: ChartData<'doughnut'>;
+  investmentsTimelineData!: ChartData<'line'>;
 
   // Opciones comunes
   chartOptions: ChartOptions = {
@@ -95,13 +105,15 @@ export class PanelComponent implements OnInit {
       users: this.usersSvc.getAll().pipe(catchError(() => of([] as IUser[]))),
       students: this.studentsSvc.loadAll().pipe(catchError(() => of([] as AnyObj[]))),
       investors: this.investorsSvc.loadAll().pipe(catchError(() => of([] as AnyObj[]))),
-      projects: this.projectsSvc.getAll().pipe(catchError(() => of([] as IProject[]))) // 👈 sumamos proyectos
+      projects: this.projectsSvc.getAll().pipe(catchError(() => of([] as IProject[]))),
+      contracts: this.investmentsSvc.getAllContracts().pipe(catchError(() => of([] as IContractLite[])))
     }).subscribe({
-      next: ({ users, students, investors, projects }) => {
+      next: ({ users, students, investors, projects, contracts }) => {
         this.users = users || [];
         this.students = students || [];
         this.investors = investors || [];
         this.projects = projects || [];
+        this.contracts = contracts || [];
 
         // KPIs
         const activeStudents = this.students.filter(s => s?.enabled).length;
@@ -114,7 +126,12 @@ export class PanelComponent implements OnInit {
           activeStudents,
           inactiveStudents: this.students.length - activeStudents,
           activeInvestors,
-          inactiveInvestors: this.investors.length - activeInvestors
+          inactiveInvestors: this.investors.length - activeInvestors,
+          fundedProjects: this.projects.filter(p => (p.fundingRaised ?? 0) > 0).length,
+          totalInvested: this.projects.reduce((sum, p) => sum + (p.fundingRaised ?? 0), 0),
+          totalInvestedARS: this.contracts.filter(c => c.status === 'activo' && c.currency === 'ARS').reduce((sum, c) => sum + (c.amount ?? 0), 0),
+          totalInvestedCNY: this.contracts.filter(c => c.status === 'activo' && c.currency === 'CNY').reduce((sum, c) => sum + (c.amount ?? 0), 0),
+          activeContracts: this.contracts.filter(c => c.status === 'activo').length,
         };
 
         // Charts
@@ -123,6 +140,8 @@ export class PanelComponent implements OnInit {
           this.buildUsersByRoleChart();
           this.buildUniversitiesChart();
           this.buildProjectsTimeline(); // 👈 timeline de proyectos
+          this.buildProjectsByStatusChart();
+          this.buildInvestmentsTimeline();
         }
       },
       error: (err) => {
@@ -179,13 +198,17 @@ export class PanelComponent implements OnInit {
   private buildUsersByRoleChart() {
     const counts: Record<string, number> = {};
     for (const u of this.users as any[]) {
-      const roles = u?.rolesList ?? u?.roles ?? [];
-      (roles as any[]).forEach(r => {
-        const name = r?.role ?? '—';
-        counts[name] = (counts[name] ?? 0) + 1;
-      });
+      // La lista de roles viene en `u.roles` que es un array de strings como "ROLE_STUDENT"
+      const roles: any[] = u?.rolesList ?? u?.roles ?? [];
+      // Buscamos el rol principal (ADMIN, STUDENT, INVESTOR) para evitar contar permisos como 'CREATE'
+      const mainRole = roles.find(r => (r?.role ?? r ?? '').startsWith('ROLE_'));
+      if (mainRole) { // `mainRole` puede ser un objeto {id, role} o un string "ROLE_..."
+        // Quitamos 'ROLE_' para que la etiqueta sea más limpia (ej: 'STUDENT')
+        const roleName = (mainRole.role ?? mainRole).replace('ROLE_', '');
+        counts[roleName] = (counts[roleName] ?? 0) + 1;
+      }
     }
-    const labels = Object.keys(counts).sort();
+    const labels = Object.keys(counts).sort((a, b) => a.localeCompare(b));
     const data = labels.map(l => counts[l]);
 
     this.usersByRoleData = {
@@ -216,6 +239,28 @@ export class PanelComponent implements OnInit {
           label: 'Estudiantes',
           data,
           backgroundColor: this.seriesColors(labels.length)
+        }
+      ]
+    };
+  }
+
+  private buildProjectsByStatusChart() {
+    const counts: Record<string, number> = {};
+    for (const p of this.projects) {
+      const status = p.status || 'UNKNOWN';
+      counts[status] = (counts[status] ?? 0) + 1;
+    }
+
+    const labels = Object.keys(counts);
+    const data = labels.map(l => counts[l]);
+
+    this.projectsByStatusData = {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: this.seriesColors(labels.length),
+          borderWidth: 0
         }
       ]
     };
@@ -261,6 +306,46 @@ export class PanelComponent implements OnInit {
           fill: false,
           borderColor: '#3b82f6',
           pointBackgroundColor: '#3b82f6'
+        }
+      ]
+    };
+  }
+
+  private buildInvestmentsTimeline(): void {
+    const now = new Date();
+    const labels: string[] = [];
+    const keys: string[] = [];
+
+    const ymKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(d.toLocaleDateString('es-AR', { month: 'short', year: '2-digit' }));
+      keys.push(ymKey(d));
+    }
+
+    const amounts: Record<string, number> = Object.fromEntries(keys.map(k => [k, 0]));
+
+    for (const c of this.contracts) {
+      if (c.status !== 'activo' || !c.startDate || !c.amount) continue;
+      const d = new Date(c.startDate);
+      if (isNaN(+d)) continue;
+      const k = ymKey(new Date(d.getFullYear(), d.getMonth(), 1));
+      if (k in amounts) amounts[k] += c.amount;
+    }
+
+    const data = keys.map(k => amounts[k] ?? 0);
+
+    this.investmentsTimelineData = {
+      labels,
+      datasets: [
+        {
+          label: 'Monto Invertido (USD)',
+          data,
+          fill: true,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34, 197, 94, 0.2)',
+          pointBackgroundColor: '#22c55e'
         }
       ]
     };

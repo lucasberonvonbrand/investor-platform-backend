@@ -1,7 +1,7 @@
 package com.example.gestor_inversores.dto;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,17 +12,19 @@ import java.util.Set;
 @Setter
 public class RequestUserUpdateDTO {
 
-    @NotBlank(message = "El username es obligatorio")
-    @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
+    // Para PATCH, los campos son opcionales, por lo que se quita @NotBlank
+    // pero se mantienen las validaciones de formato si el campo es proporcionado.
+
+    @Size(min = 3, max = 50, message = "Si se proporciona, el username debe tener entre 3 y 50 caracteres")
     private String username;
 
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "Email no válido")
+    @Email(message = "Si se proporciona, el email debe tener un formato válido")
     private String email;
 
+    @Pattern(regexp = "^(https?://).*$", message = "Si se proporciona, debe ser una URL válida")
     private String photoUrl;
 
-    // Campos de seguridad opcionales
+    // Campos de seguridad opcionales (mantenidos por decisión de proyecto)
     private Boolean enabled;
     private Boolean accountNotExpired;
     private Boolean accountNotLocked;
@@ -30,4 +32,3 @@ public class RequestUserUpdateDTO {
 
     private Set<Long> rolesIds;
 }
-

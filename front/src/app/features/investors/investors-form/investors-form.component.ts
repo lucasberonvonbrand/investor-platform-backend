@@ -3,12 +3,16 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgIf, NgFor } from '@angular/common';
 import { InvestorService } from '../../../core/services/investors.service';
 import { Investor, Province } from '../../../models/investor.model';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+
+// PrimeNG
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-investor-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule],
   templateUrl: './investors-form.component.html',
   styleUrls: ['./investors-form.component.scss']
 })
@@ -58,6 +62,8 @@ export class InvestorFormComponent {
       contactPerson: f.contactPerson!,
       phone: f.phone!,
       webSite: f.webSite!,
+      linkedinUrl: f.linkedinUrl!,
+      description: f.description!,
       address: {
         street: f.street!,
         number: Number(f.number),
@@ -78,7 +84,7 @@ export class InvestorFormComponent {
         this.form.reset();
         setTimeout(() => {
           this.showModal.set(false);
-          this.router.navigateByUrl('/dashboard', { replaceUrl: true });
+          this.router.navigateByUrl('/auth/login', { replaceUrl: true });
         }, 2000);
       },
       error: (err: any) => {

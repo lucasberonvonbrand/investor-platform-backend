@@ -58,34 +58,6 @@
   </p-card>
 </div>
 
-<!-- Recomendados -->
-<p-card class="mt-4 shadow-sm" header="Recomendados">
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-    <div *ngFor="let p of recommended"
-         class="border rounded-xl p-3 h-full flex flex-col">
-      <div class="flex items-start justify-between gap-3">
-        <div class="font-semibold text-lg leading-tight">{{ p.title }}</div>
-        <button pButton [text]="true" [rounded]="true" [size]="'small'"
-                [icon]="isFav(p.id) ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
-                [pTooltip]="isFav(p.id) ? 'Quitar de guardados' : 'Guardar'"
-                (click)="toggleFav(p)">
-        </button>
-      </div>
-      <div class="opacity-70 text-sm mt-1 line-clamp-3">{{ p.summary || '—' }}</div>
-      <div class="mt-2 flex gap-2 flex-wrap">
-        <p-tag [value]="p.category || '—'" [ngStyle]="tagStyle(p.category || '—', 0)"></p-tag>
-        <p-tag [value]="p.status || '—'"   [ngStyle]="tagStyle(p.status || '—', 1)"></p-tag>
-        <p-tag *ngIf="p.university" [value]="p.university" [ngStyle]="tagStyle(p.university, 2)"></p-tag>
-      </div>
-      <div class="mt-3 flex-1"></div>
-      <div class="mt-3 flex items-center justify-between">
-        <button pButton type="button" label="Ver" icon="pi pi-eye" (click)="openDetail(p)"></button>
-        <span class="text-xs opacity-70" *ngIf="p.lastUpdated">Actualizado: {{ p.lastUpdated | date:'dd/MM/yyyy' }}</span>
-      </div>
-    </div>
-  </div>
-</p-card>
-
 <!-- ===== Vista principal: CARDS o TABLA ===== -->
 <p-card class="mt-4 shadow-sm" header="Mis Proyectos">
   <!-- Cards -->

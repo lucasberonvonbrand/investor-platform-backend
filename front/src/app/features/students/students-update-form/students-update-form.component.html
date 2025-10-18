@@ -91,18 +91,6 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="configuracionProvincia">Provincia</label>
-        <select id="configuracionProvincia" formControlName="province">
-          <option value="" disabled>Seleccione una provincia</option>
-          <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
-        </select>
-        <div *ngIf="studentsUpdateForm.get('province')?.invalid && studentsUpdateForm.get('province')?.touched" class="text-red-500 text-sm">
-          <div *ngIf="studentsUpdateForm.get('province')?.errors?.['required']">La provincia es obligatoria.</div>
-        </div>
-      </div>
-
-
-      <div class="form-group">
         <label for="configuracionCarrera">Carrera</label>
         <input type="text" id="configuracionCarrera" placeholder="Ingrese carrera" formControlName="career" autocomplete="off">
         <div *ngIf="studentsUpdateForm.get('career')?.invalid && studentsUpdateForm.get('career')?.touched" class="text-red-500 text-sm">
@@ -132,7 +120,7 @@
       </div>    
 
       <div class="actions">
-        <button type="submit" class="save-button" [disabled]="studentsUpdateForm.invalid">Guardar Cambios</button>
+        <button type="submit" class="save-button">Guardar Cambios</button>
         <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
       </div>    
 

@@ -1,25 +1,24 @@
 package com.example.gestor_inversores.service.investor;
 
 import com.example.gestor_inversores.dto.RequestInvestorDTO;
+import com.example.gestor_inversores.dto.RequestInvestorUpdateByAdminDTO;
 import com.example.gestor_inversores.dto.RequestInvestorUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseInvestorDTO;
-import com.example.gestor_inversores.model.Investor;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface IInvestorService {
+    ResponseInvestorDTO save(RequestInvestorDTO dto);
 
-    public List<Investor> findAll();
+    ResponseInvestorDTO findById(Long id);
 
-    public Optional<Investor> findById(Long id);
+    List<ResponseInvestorDTO> findAll();
 
-    public ResponseInvestorDTO save(RequestInvestorDTO investor);
+    ResponseInvestorDTO patchInvestor(Long id, RequestInvestorUpdateDTO patchDto);
 
-    public Optional<Investor> patchInvestor(Long id, RequestInvestorUpdateDTO patchDto);
+    ResponseInvestorDTO activateInvestor(Long id);
 
-    public Investor activateInvestor(Long id);
+    ResponseInvestorDTO desactivateInvestor(Long id);
 
-    public Investor desactivateInvestor(Long id);
-
+    ResponseInvestorDTO updateByAdmin(Long id, RequestInvestorUpdateByAdminDTO dto);
 }

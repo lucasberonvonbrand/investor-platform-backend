@@ -7,28 +7,27 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IStudentService {
+    ResponseStudentDTO findById(Long id);
 
-    public List<Student> findAll();
-
-    public Optional<Student> findById(Long id);
-
-    public Optional<Student> findByDni(String dni);
-
-    public Student save(RequestStudentDTO student);
-
-    public void deleteById(Long id);
+    Student save(RequestStudentDTO dto);
 
     Optional<Student> patchStudent(Long id, RequestStudentUpdateDTO patchDto);
+
+    void deleteById(Long id);
 
     Student activateStudent(Long id);
 
     Student desactivateStudent(Long id);
 
-    List<ResponseStudentNameDTO> findAllStudentNames();
+    ResponseStudentDTO findByDni(String dni);
 
-    Optional<ResponseStudentDTO> findByUsername(String username);
+    List<ResponseStudentDTO> findAll();
+
+    List<ResponseStudentNameDTO> findAllStudentNames();
 
     List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active);
 
+    Optional<ResponseStudentDTO> findByUsername(String username);
 
+    ResponseStudentDTO updateByAdmin(Long id, RequestStudentUpdateByAdminDTO dto);
 }

@@ -9,9 +9,9 @@ import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.repository.IProjectRepository;
 import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.repository.IUserRepository;
-import com.example.gestor_inversores.service.role.RoleService;
+import com.example.gestor_inversores.service.role.IRoleService;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -24,29 +24,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class StudentService implements IStudentService {
 
-    @Autowired
-    private IStudentRepository studentRepository;
-
-    @Autowired
-    private IUserRepository userRepository;
-
-    @Autowired
-    private IProjectRepository projectRepository;
-
-    @Autowired
-    private RoleService roleService;
-
-    @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    private StudentMapper mapper;
+    private final IStudentRepository studentRepository;
+    private final IUserRepository userRepository;
+    private final IProjectRepository projectRepository;
+    private final IRoleService roleService; // Cambiado a la interfaz para desacoplar
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final StudentMapper mapper;
 
     @Override
-    public Optional<Student> findById(Long id) {
-        return studentRepository.findById(id);
+    public ResponseStudentDTO findById(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + id + " no encontrado"));
+        return mapper.studentToResponseStudentDTO(student);
     }
 
     @Override
@@ -71,9 +63,9 @@ public class StudentService implements IStudentService {
         student.setAccountNotLocked(true);
         student.setCredentialNotExpired(true);
 
-        // Asignar rol STUDENT (id=3)
-        Role studentRole = roleService.findById(3L)
-                .orElseThrow(() -> new RuntimeException("Rol STUDENT no encontrado"));
+        // Asignar rol STUDENT por nombre
+        Role studentRole = roleService.findByRole("STUDENT")
+                .orElseThrow(() -> new RoleNotFoundException("Rol STUDENT no encontrado. Asegúrese de que esté creado en la base de datos."));
         student.setRolesList(Set.of(studentRole));
 
         // Encriptar contraseña
@@ -86,6 +78,18 @@ public class StudentService implements IStudentService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             throw new CreateException("No se pudo guardar el estudiante");
         }
+    }
+
+    @Override
+    @Transactional
+    public ResponseStudentDTO updateByAdmin(Long id, RequestStudentUpdateByAdminDTO dto) {
+        Student studentToUpdate = studentRepository.findById(id)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + id + " no encontrado para actualizar"));
+
+        mapper.updateStudentFromAdminDto(dto, studentToUpdate);
+
+        Student updatedStudent = studentRepository.save(studentToUpdate);
+        return mapper.studentToResponseStudentDTO(updatedStudent);
     }
 
     @Transactional
@@ -143,13 +147,17 @@ public class StudentService implements IStudentService {
     }
 
     @Override
-    public Optional<Student> findByDni(String dni) {
-        return studentRepository.findByDni(dni);
+    public ResponseStudentDTO findByDni(String dni) {
+        Student student = studentRepository.findByDni(dni)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante con DNI " + dni + " no encontrado"));
+        return mapper.studentToResponseStudentDTO(student);
     }
 
     @Override
-    public List<Student> findAll() {
-        return studentRepository.findAll();
+    public List<ResponseStudentDTO> findAll() {
+        return studentRepository.findAll().stream()
+                .map(mapper::studentToResponseStudentDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -163,8 +171,7 @@ public class StudentService implements IStudentService {
                 .toList();
     }
 
-    @Override
-    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
+     public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
         studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));
 
@@ -175,16 +182,14 @@ public class StudentService implements IStudentService {
         return StudentMapper.mapProjectsToResponseProjectDTO(new HashSet<>(projects), active);
     }
 
-
-
-    @Override
+     @Override
     public Optional<ResponseStudentDTO> findByUsername(String username) {
         return studentRepository.findByUsername(username)
-                .map(StudentMapper::studentToResponseStudentDTO)
+                .map(mapper::studentToResponseStudentDTO)
                 .or(() -> {
                     throw new StudentNotFoundException(
                             "Estudiante con username '" + username + "' no existe");
                 });
-    }
+    } 
 
 }
