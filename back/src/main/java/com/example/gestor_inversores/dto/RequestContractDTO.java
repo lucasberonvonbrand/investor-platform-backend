@@ -3,6 +3,7 @@ package com.example.gestor_inversores.dto;
 import com.example.gestor_inversores.model.enums.Currency;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -21,7 +22,10 @@ public class RequestContractDTO {
     @NotNull(message = "El ID del inversor creador es obligatorio")
     private Long createdByInvestorId;
 
+    @NotBlank(message = "Título es obligatorio")
     private String textTitle;
+
+    private String description;
 
     @NotNull(message = "El monto es obligatorio")
     @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
