@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ChatbotService, ChatResponse } from '../../core/services/chatbot.service';
+import { marked } from 'marked';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface Message {
   text: string;
@@ -24,7 +27,7 @@ export class ChatbotComponent {
     { text: '¡Hola! ¿En qué puedo ayudarte?', type: 'received' }
   ];
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private chatService: ChatbotService, private sanitizer: DomSanitizer) {
     this.router.events.subscribe(() => {
       this.shouldShowChatbot = !this.router.url.includes('/auth/login');
     });
@@ -47,14 +50,39 @@ export class ChatbotComponent {
     this.userMessage = '';
   }
 
+  toHtml(markdown?: string): SafeHtml {
+    if (!markdown) {
+      return this.sanitizer.bypassSecurityTrustHtml(''); // devuelve SafeHtml vacío
+    }
+
+    const html = (marked.parse ? marked.parse(markdown) : marked(markdown)) as string;
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
   private getBotResponse(question: string) {
-    // Simula una respuesta del bot después de un segundo
-    setTimeout(() => {
-      let response = 'Lo siento, no entendí tu pregunta. ¿Puedes reformularla?';
-      if (question.toLowerCase().includes('crear proyecto')) {
-        response = 'Para crear un proyecto, ve a la sección de "Gestión" y haz clic en "Crear Proyecto".';
+    this.messages.push({ text: '...', type: 'received' });
+
+    this.chatService.sendMessage(question).subscribe({
+      next: (res: string) => {
+        const botText: string = res ?? ' ';
+
+        const idx = this.messages.findIndex(m => m.type === 'received' && m.text === '...');
+        if (idx >= 0) {
+          this.messages[idx] = { text: botText, type: 'received' };
+        } else {
+          this.messages.push({ text: botText, type: 'received' });
+        }
+      },
+      error: (err) => {
+        console.error('Chat error:', err);
+        const idx = this.messages.findIndex(m => m.type === 'received' && m.text === '...');
+        const errMsg = 'Error: no se recibió respuesta';
+        if (idx >= 0) {
+          this.messages[idx] = { text: errMsg, type: 'received' };
+        } else {
+          this.messages.push({ text: errMsg, type: 'received' });
+        }
       }
-      this.messages.push({ text: response, type: 'received' });
-    }, 1000);
+    });
   }
 }
