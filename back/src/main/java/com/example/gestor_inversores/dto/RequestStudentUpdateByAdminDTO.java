@@ -4,10 +4,7 @@ import com.example.gestor_inversores.model.Address;
 import com.example.gestor_inversores.model.enums.DegreeStatus;
 import com.example.gestor_inversores.model.enums.University;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -53,6 +50,7 @@ public class RequestStudentUpdateByAdminDTO {
 
     private DegreeStatus degreeStatus;
 
+    @Pattern(regexp = "^(https?://.*|linkedin\\.com/.*)?$", message = "Si se proporciona, debe ser una URL válida")
     private String linkedinUrl;
 
     @Size(max = 500, message = "La descripción puede tener hasta 500 caracteres")
