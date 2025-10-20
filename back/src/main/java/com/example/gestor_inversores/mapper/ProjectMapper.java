@@ -39,6 +39,7 @@ public class ProjectMapper {
         String ownerName = project.getOwner() != null
                 ? project.getOwner().getFirstName() + " " + project.getOwner().getLastName()
                 : "";
+        String tagName = project.getProjectTag() != null ? project.getProjectTag().getName() : null;
 
         return ResponseProjectDTO.builder()
                 .id(project.getIdProject())
@@ -52,6 +53,7 @@ public class ProjectMapper {
                 .endDate(project.getEndDate())
                 .ownerId(ownerId)
                 .ownerName(ownerName)
+                .tagName(tagName)
                 .students(project.getStudents().stream()
                         .filter(s -> project.getOwner() == null || !s.getId().equals(project.getOwner().getId()))
                         .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)

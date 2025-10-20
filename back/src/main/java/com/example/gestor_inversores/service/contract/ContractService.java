@@ -59,18 +59,25 @@ public class ContractService implements IContractService {
         Investor investor = investorRepository.findById(dto.getCreatedByInvestorId())
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 1. Validar que el proyecto aún necesite financiación
+        // 1. Validar que el título del contrato no se repita para el mismo inversor
+        if (dto.getTextTitle() != null && !dto.getTextTitle().isEmpty()) {
+            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getCreatedByInvestorId(), dto.getTextTitle())
+                .ifPresent(existingContract -> {
+                    throw new BusinessException("Ya tienes un contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                });
+        }
+
+        // 2. Validar que el proyecto aún necesite financiación
         if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
             throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
         }
 
-        // 2. Validar que el monto no supere el presupuesto restante
+        // 3. Validar que el monto no supere el presupuesto restante
         BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
         BigDecimal offerAmountInUSD = dto.getAmount();
 
         if (dto.getCurrency() != Currency.USD) {
             if (currencyConversionService == null) {
-                // Usamos una excepción estándar para evitar problemas de compilación
                 throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
             }
             offerAmountInUSD = currencyConversionService.getConversionRate(dto.getCurrency().name(), "USD")
@@ -91,7 +98,8 @@ public class ContractService implements IContractService {
         Contract contract = Contract.builder()
                 .project(project)
                 .createdByInvestor(investor)
-                .textTitle(dto.getTextTitle()) // <-- CAMPO AÑADIDO
+                .textTitle(dto.getTextTitle())
+                .description(dto.getDescription())
                 .amount(dto.getAmount())
                 .currency(dto.getCurrency())
                 .status(ContractStatus.PENDING_STUDENT_SIGNATURE)
@@ -315,6 +323,27 @@ public class ContractService implements IContractService {
 
         if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE)
             throw new ContractCannotBeModifiedException("Solo contratos pendientes pueden modificarse.");
+
+        // Validar que el nuevo título no exista ya para otro contrato del mismo inversor
+        if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
+            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
+                .ifPresent(existingContract -> {
+                    if (!existingContract.getIdContract().equals(contractId)) {
+                        throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                    }
+                });
+        }
+
+        // Normalizar profits a fracción decimal antes de guardar
+        if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit1Year(dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit2Years(dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit3Years(dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
 
         contractMapper.updateContractByInvestor(dto, contract);
         contractRepository.save(contract);

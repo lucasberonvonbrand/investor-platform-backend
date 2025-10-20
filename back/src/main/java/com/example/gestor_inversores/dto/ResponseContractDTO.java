@@ -22,6 +22,8 @@ public class ResponseContractDTO {
 
     private String textTitle;
 
+    private String description;
+
     private BigDecimal amount;
     private Currency currency;
     private ContractStatus status;
