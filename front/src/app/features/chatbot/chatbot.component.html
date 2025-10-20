@@ -11,7 +11,7 @@
     </div>
     <div class="chat-body">
       <div *ngFor="let message of messages" class="message" [ngClass]="message.type">
-        {{ message.text }}
+        <div [innerHTML]="toHtml(message.text)"></div>
       </div>
       <div class="preset-questions">
         <button class="preset-btn" (click)="selectQuestion('Crear proyecto')">Crear proyecto</button>
