@@ -164,7 +164,7 @@
       </div>
       <div class="col-span-2 sm:col-span-1">
         <label class="block mb-1">DNI <span class="text-red-500">*</span></label>
-        <input pInputText name="dni" [(ngModel)]="formModel.dni" required pattern="^[0-9]+$" maxlength="8" />
+        <input pInputText name="dni" [(ngModel)]="formModel.dni" required pKeyFilter="int" maxlength="8" />
       </div>
       <div class="col-span-2 sm:col-span-1">
         <label class="block mb-1">Teléfono</label>
@@ -174,8 +174,8 @@
         <label class="block mb-1">Fecha de Nacimiento</label>
         <input pInputText type="date" name="dateOfBirth" [(ngModel)]="formModel.dateOfBirth" />
       </div>
-      <div class="col-span-2 sm:col-span-1">
-        <label class="block mb-1">LinkedIn</label>
+      <div class="col-span-2">
+        <label class="block mb-1">URL de LinkedIn</label>
         <input pInputText name="linkedinUrl" [(ngModel)]="formModel.linkedinUrl" />
       </div>
 

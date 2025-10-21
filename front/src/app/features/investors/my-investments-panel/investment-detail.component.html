@@ -1,0 +1,48 @@
+<p-toast></p-toast>
+
+<p-toolbar class="mb-3">
+  <div class="p-toolbar-group-left">
+    <button pButton icon="pi pi-arrow-left" label="Volver a Mis Inversiones" (click)="goBack()"></button>
+  </div>
+</p-toolbar>
+
+<div *ngIf="loading()" class="flex items-center justify-center p-8">
+  <i class="pi pi-spin pi-spinner text-3xl"></i>
+</div>
+
+<ng-container *ngIf="investment() as inv">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <!-- Columna de Inversión -->
+    <div class="lg:col-span-1">
+      <p-card header="Detalle de mi Inversión" styleClass="h-full">
+        <div class="space-y-4 text-sm">
+          <div>
+            <div class="font-semibold text-gray-500 dark:text-gray-400">Monto Invertido</div>
+            <div class="text-2xl font-bold text-primary-500">{{ inv.amount | currency:inv.currency:'symbol':'1.0-2' }}</div>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-500 dark:text-gray-400">Estado de la Inversión</div>
+            <div><p-tag [value]="getInvestmentStatusLabel(inv.status)" [ngStyle]="tagStyle(inv.status || '', 1)"></p-tag></div>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de Inversión</div>
+            <div class="text-gray-800 dark:text-gray-100">{{ inv.createdAt | date:'dd/MM/yyyy' }}</div>
+          </div>
+          <div *ngIf="inv.confirmedAt">
+            <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de Confirmación</div>
+            <div class="text-gray-800 dark:text-gray-100">{{ inv.confirmedAt | date:'dd/MM/yyyy' }}</div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Columna de Proyecto -->
+    <div class="lg:col-span-2">
+      <p-card header="Información del Proyecto" styleClass="h-full">
+        <h3 class="text-xl font-bold">{{ inv.project.title }}</h3>
+        <p class="mt-2 text-gray-600 dark:text-gray-300">{{ inv.project.summary }}</p>
+        <button pButton label="Ver Detalles Completos del Proyecto" icon="pi pi-arrow-right" class="p-button-text mt-4" (click)="goToProject()"></button>
+      </p-card>
+    </div>
+  </div>
+</ng-container>

@@ -1,6 +1,8 @@
-import { Component, OnInit, inject, Input } from '@angular/core';
+import { Component, OnInit, inject, Input, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -20,13 +22,19 @@ import { Router } from '@angular/router';
   standalone: true,
   selector: 'app-my-projects-panel',
   imports: [
-    CommonModule, FormsModule,
+    CommonModule, FormsModule, RouterLink,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
     TagModule, TableModule, DialogModule, DividerModule, TooltipModule, ToastModule
   ],
   templateUrl: './my-projects-panel.component.html',
   styleUrls: ['./my-projects-panel.component.scss'],
-  providers: [MessageService]
+  providers: [MessageService],
+  animations: [
+    trigger('fadeInOut', [
+      transition(':enter', [style({ opacity: 0 }), animate('300ms ease-out', style({ opacity: 1 }))]),
+      transition(':leave', [animate('300ms ease-in', style({ opacity: 0 }))]),
+    ]),
+  ]
 })
 export class MyProjectsPanelComponent implements OnInit {
   private svc = inject(MyProjectsService);
@@ -54,10 +62,13 @@ export class MyProjectsPanelComponent implements OnInit {
   selected: IMyProject | null = null;
 
   // loading
-  loading = false;
+  loading = signal(true);
 
   // KPIs
   kpis = { total: 0, activos: 0, recientes: 0, conFinanciacion: 0 };
+
+  // Señal para mostrar el estado vacío después de cargar
+  showEmptyState = computed(() => !this.loading() && this.projects.length === 0);
 
   // Favoritos (localStorage)
   private favKey = 'pp_fav_my_projects';
@@ -69,7 +80,7 @@ export class MyProjectsPanelComponent implements OnInit {
   }
 
   reload(): void {
-    this.loading = true;
+    this.loading.set(true);
     this.svc.getMine().subscribe({
       next: (list) => {
         this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
@@ -77,11 +88,20 @@ export class MyProjectsPanelComponent implements OnInit {
         this.computeKpis();
         this.buildRecommended();
       },
-      error: (err) => {
-        console.error(err);
-        this.toast.add({ severity: 'error', summary: 'Mis Proyectos', detail: 'No se pudieron cargar' });
-      },
-      complete: () => (this.loading = false)
+      error: (err: any) => {
+        // Si el backend devuelve 404, significa que no tiene proyectos.
+        // Lo tratamos como un caso de éxito con una lista vacía.
+        if (err.status === 404) {
+          this.projects = [];
+          this.applyFilters();
+          this.computeKpis();
+          this.loading.set(false); // Detener el spinner
+        } else {
+          console.error(err);
+          this.toast.add({ severity: 'error', summary: 'Mis Proyectos', detail: 'No se pudieron cargar' });
+          this.loading.set(false); // Detener el spinner también en caso de otros errores
+        }
+      }
     });
   }
 
@@ -155,6 +175,15 @@ export class MyProjectsPanelComponent implements OnInit {
   openDetail(p: IMyProject) {
     if (!p?.id) return;
     this.router.navigate(['/proyectos-maestro', p.id]);
+  }
+
+  getProjectStatusLabel(status: string | null): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Progreso';
+      case 'PENDING_FUNDING': return 'Pendiente de Financiación';
+      case 'COMPLETED': return 'Completado';
+      default: return status || '—';
+    }
   }
 
   // tags colores
