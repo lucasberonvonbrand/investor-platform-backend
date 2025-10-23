@@ -19,6 +19,7 @@ import { MessageService } from 'primeng/api';
 // Services and Interfaces
 import { ParticipantProjectsService } from '../../../core/services/participant-projects.service';
 import { IMyProject } from '../../../core/services/my-projects.service';
+import { AuthService } from '../../auth/login/auth.service';
 
 @Component({
   standalone: true,
@@ -37,6 +38,7 @@ export class ParticipantProjectsPanelComponent implements OnInit {
   private svc = inject(ParticipantProjectsService);
   private toast = inject(MessageService);
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   // filtros
   q = '';
@@ -64,8 +66,10 @@ export class ParticipantProjectsPanelComponent implements OnInit {
   // Favoritos (localStorage)
   private favKey = 'pp_fav_member_projects';
   favIds = new Set<number>();
+  private currentUser = this.auth.getSession();
 
   ngOnInit(): void {
+    this.currentUser = this.auth.getSession();
     this.restoreFavs();
     this.reload(); // Renombramos loadProjects a reload para consistencia
   }
@@ -159,8 +163,32 @@ export class ParticipantProjectsPanelComponent implements OnInit {
 
   // ===== Navegar al maestro =====
   openDetail(p: IMyProject): void {
-    if (!p?.id) return;
-    this.router.navigate(['/proyectos-maestro', p.id]);
+    if (!p?.id || !this.currentUser) return;
+
+    // Comparamos el nombre de usuario del dueño del proyecto con el del usuario actual.
+    // Es una aproximación segura ya que el nombre de usuario es único.
+    // @ts-ignore - ownerId no está en esta versión de la interfaz, usamos owner
+    if (p.owner === this.currentUser.username) {
+      this.router.navigate(['/proyectos-maestro', p.id]);
+    } else {
+      // Si no es el dueño, solo muestra el modal con los detalles.
+      this.selected = p;
+      this.showDetail = true;
+    }
+  }
+
+  getProjectStatusLabel(status: string | null): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Progreso';
+      case 'PENDING_FUNDING': return 'Pendiente de Financiación';
+      case 'COMPLETED': return 'Completado';
+      case 'CANCELLED': return 'Cancelado';
+      default: return status || 'No definido';
+    }
+  }
+
+  getCategoryLabel(category: string | null | undefined): string {
+    return !category || category === '—' ? 'Sin categoría' : category;
   }
 
   // --- Helpers para la UI (copiados de MyProjectsPanelComponent para consistencia) ---

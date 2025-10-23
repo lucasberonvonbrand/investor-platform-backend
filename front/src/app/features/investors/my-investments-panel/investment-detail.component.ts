@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { switchMap } from 'rxjs';
 
@@ -10,12 +11,13 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ToastModule } from 'primeng/toast';
+import { UIChart, ChartModule } from 'primeng/chart';
 import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-investment-detail',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, TagModule, ToolbarModule, ToastModule],
+  imports: [CommonModule, FormsModule, CardModule, ButtonModule, TagModule, ToolbarModule, ToastModule, ChartModule],
   providers: [MessageService],
   templateUrl: './investment-detail.component.html',
   styleUrls: ['./investment-detail.component.scss']
@@ -28,6 +30,13 @@ export class InvestmentDetailComponent implements OnInit {
 
   investment = signal<IInvestedProject | null>(null);
   loading = signal(true);
+
+  // --- Control del Gráfico ---
+  @ViewChild('chartCanvas') chartComponent?: UIChart;
+
+  // --- Chart Data & Options ---
+  chartData = signal<any>({});
+  chartOptions = signal<any>({});
 
   ngOnInit(): void {
     this.route.paramMap.pipe(
@@ -44,7 +53,9 @@ export class InvestmentDetailComponent implements OnInit {
     ).subscribe({
       next: (data) => {
         this.investment.set(data);
-        this.loading.set(false);
+        // Usamos setTimeout para asegurar que la vista se actualice ANTES de intentar dibujar el gráfico
+        setTimeout(() => this.setupChart(), 0);
+        this.loading.set(false); // Datos cargados, quitamos el spinner
       },
       error: (err) => {
         console.error('Error loading investment detail:', err);
@@ -52,6 +63,70 @@ export class InvestmentDetailComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  private setupChart(): void {
+    const inv = this.investment();
+    if (!inv || !this.chartComponent) return; // Doble chequeo por si acaso
+
+    const data = [
+      this.calculateProfit(inv.amount, inv.profit1Year),
+      this.calculateProfit(inv.amount, inv.profit2Years),
+      this.calculateProfit(inv.amount, inv.profit3Years)
+    ];
+
+    const documentStyle = getComputedStyle(document.documentElement);
+
+    // El gradiente debe crearse aquí, donde se usa.
+    const canvas = this.chartComponent.getCanvas();
+    const gradient = canvas.getContext('2d')!.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+    // Se mueven las opciones aquí para asegurar que los colores del tema se carguen correctamente
+    const textColorSecondary = documentStyle.getPropertyValue('--p-text-color-secondary');
+    const surfaceBorder = documentStyle.getPropertyValue('--p-content-border-color');
+    this.chartOptions.set({
+      maintainAspectRatio: false,
+      aspectRatio: 0.9,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => `Ganancia: ${new Intl.NumberFormat('es-AR', { style: 'currency', currency: inv.currency }).format(context.raw)}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: {
+            color: textColorSecondary,
+            callback: (value: any) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: inv.currency, minimumFractionDigits: 0 }).format(value)
+          },
+          grid: { color: surfaceBorder }
+        },
+        x: {
+          ticks: { color: textColorSecondary },
+          grid: { color: surfaceBorder }
+        }
+      }
+    });
+
+    this.chartData.set({
+      labels: ['1 Año', '2 Años', '3 Años'],
+      datasets: [{
+        label: 'Ganancia Estimada',
+        fill: true,
+        data: data,
+        borderColor: documentStyle.getPropertyValue('--p-blue-500'),
+        backgroundColor: gradient,
+        tension: 0.4,
+        pointBackgroundColor: documentStyle.getPropertyValue('--p-blue-500'),
+        pointBorderColor: documentStyle.getPropertyValue('--p-blue-500'),
+      }]
+    });
+
+    this.chartComponent.reinit(); // Forzamos el redibujado con los nuevos datos y opciones
   }
 
   goBack(): void {
@@ -69,10 +144,17 @@ export class InvestmentDetailComponent implements OnInit {
     // Puedes expandir esto si tienes más estados
     switch (status) {
       case 'IN_PROGRESS': return 'En Progreso';
-      case 'COMPLETED': return 'Completada';
-      case 'CANCELLED': return 'Cancelada';
+      case 'RECEIVED': return 'Recibida';
+      case 'NOT_RECEIVED': return 'No Recibida';
       default: return status || 'Desconocido';
     }
+  }
+
+  calculateProfit(baseAmount: number | null | undefined, percentage: number | null | undefined): number {
+    if (baseAmount == null || percentage == null || percentage < 0) {
+      return 0;
+    }
+    return (baseAmount * percentage); // El backend ya devuelve el porcentaje como fracción (ej: 0.10 para 10%)
   }
 
   // --- Copied from my-investments-panel for style consistency ---

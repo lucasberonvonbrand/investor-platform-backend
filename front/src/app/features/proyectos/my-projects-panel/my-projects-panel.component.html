@@ -76,23 +76,21 @@
   <div *ngIf="viewMode==='cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
     <div *ngFor="let row of filtered"
          class="border rounded-xl p-3 h-full flex flex-col">
-      <div class="flex items-start justify-between gap-3">
-        <div class="font-semibold text-lg leading-tight">{{ row.title }}</div>
-        <button pButton [text]="true" [rounded]="true" [size]="'small'"
-                [icon]="isFav(row.id) ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
-                [pTooltip]="isFav(row.id) ? 'Quitar de guardados' : 'Guardar'"
-                (click)="toggleFav(row)"></button>
-      </div>
+      <div class="font-semibold text-lg leading-tight">{{ row.title }}</div>
       <div class="opacity-70 text-sm mt-1 line-clamp-3">{{ row.summary || '—' }}</div>
       <div class="mt-2 flex gap-2 flex-wrap">
-        <p-tag [value]="row.category || '—'" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag>
-        <p-tag [value]="getProjectStatusLabel(row.status)"   [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        <p-tag [value]="getCategoryLabel(row.category)" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag>
+        <div class="flex items-center gap-1 text-sm">
+          <span class="font-semibold">Estado:</span>
+          <p-tag [value]="getProjectStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        </div>
         <p-tag *ngIf="row.university" [value]="row.university" [ngStyle]="tagStyle(row.university, 2)"></p-tag>
       </div>
       <div class="mt-3 flex-1"></div>
-      <div class="mt-3 flex items-center justify-between">
-        <button pButton type="button" label="Ver" icon="pi pi-eye" (click)="openDetail(row)"></button>
-        <span class="text-xs opacity-70" *ngIf="row.lastUpdated">Actualizado: {{ row.lastUpdated | date:'dd/MM/yyyy' }}</span>
+      <div class="mt-4 border-t pt-3">
+        <button pButton type="button" label="Ver Detalles" icon="pi pi-arrow-right" iconPos="right"
+                class="w-full p-button-secondary p-button-outlined"
+                (click)="openDetail(row)"></button>
       </div>
     </div>
   </div>
@@ -101,34 +99,29 @@
   <p-table *ngIf="viewMode==='table'"
     [value]="filtered" [loading]="loading()" dataKey="id"
     [rowHover]="true" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[5,10,25,50]"
-    [globalFilterFields]="['title','summary','category','status','university']"
+    [globalFilterFields]="['title','summary','category','status']"
     responsiveLayout="scroll">
     <ng-template pTemplate="header">
       <tr>
-        <th style="width:80px">ID</th>
+        <th style="width:120px">Número de Proyecto</th>
         <th>Título</th>
         <th>Categoría</th>
         <th>Estado</th>
-        <th>Universidad</th>
         <th style="width:160px; text-align:center">Acciones</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-row>
       <tr>
-        <td class="text-right">{{ row.id }}</td>
+        <td class="text-center font-semibold">#{{ row.id }}</td>
         <td>{{ row.title }}</td>
-        <td><p-tag [value]="row.category || '—'" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag></td>
-        <td><p-tag [value]="getProjectStatusLabel(row.status)"   [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag></td>
-        <td>{{ row.university || '—' }}</td>
+        <td><p-tag [value]="getCategoryLabel(row.category)" [ngStyle]="tagStyle(row.category, 0)"></p-tag></td>
+        <td>
+          <span class="font-semibold mr-2">Estado:</span>
+          <p-tag [value]="getProjectStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        </td>
         <td class="text-center whitespace-nowrap">
           <div class="flex items-center justify-center gap-1">
-            <button pButton type="button" pTooltip="Ver" icon="pi pi-eye" [text]="true" [rounded]="true" [size]="'small'"
-                    (click)="openDetail(row)"></button>
-            <button pButton type="button"
-                    [pTooltip]="isFav(row.id) ? 'Quitar de guardados' : 'Guardar'"
-                    [icon]="isFav(row.id) ? 'pi pi-bookmark-fill' : 'pi pi-bookmark'"
-                    [text]="true" [rounded]="true" [size]="'small'"
-                    (click)="toggleFav(row)"></button>
+            <button pButton type="button" pTooltip="Ver" icon="pi pi-eye" [text]="true" [rounded]="true" [size]="'small'" (click)="openDetail(row)"></button>
           </div>
         </td>
       </tr>

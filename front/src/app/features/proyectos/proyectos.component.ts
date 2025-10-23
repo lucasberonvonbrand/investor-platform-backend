@@ -4,11 +4,15 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ToastModule } from 'primeng/toast';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
 import { MessageService } from 'primeng/api';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ProjectsService, CreateProjectDto, ProjectStatus } from '../../core/services/projects.service';
 import { StudentService } from '../../core/services/students.service';
+import { AuthService } from '../auth/login/auth.service';
 import { StudentName } from '../../models/student-name.model';
 
 // Garantizamos fullName en el componente
@@ -19,7 +23,15 @@ type StudentWithFullName = StudentName & { fullName: string };
   standalone: true,
   templateUrl: './proyectos.component.html',
   styleUrls: ['./proyectos.component.scss'],
-  imports: [CommonModule, ReactiveFormsModule, AutoCompleteModule, ToastModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    AutoCompleteModule,
+    ToastModule,
+    CardModule,
+    InputTextModule, // InputTextarea está incluido en InputTextModule en algunas versiones
+    ButtonModule
+  ],
   providers: [MessageService],
 })
 export class ProyectosComponent implements OnInit {
@@ -27,6 +39,7 @@ export class ProyectosComponent implements OnInit {
   private projectsSrv = inject(ProjectsService);
   private studentSrv = inject(StudentService);
   private msg = inject(MessageService);
+  private authSvc = inject(AuthService);
 
   projectForm!: FormGroup;
 
@@ -36,14 +49,22 @@ export class ProyectosComponent implements OnInit {
 
   // Data para autocompletes
   allStudents: StudentWithFullName[] = [];
-  ownerLoading = false;
   studentsLoading = false;
-  suggestionsOwners: StudentWithFullName[] = [];
   suggestionsStudents: StudentWithFullName[] = [];
 
   statuses: ProjectStatus[] = ['PENDING_FUNDING', 'IN_PROGRESS', 'COMPLETED'];
 
   ngOnInit(): void {
+    const currentUser = this.authSvc.getSession();
+    const ownerForForm: StudentWithFullName | null = currentUser
+      ? {
+          id: currentUser.id,
+          firstName: currentUser.username, // Usamos username como fallback
+          lastName: '',
+          fullName: currentUser.username,
+        }
+      : null;
+
     this.projectForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(80)]],
       description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
@@ -51,7 +72,7 @@ export class ProyectosComponent implements OnInit {
       status: ['', Validators.required],
       startDate: ['', Validators.required],          // 'YYYY-MM-DD'
       estimatedEndDate: ['', Validators.required],   // 'YYYY-MM-DD'
-      owner: [null as StudentWithFullName | null, Validators.required],
+      owner: [{ value: ownerForForm, disabled: true }, Validators.required],
       students: [[] as StudentWithFullName[]],
     });
   }
@@ -87,14 +108,6 @@ export class ProyectosComponent implements OnInit {
   }
 
   // Dropdowns
-  showAllOwners(): void {
-    this.ownerLoading = true;
-    this.fetchNames('', (arr) => {
-      this.suggestionsOwners = arr.slice(0, 20);
-      this.allStudents = arr;
-      this.ownerLoading = false;
-    });
-  }
   showAllStudents(): void {
     this.studentsLoading = true;
     this.fetchNames('', (arr) => {
@@ -105,14 +118,6 @@ export class ProyectosComponent implements OnInit {
   }
 
   // Autocomplete typing
-  completeOwner(e: { query: string }): void {
-    this.ownerLoading = true;
-    const q = (e?.query ?? '').trim();
-    this.fetchNames(q, (arr) => {
-      this.suggestionsOwners = arr;
-      this.ownerLoading = false;
-    });
-  }
   completeStudents(e: { query: string }): void {
     this.studentsLoading = true;
     const q = (e?.query ?? '').trim();
@@ -288,7 +293,6 @@ export class ProyectosComponent implements OnInit {
         setTimeout(() => {
           this.isLoading = false;
           this.projectForm.reset();
-          this.suggestionsOwners = [];
           this.suggestionsStudents = [];
         }, 300);
       },
