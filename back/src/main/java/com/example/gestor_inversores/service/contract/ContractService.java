@@ -59,7 +59,6 @@ public class ContractService implements IContractService {
         Investor investor = investorRepository.findById(dto.getCreatedByInvestorId())
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 1. Validar que el título del contrato no se repita para el mismo inversor
         if (dto.getTextTitle() != null && !dto.getTextTitle().isEmpty()) {
             contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getCreatedByInvestorId(), dto.getTextTitle())
                 .ifPresent(existingContract -> {
@@ -67,12 +66,10 @@ public class ContractService implements IContractService {
                 });
         }
 
-        // 2. Validar que el proyecto aún necesite financiación
         if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
             throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
         }
 
-        // 3. Validar que el monto no supere el presupuesto restante
         BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
         BigDecimal offerAmountInUSD = dto.getAmount();
 
@@ -90,7 +87,6 @@ public class ContractService implements IContractService {
                     offerAmountInUSD, remainingBudget));
         }
 
-        // Normalizar profits a fracción decimal antes de guardar
         BigDecimal profit1 = dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit1Year();
         BigDecimal profit2 = dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit2Years();
         BigDecimal profit3 = dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit3Years();
@@ -102,7 +98,7 @@ public class ContractService implements IContractService {
                 .description(dto.getDescription())
                 .amount(dto.getAmount())
                 .currency(dto.getCurrency())
-                .status(ContractStatus.PENDING_STUDENT_SIGNATURE)
+                .status(ContractStatus.DRAFT)
                 .createdAt(LocalDate.now())
                 .profit1Year(profit1)
                 .profit2Years(profit2)
@@ -112,29 +108,15 @@ public class ContractService implements IContractService {
 
         Contract savedContract = contractRepository.save(contract);
 
-        // Notificación al estudiante
         String toStudent = project.getOwner().getEmail();
-        String subjectToStudent = String.format("¡Nueva oferta de contrato para tu proyecto '%s'!", project.getName());
+        String subjectToStudent = String.format("¡Nueva propuesta de contrato para tu proyecto '%s'!", project.getName());
         String bodyToStudent = String.format(
-            "Hola %s,\n\nEl inversor '%s' te ha enviado una nueva oferta de contrato para tu proyecto '%s'.\n\n" +
-            "Aquí tienes los detalles de la oferta:\n" +
-            "------------------------------------\n" +
-            "Monto de la Inversión:   %.2f %s\n\n" +
-            "Tasas de Ganancia Ofrecidas:\n" +
-            "  - A 1 año:   %.2f%%\n" +
-            "  - A 2 años:  %.2f%%\n" +
-            "  - A 3 años:  %.2f%%\n" +
-            "------------------------------------\n\n" +
-            "Puedes revisar todos los detalles y firmar el contrato desde la plataforma para aceptar la inversión.\n\n" +
+            "Hola %s,\n\nEl inversor '%s' ha creado una propuesta de contrato para tu proyecto '%s'.\n\n" +
+            "Puedes revisar y editar los detalles del contrato desde la plataforma. Una vez que ambas partes estén de acuerdo con los términos, podrás pasar a la fase de firma.\n\n" +
             "Saludos,\nEl equipo de ProyPlus",
             project.getOwner().getFirstName(),
             investor.getUsername(),
-            project.getName(),
-            savedContract.getAmount(),
-            savedContract.getCurrency(),
-            savedContract.getProfit1Year().multiply(BigDecimal.valueOf(100)),
-            savedContract.getProfit2Years().multiply(BigDecimal.valueOf(100)),
-            savedContract.getProfit3Years().multiply(BigDecimal.valueOf(100))
+            project.getName()
         );
         mailService.sendEmail(toStudent, subjectToStudent, bodyToStudent);
 
@@ -142,8 +124,302 @@ public class ContractService implements IContractService {
     }
 
     @Override
-    public ResponseContractDTO signContract(Long contractId, RequestContractActionByStudentDTO dto) {
-        return handleStudentAction(contractId, dto, ContractStatus.SIGNED);
+    public ResponseContractDTO updateContractByInvestor(Long contractId, RequestContractUpdateByInvestorDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+
+        if (!contract.getCreatedByInvestor().getId().equals(dto.getInvestorId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para modificar este contrato.");
+        }
+
+        if (contract.getStatus() != ContractStatus.DRAFT)
+            throw new ContractCannotBeModifiedException("Solo se pueden modificar contratos en estado de borrador (DRAFT).");
+
+        if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
+            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
+                .ifPresent(existingContract -> {
+                    if (!existingContract.getIdContract().equals(contractId)) {
+                        throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                    }
+                });
+        }
+
+        if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit1Year(dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit2Years(dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit3Years(dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+
+        contractMapper.updateContractByInvestor(dto, contract);
+        Contract savedContract = contractRepository.save(contract);
+
+        Student student = savedContract.getProject().getOwner();
+        String toStudent = student.getEmail();
+        String subject = String.format("El contrato para '%s' ha sido actualizado", savedContract.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl inversor '%s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
+            "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            student.getFirstName(),
+            savedContract.getCreatedByInvestor().getUsername(),
+            savedContract.getProject().getName()
+        );
+        mailService.sendEmail(toStudent, subject, body);
+
+        return contractMapper.toResponseDTO(savedContract);
+    }
+
+    @Override
+    public ResponseContractDTO updateContractByStudent(Long contractId, RequestContractUpdateByStudentDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+
+        Student student = studentRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        if (!contract.getProject().getOwner().getId().equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para modificar este contrato. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (contract.getStatus() != ContractStatus.DRAFT) {
+            throw new ContractCannotBeModifiedException("Solo se pueden modificar contratos en estado de borrador (DRAFT).");
+        }
+
+        if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit1Year(dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit2Years(dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit3Years(dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+
+        contractMapper.updateContractByStudent(dto, contract);
+        Contract savedContract = contractRepository.save(contract);
+
+        Investor investor = savedContract.getCreatedByInvestor();
+        String toInvestor = investor.getEmail();
+        String subject = String.format("El contrato para '%s' ha sido actualizado por el estudiante", savedContract.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl estudiante '%s %s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
+            "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            investor.getUsername(),
+            student.getFirstName(),
+            student.getLastName(),
+            savedContract.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return contractMapper.toResponseDTO(savedContract);
+    }
+
+    @Override
+    public ResponseContractDTO agreeByStudent(Long contractId, RequestContractActionByStudentDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+            .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+        Student student = studentRepository.findById(dto.getStudentId())
+            .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        if (!contract.getProject().getOwner().getId().equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para realizar esta acción. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        return agreeAndLockContract(contract, student.getFirstName() + " " + student.getLastName(), contract.getCreatedByInvestor().getEmail());
+    }
+
+    @Override
+    public ResponseContractDTO agreeByInvestor(Long contractId, RequestContractActionByInvestorDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+            .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+        Investor investor = investorRepository.findById(dto.getInvestorId())
+            .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        if (!contract.getCreatedByInvestor().getId().equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para realizar esta acción. Solo el creador del contrato puede hacerlo.");
+        }
+
+        return agreeAndLockContract(contract, investor.getUsername(), contract.getProject().getOwner().getEmail());
+    }
+
+    private ResponseContractDTO agreeAndLockContract(Contract contract, String actorName, String notificationEmail) {
+        if (contract.getStatus() != ContractStatus.DRAFT) {
+            throw new ContractCannotBeModifiedException("El contrato ya no está en fase de borrador. No se puede volver a acordar.");
+        }
+
+        contract.setStatus(ContractStatus.PARTIALLY_SIGNED);
+
+        ContractAction action = ContractAction.builder()
+                .contract(contract)
+                .student(contract.getProject().getOwner())
+                .status(ContractStatus.PARTIALLY_SIGNED)
+                .actionDate(LocalDate.now())
+                .build();
+        contract.getActions().add(action);
+
+        Contract savedContract = contractRepository.save(contract);
+
+        String subject = String.format("Acuerdo alcanzado para el contrato del proyecto '%s'", contract.getProject().getName());
+        String body = String.format(
+            "Hola,\n\nSe ha alcanzado un acuerdo sobre los términos del contrato para el proyecto '%s'.\n\n" +
+            "La propuesta ha sido aceptada por %s y el contrato ha sido bloqueado para su edición.\n\n" +
+            "El siguiente paso es que ambas partes firmen el contrato para formalizar la inversión.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            contract.getProject().getName(),
+            actorName
+        );
+        mailService.sendEmail(notificationEmail, subject, body);
+
+        return contractMapper.toResponseDTO(savedContract);
+    }
+
+    @Override
+    public ResponseContractDTO signByStudent(Long contractId, RequestContractActionByStudentDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+        Student student = studentRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        if (!contract.getProject().getOwner().getId().equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para firmar este contrato. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (contract.getStatus() != ContractStatus.PARTIALLY_SIGNED) {
+            throw new ContractCannotBeModifiedException("Este contrato no puede ser firmado en su estado actual.");
+        }
+
+        if (contract.isStudentSigned()) {
+            throw new BusinessException("Ya has firmado este contrato.");
+        }
+
+        contract.setStudentSigned(true);
+        contract.setStudentSignedDate(LocalDate.now());
+
+        if (contract.isInvestorSigned()) {
+            return finalizeContract(contract);
+        } else {
+            contractRepository.save(contract);
+            // Notificar al inversor
+            String toInvestor = contract.getCreatedByInvestor().getEmail();
+            String subject = String.format("El estudiante ha firmado el contrato para '%s'", contract.getProject().getName());
+            String body = String.format(
+                "Hola %s,\n\nEl estudiante %s %s ha firmado el contrato para el proyecto '%s'.\n\n" +
+                "Ahora solo falta tu firma para activar la inversión.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                contract.getCreatedByInvestor().getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                contract.getProject().getName()
+            );
+            mailService.sendEmail(toInvestor, subject, body);
+        }
+
+        return contractMapper.toResponseDTO(contract);
+    }
+
+    @Override
+    public ResponseContractDTO signByInvestor(Long contractId, RequestContractActionByInvestorDTO dto) {
+        Contract contract = contractRepository.findById(contractId)
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+        Investor investor = investorRepository.findById(dto.getInvestorId())
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        if (!contract.getCreatedByInvestor().getId().equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para firmar este contrato. Solo el creador del contrato puede hacerlo.");
+        }
+
+        if (contract.getStatus() != ContractStatus.PARTIALLY_SIGNED) {
+            throw new ContractCannotBeModifiedException("Este contrato no puede ser firmado en su estado actual.");
+        }
+
+        if (contract.isInvestorSigned()) {
+            throw new BusinessException("Ya has firmado este contrato.");
+        }
+
+        contract.setInvestorSigned(true);
+        contract.setInvestorSignedDate(LocalDate.now());
+
+        if (contract.isStudentSigned()) {
+            return finalizeContract(contract);
+        } else {
+            contractRepository.save(contract);
+            // Notificar al estudiante
+            Student student = contract.getProject().getOwner();
+            String toStudent = student.getEmail();
+            String subject = String.format("El inversor ha firmado el contrato para '%s'", contract.getProject().getName());
+            String body = String.format(
+                "Hola %s,\n\nEl inversor %s ha firmado el contrato para tu proyecto '%s'.\n\n" +
+                "Ahora solo falta tu firma para activar la inversión.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                investor.getUsername(),
+                contract.getProject().getName()
+            );
+            mailService.sendEmail(toStudent, subject, body);
+        }
+
+        return contractMapper.toResponseDTO(contract);
+    }
+
+    private ResponseContractDTO finalizeContract(Contract contract) {
+        if (contract.getProject().getStatus() != ProjectStatus.PENDING_FUNDING) {
+            throw new BusinessException("No se puede firmar el contrato. El proyecto ya ha sido financiado.");
+        }
+
+        contract.setStatus(ContractStatus.SIGNED);
+
+        ContractAction action = ContractAction.builder()
+                .contract(contract)
+                .student(contract.getProject().getOwner())
+                .status(ContractStatus.SIGNED)
+                .actionDate(LocalDate.now())
+                .build();
+        contract.getActions().add(action);
+
+        Investment inv = new Investment();
+        inv.setAmount(contract.getAmount());
+        inv.setCurrency(contract.getCurrency());
+        inv.setGeneratedBy(contract.getCreatedByInvestor());
+        inv.setProject(contract.getProject());
+        inv.setStatus(InvestmentStatus.IN_PROGRESS);
+        inv.setCreatedAt(LocalDate.now());
+        inv.setContract(contract);
+        investmentRepo.save(inv);
+        contract.setInvestment(inv);
+
+        contractRepository.save(contract);
+
+        // Notificar a ambas partes
+        String toInvestor = contract.getCreatedByInvestor().getEmail();
+        String subjectToInvestor = String.format("¡Contrato para '%s' activado!", contract.getProject().getName());
+        String bodyToInvestor = String.format(
+            "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para el proyecto '%s'.\n\n" +
+            "La inversión ha sido creada y está esperando a que realices la transferencia.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            contract.getCreatedByInvestor().getUsername(),
+            contract.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subjectToInvestor, bodyToInvestor);
+
+        Student student = contract.getProject().getOwner();
+        String toStudent = student.getEmail();
+        String subjectToStudent = String.format("¡Contrato para '%s' activado!", contract.getProject().getName());
+        String bodyToStudent = String.format(
+            "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para tu proyecto '%s'.\n\n" +
+            "La inversión del inversor %s ha sido registrada y está pendiente de transferencia.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            student.getFirstName(),
+            contract.getCreatedByInvestor().getUsername(),
+            contract.getProject().getName()
+        );
+        mailService.sendEmail(toStudent, subjectToStudent, bodyToStudent);
+
+        return contractMapper.toResponseDTO(contract);
     }
 
     @Override
@@ -168,30 +444,18 @@ public class ContractService implements IContractService {
         Student student = studentRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
-        Long projectOwnerId = contract.getProject().getOwner().getId();
-        if (!projectOwnerId.equals(student.getId())) {
+        if (!contract.getProject().getOwner().getId().equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar este contrato. Solo el dueño del proyecto puede hacerlo.");
         }
 
         switch (actionStatus) {
-            case SIGNED -> {
-                if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE) {
-                    throw new ContractCannotBeModifiedException(
-                            "Este contrato ya fue firmado, cancelado, cerrado o devuelto y no puede firmarse nuevamente.");
-                }
-                // Re-validar que el proyecto no se haya financiado mientras el contrato estaba pendiente
-                if (contract.getProject().getStatus() != ProjectStatus.PENDING_FUNDING) {
-                    throw new BusinessException("No se puede firmar el contrato. El proyecto ya ha sido financiado.");
-                }
-            }
             case CLOSED -> {
                 if (contract.getStatus() != ContractStatus.SIGNED) {
                     throw new ContractCannotBeModifiedException("Solo contratos firmados pueden cerrarse.");
                 }
             }
             case CANCELLED -> {
-                if (contract.getStatus() == ContractStatus.CANCELLED ||
-                        contract.getStatus() == ContractStatus.CLOSED ||
+                if (contract.getStatus() == ContractStatus.CLOSED ||
                         contract.getStatus() == ContractStatus.REFUNDED) {
                     throw new ContractCannotBeModifiedException("El contrato no puede cancelarse en su estado actual.");
                 }
@@ -202,7 +466,7 @@ public class ContractService implements IContractService {
                     throw new ContractCannotBeModifiedException("Solo contratos firmados o cerrados pueden devolverse al inversor.");
                 }
             }
-            default -> {}
+            default -> throw new BusinessException("Acción no válida: " + actionStatus);
         }
 
         contract.setStatus(actionStatus);
@@ -216,19 +480,6 @@ public class ContractService implements IContractService {
         contract.getActions().add(action);
 
         Investment inv = contract.getInvestment();
-
-        if (actionStatus == ContractStatus.SIGNED && inv == null) {
-            inv = new Investment();
-            inv.setAmount(contract.getAmount());
-            inv.setCurrency(contract.getCurrency());
-            inv.setGeneratedBy(contract.getCreatedByInvestor());
-            inv.setProject(contract.getProject());
-            inv.setStatus(InvestmentStatus.IN_PROGRESS);
-            inv.setCreatedAt(LocalDate.now());
-            inv.setContract(contract);
-            investmentRepo.save(inv);
-            contract.setInvestment(inv);
-        }
 
         if (inv != null) {
             switch (actionStatus) {
@@ -248,36 +499,13 @@ public class ContractService implements IContractService {
                         investmentRepo.save(inv);
                     }
                 }
-                case SIGNED -> {
-                    if (inv.getStatus() == InvestmentStatus.IN_PROGRESS) {
-                        LocalDate fechaLimite = inv.getCreatedAt().plusDays(30);
-                        if (LocalDate.now().isAfter(fechaLimite)) {
-                            inv.setStatus(InvestmentStatus.CANCELLED);
-                            investmentRepo.save(inv);
-                            contract.setStatus(ContractStatus.CANCELLED);
-                        }
-                    }
-                }
                 default -> {}
             }
         }
 
         contractRepository.save(contract);
 
-        if (actionStatus == ContractStatus.SIGNED) {
-            String toInvestor = contract.getCreatedByInvestor().getEmail();
-            String subjectToInvestor = String.format("¡Tu oferta para el proyecto '%s' ha sido aceptada!", contract.getProject().getName());
-            String bodyToInvestor = String.format(
-                "Hola %s,\n\n¡Buenas noticias! El estudiante %s %s ha firmado el contrato para el proyecto '%s'.\n\n" +
-                "La inversión ya ha sido creada y está esperando a que realices la transferencia.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                contract.getCreatedByInvestor().getUsername(),
-                student.getFirstName(),
-                student.getLastName(),
-                contract.getProject().getName()
-            );
-            mailService.sendEmail(toInvestor, subjectToInvestor, bodyToInvestor);
-        } else if (actionStatus == ContractStatus.CANCELLED) {
+        if (actionStatus == ContractStatus.CANCELLED) {
             String toInvestor = contract.getCreatedByInvestor().getEmail();
             String subject = String.format("Alerta: Contrato para el proyecto '%s' cancelado", contract.getProject().getName());
             String body = String.format(
@@ -312,70 +540,24 @@ public class ContractService implements IContractService {
     }
 
     @Override
-    public ResponseContractDTO updateContractByInvestor(Long contractId, RequestContractUpdateByInvestorDTO dto) {
-        Contract contract = contractRepository.findById(contractId)
-                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
-
-        Long contractOwnerId = contract.getCreatedByInvestor().getId();
-        if (!contractOwnerId.equals(dto.getInvestorId())) {
-            throw new UnauthorizedOperationException("No tienes permiso para modificar este contrato.");
-        }
-
-        if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE)
-            throw new ContractCannotBeModifiedException("Solo contratos pendientes pueden modificarse.");
-
-        // Validar que el nuevo título no exista ya para otro contrato del mismo inversor
-        if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
-            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
-                .ifPresent(existingContract -> {
-                    if (!existingContract.getIdContract().equals(contractId)) {
-                        throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
-                    }
-                });
-        }
-
-        // Normalizar profits a fracción decimal antes de guardar
-        if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
-            dto.setProfit1Year(dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
-        }
-        if (dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0) {
-            dto.setProfit2Years(dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
-        }
-        if (dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0) {
-            dto.setProfit3Years(dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
-        }
-
-        contractMapper.updateContractByInvestor(dto, contract);
-        contractRepository.save(contract);
-        return contractMapper.toResponseDTO(contract);
-    }
-
-    @Override
     public ResponseContractDTO cancelByInvestor(Long contractId, RequestContractActionByInvestorDTO dto) {
-        // 1. Buscar entidades
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
         Investor investor = investorRepository.findById(dto.getInvestorId())
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
-        // 2. Validación de Seguridad: Asegurarse de que el inversor es el dueño del contrato
-        Long contractOwnerId = contract.getCreatedByInvestor().getId();
-        if (!contractOwnerId.equals(investor.getId())) {
+        if (!contract.getCreatedByInvestor().getId().equals(investor.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para cancelar este contrato.");
         }
 
-        // 3. Validación de Estado: Solo se pueden cancelar ofertas pendientes
-        if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE) {
+        if (contract.getStatus() != ContractStatus.DRAFT && contract.getStatus() != ContractStatus.PARTIALLY_SIGNED) {
             throw new ContractCannotBeModifiedException("Esta oferta de contrato ya no puede ser cancelada porque ya ha sido firmada o procesada.");
         }
 
-        // 4. Actualizar estado
         contract.setStatus(ContractStatus.CANCELLED);
 
-        // 5. Guardar el cambio
         Contract savedContract = contractRepository.save(contract);
 
-        // 6. Notificar al estudiante
         Project project = savedContract.getProject();
         Student student = project.getOwner();
 
@@ -391,7 +573,6 @@ public class ContractService implements IContractService {
         );
         mailService.sendEmail(toStudent, subject, body);
 
-        // 7. Retornar DTO
         return contractMapper.toResponseDTO(savedContract);
     }
 
@@ -419,19 +600,15 @@ public class ContractService implements IContractService {
 
     @Override
     public List<ResponseContractDTO> getContractsByOwner(Long ownerId) {
-        // 1. Validar que el estudiante exista
         studentRepository.findById(ownerId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + ownerId + " no encontrado."));
 
-        // 2. Validar que el estudiante sea dueño de al menos un proyecto
         if (!projectRepository.existsByOwnerId(ownerId)) {
             throw new UnauthorizedOperationException("El estudiante con id " + ownerId + " no es dueño de ningún proyecto.");
         }
 
-        // 3. Usar el nuevo método del repositorio
         List<Contract> contracts = contractRepository.findByProjectOwnerId(ownerId);
 
-        // 4. Mapear y retornar
         return contracts.stream()
                 .map(contractMapper::toResponseDTO)
                 .toList();

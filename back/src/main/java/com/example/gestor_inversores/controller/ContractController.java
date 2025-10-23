@@ -21,11 +21,46 @@ public class ContractController {
         return ResponseEntity.ok(contractService.createContract(dto));
     }
 
-    @PutMapping("/sign/{id}")
-    public ResponseEntity<ResponseContractDTO> signContract(
+    @PutMapping("/update-by-investor/{id}")
+    public ResponseEntity<ResponseContractDTO> updateByInvestor(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestContractUpdateByInvestorDTO dto) {
+        return ResponseEntity.ok(contractService.updateContractByInvestor(id, dto));
+    }
+
+    @PutMapping("/update-by-student/{id}")
+    public ResponseEntity<ResponseContractDTO> updateByStudent(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestContractUpdateByStudentDTO dto) {
+        return ResponseEntity.ok(contractService.updateContractByStudent(id, dto));
+    }
+
+    @PutMapping("/agree-by-student/{id}")
+    public ResponseEntity<ResponseContractDTO> agreeByStudent(
             @PathVariable Long id,
             @Valid @RequestBody RequestContractActionByStudentDTO dto) {
-        return ResponseEntity.ok(contractService.signContract(id, dto));
+        return ResponseEntity.ok(contractService.agreeByStudent(id, dto));
+    }
+
+    @PutMapping("/agree-by-investor/{id}")
+    public ResponseEntity<ResponseContractDTO> agreeByInvestor(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestContractActionByInvestorDTO dto) {
+        return ResponseEntity.ok(contractService.agreeByInvestor(id, dto));
+    }
+
+    @PutMapping("/sign-by-student/{id}")
+    public ResponseEntity<ResponseContractDTO> signByStudent(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(contractService.signByStudent(id, dto));
+    }
+
+    @PutMapping("/sign-by-investor/{id}")
+    public ResponseEntity<ResponseContractDTO> signByInvestor(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestContractActionByInvestorDTO dto) {
+        return ResponseEntity.ok(contractService.signByInvestor(id, dto));
     }
 
     @PutMapping("/close/{id}")
@@ -47,13 +82,6 @@ public class ContractController {
             @PathVariable Long id,
             @Valid @RequestBody RequestContractActionByStudentDTO dto) {
         return ResponseEntity.ok(contractService.refundContract(id, dto));
-    }
-
-    @PutMapping("/update-by-investor/{id}")
-    public ResponseEntity<ResponseContractDTO> updateByInvestor(
-            @PathVariable Long id,
-            @Valid @RequestBody RequestContractUpdateByInvestorDTO dto) {
-        return ResponseEntity.ok(contractService.updateContractByInvestor(id, dto));
     }
 
     @PutMapping("/cancel-by-investor/{id}")
