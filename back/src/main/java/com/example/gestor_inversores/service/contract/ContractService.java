@@ -70,22 +70,7 @@ public class ContractService implements IContractService {
             throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
         }
 
-        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
-        BigDecimal offerAmountInUSD = dto.getAmount();
-
-        if (dto.getCurrency() != Currency.USD) {
-            if (currencyConversionService == null) {
-                throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
-            }
-            offerAmountInUSD = currencyConversionService.getConversionRate(dto.getCurrency().name(), "USD")
-                    .getRate().multiply(dto.getAmount());
-        }
-
-        if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
-            throw new BusinessException(String.format(
-                    "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
-                    offerAmountInUSD, remainingBudget));
-        }
+        validateOfferAmount(project, dto.getAmount(), dto.getCurrency());
 
         BigDecimal profit1 = dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit1Year();
         BigDecimal profit2 = dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit2Years();
@@ -112,7 +97,7 @@ public class ContractService implements IContractService {
         String subjectToStudent = String.format("¡Nueva propuesta de contrato para tu proyecto '%s'!", project.getName());
         String bodyToStudent = String.format(
             "Hola %s,\n\nEl inversor '%s' ha creado una propuesta de contrato para tu proyecto '%s'.\n\n" +
-            "Puedes revisar y editar los detalles del contrato desde la plataforma. Una vez que ambas partes estén de acuerdo con los términos, podrás pasar a la fase de firma.\n\n" +
+            "Puedes revisar y editar los detalles del contrato desde la plataforma. Una vez que ambos estéis de acuerdo con los términos, podréis pasar a la fase de firma.\n\n" +
             "Saludos,\nEl equipo de ProyPlus",
             project.getOwner().getFirstName(),
             investor.getUsername(),
@@ -134,6 +119,10 @@ public class ContractService implements IContractService {
 
         if (contract.getStatus() != ContractStatus.DRAFT)
             throw new ContractCannotBeModifiedException("Solo se pueden modificar contratos en estado de borrador (DRAFT).");
+
+        if (dto.getAmount() != null) {
+            validateOfferAmount(contract.getProject(), dto.getAmount(), dto.getCurrency() != null ? dto.getCurrency() : contract.getCurrency());
+        }
 
         if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
             contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
@@ -256,7 +245,7 @@ public class ContractService implements IContractService {
 
         ContractAction action = ContractAction.builder()
                 .contract(contract)
-                .student(contract.getProject().getOwner())
+                .student(contract.getProject().getOwner()) 
                 .status(ContractStatus.PARTIALLY_SIGNED)
                 .actionDate(LocalDate.now())
                 .build();
@@ -304,7 +293,6 @@ public class ContractService implements IContractService {
             return finalizeContract(contract);
         } else {
             contractRepository.save(contract);
-            // Notificar al inversor
             String toInvestor = contract.getCreatedByInvestor().getEmail();
             String subject = String.format("El estudiante ha firmado el contrato para '%s'", contract.getProject().getName());
             String body = String.format(
@@ -348,7 +336,6 @@ public class ContractService implements IContractService {
             return finalizeContract(contract);
         } else {
             contractRepository.save(contract);
-            // Notificar al estudiante
             Student student = contract.getProject().getOwner();
             String toStudent = student.getEmail();
             String subject = String.format("El inversor ha firmado el contrato para '%s'", contract.getProject().getName());
@@ -394,7 +381,6 @@ public class ContractService implements IContractService {
 
         contractRepository.save(contract);
 
-        // Notificar a ambas partes
         String toInvestor = contract.getCreatedByInvestor().getEmail();
         String subjectToInvestor = String.format("¡Contrato para '%s' activado!", contract.getProject().getName());
         String bodyToInvestor = String.format(
@@ -618,4 +604,22 @@ public class ContractService implements IContractService {
         contractRepository.save(contract);
     }
 
+    private void validateOfferAmount(Project project, BigDecimal amount, Currency currency) {
+        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
+        BigDecimal offerAmountInUSD = amount;
+
+        if (currency != Currency.USD) {
+            if (currencyConversionService == null) {
+                throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
+            }
+            offerAmountInUSD = currencyConversionService.getConversionRate(currency.name(), "USD")
+                    .getRate().multiply(amount);
+        }
+
+        if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
+            throw new BusinessException(String.format(
+                    "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
+                    offerAmountInUSD, remainingBudget));
+        }
+    }
 }

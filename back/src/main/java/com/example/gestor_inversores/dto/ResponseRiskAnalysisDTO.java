@@ -1,10 +1,12 @@
 package com.example.gestor_inversores.dto;
 
+import com.example.gestor_inversores.model.enums.Currency;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -14,12 +16,27 @@ public class ResponseRiskAnalysisDTO {
 
     // --- El Resultado Principal ---
     private String riskCategory;
-    private int riskScore;
+    private int confidenceScore;
+
+    // --- Datos de la Inversión Propuesta ---
+    private BigDecimal investmentAmount;
+    private Currency investmentCurrency;
+
+    // --- Datos de Financiación del Proyecto (siempre en USD) ---
+    private BigDecimal budgetGoal;
+    private BigDecimal currentGoal;
+    private double fundingPercentage;
+
+    // --- Contexto Temporal del Proyecto ---
+    private LocalDate fundingStartDate;
+    private LocalDate fundingEndDate;
+    private double timeElapsedPercentage;
+    private double fundingPace;
 
     // --- El Desglose del Riesgo ---
     private List<AnalysisFactor> analysisFactors;
 
-    // --- Proyección de Ganancias ---
+    // --- Proyección de Ganancias (en la moneda de la inversión) ---
     private List<ProfitProjection> profitProjections;
 
     // --- Datos para el Gráfico ---
@@ -33,6 +50,7 @@ public class ResponseRiskAnalysisDTO {
         private String factorName;
         private String factorValue;
         private String factorAssessment;
+        private double importancePercentage; // Porcentaje de importancia del factor
         private String factorDescription;
     }
 
