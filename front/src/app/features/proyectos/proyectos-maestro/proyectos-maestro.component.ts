@@ -14,9 +14,12 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
 import { AccordionModule } from 'primeng/accordion';
+import { SliderModule } from 'primeng/slider';
 import { EditorModule } from 'primeng/editor';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
+import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
@@ -33,7 +36,7 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule,
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [
@@ -68,21 +71,44 @@ export class ProyectosMaestroComponent implements OnInit {
     return (p?.students as unknown as Student[]) ?? [];
   }
 
+  fundingProgress = computed(() => {
+    const p = this.project();
+    if (!p || !p.fundingGoal || p.fundingGoal <= 0 || !p.fundingRaised) {
+      return 0;
+    }
+    // Calcula el porcentaje y lo limita a un máximo de 100
+    return Math.min(100, (p.fundingRaised / p.fundingGoal) * 100);
+  });
+
   contracts = signal<IContract[]>([]);
   loading = signal<boolean>(false);
 
   // ===== Acordeón Crear/Editar contrato =====
   accordionOpen = signal<boolean>(false);
   editing: IContract | null = null;
+  viewingOnly = signal<IContract | null>(null);
+
+  currentContractStatus = computed<IContract['status'] | 'PENDING_STUDENT_SIGNATURE'>(() => {
+    const contractInView = this.viewingOnly() || this.reviewingToSign || this.editing;
+    return contractInView?.status || 'PENDING_STUDENT_SIGNATURE';
+  });
+  currentContractStatusLabel = computed(() => this.getContractStatusLabel(this.currentContractStatus()));
+
+  reviewingToSign: IContract | null = null; // Nuevo estado para cuando un estudiante revisa un contrato para firmar
+  currencyOptions = [
+    { label: 'Dólar Estadounidense', value: 'USD' },
+    { label: 'Peso Argentino', value: 'ARS' },
+    { label: 'Euro', value: 'EUR' },
+    { label: 'Yuan Chino', value: 'CNY' }
+  ];
   contractForm = this.fb.nonNullable.group({
     title: ['', Validators.required],
     amount: [0, [Validators.required, Validators.min(0)]],
-    startDate: [null as Date | null],
+    currency: ['USD', Validators.required],
     profit1Year: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
     profit2Years: [15, [Validators.required, Validators.min(0), Validators.max(100)]],
     profit3Years: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
     clauses: [''], // Campo para el editor de texto
-    endDate: [null as Date | null],
   });
 
   ngOnInit(): void {
@@ -137,8 +163,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.contractForm.reset({
       title: '',
       amount: 0,
-      startDate: null,
-      endDate: null,
+      currency: 'USD',
       clauses: '',
     });
     this.accordionOpen.set(true);
@@ -150,8 +175,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.contractForm.reset({
       title: row.title,
       amount: row.amount,
-      startDate: row.startDate ? new Date(row.startDate) : null,
-      endDate: row.endDate ? new Date(row.endDate) : null,
+      currency: row.currency ?? 'USD',
       clauses: (row as any).clauses ?? '', // Cargar cláusulas si existen
     });
     this.accordionOpen.set(true);
@@ -160,32 +184,58 @@ export class ProyectosMaestroComponent implements OnInit {
   cancelEdit(): void {
     this.accordionOpen.set(false);
     this.editing = null;
+    this.reviewingToSign = null;
+    this.viewingOnly.set(null);
+    this.contractForm.enable(); // Habilitar el formulario al cancelar
   }
 
   saveContract(): void {
+    // Si estamos en modo "revisar para firmar", llamamos a la función de firma
+    if (this.reviewingToSign) {
+      this.confirmAndSign(this.reviewingToSign);
+      return;
+    }
+
+    // Si no, es un inversor creando/editando. Validamos.
     if (this.contractForm.invalid || !this.isInvestor()) return;
 
+    let dto: Partial<IContract> & { projectId: number };
     const raw = this.contractForm.getRawValue();
-    const dto: Partial<IContract> & { projectId: number } = {
-      projectId: this.projectId(),
-      title: raw.title,
-      amount: raw.amount,
-      currency: 'USD', // Volvemos a fijar USD
-      profit1Year: raw.profit1Year,
-      profit2Years: raw.profit2Years,
-      profit3Years: raw.profit3Years,
-      startDate: raw.startDate ? this.formatISO(raw.startDate) : null,
-      endDate: raw.endDate ? this.formatISO(raw.endDate) : null,
-      clauses: raw.clauses,
-      status: this.editing ? this.editing.status : 'PENDING_STUDENT_SIGNATURE',
-      createdByInvestorId: this.currentUser?.id,
-      id: this.editing?.id,
-    } as any;
 
+    if (this.editing) {
+      // Payload para ACTUALIZAR un contrato existente
+      dto = { // @ts-ignore
+        idContract: this.editing.idContract,
+        projectId: this.projectId(),
+        title: raw.title,
+        amount: raw.amount,
+        currency: raw.currency as IContract['currency'],
+        profit1Year: raw.profit1Year,
+        profit2Years: raw.profit2Years,
+        profit3Years: raw.profit3Years,
+        clauses: raw.clauses,
+        status: this.editing.status, // Mantenemos el status actual al editar
+        createdByInvestorId: this.currentUser?.id,
+      };
+    } else {
+      // Payload para CREAR un nuevo contrato (según el formato requerido por el backend)
+      dto = {
+        projectId: this.projectId(),
+        createdByInvestorId: this.currentUser?.id,
+        textTitle: raw.title, // El backend espera 'textTitle'
+        amount: raw.amount,
+        currency: raw.currency as IContract['currency'],
+        profit1Year: raw.profit1Year,
+        profit2Years: raw.profit2Years,
+        profit3Years: raw.profit3Years,
+        clauses: raw.clauses,
+      };
+    }
+    
     this.svc.upsertContract(dto).subscribe({
       next: (saved: IContract) => {
         const list = this.contracts();
-        const idx = list.findIndex(c => c.id === saved.id);
+        const idx = list.findIndex(c => c.idContract === saved.idContract);
         if (idx >= 0) {
           list[idx] = saved;
         } else {
@@ -195,7 +245,10 @@ export class ProyectosMaestroComponent implements OnInit {
         this.toast.add({ severity: 'success', summary: 'Contrato', detail: this.editing ? 'Actualizado' : 'Creado', life: 1600 });
         this.cancelEdit();
       },
-      error: () => this.toast.add({ severity: 'error', summary: 'Contrato', detail: 'No se pudo guardar' }),
+      error: (err: any) => {
+        const detail = err?.error?.message || 'No se pudo guardar el contrato.';
+        this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 5000 });
+      }
     });
   }
 
@@ -204,27 +257,71 @@ export class ProyectosMaestroComponent implements OnInit {
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   }
 
+  calculateProfit(baseAmount: number | null | undefined, percentage: number | null | undefined): number {
+    if (baseAmount == null || percentage == null) {
+      return 0;
+    }
+    return (baseAmount * percentage) / 100;
+  }
+
   // ===== Acciones de Contrato (Firma y Cancelación) =====
 
-  signContract(contract: IContract): void {
+  /** Abre el panel para ver un contrato en modo solo lectura */
+  viewContract(contract: IContract): void {
+    this.editing = null;
+    this.reviewingToSign = null;
+    this.viewingOnly.set(contract);
+    this.contractForm.reset({
+      title: contract.textTitle,
+      amount: contract.amount,
+      currency: contract.currency ?? 'USD',
+      profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
+      profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
+      profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
+      clauses: (contract as any).clauses ?? '',
+    });
+    this.contractForm.disable();
+    this.accordionOpen.set(true);
+  }
+  /** El estudiante hace clic en "Firmar", se abre el panel para revisar */
+  reviewAndSignContract(contract: IContract): void {
+    this.reviewingToSign = contract;
+    this.viewingOnly.set(null); // Limpiar el estado de solo vista
+    this.editing = null; // Nos aseguramos de no estar en modo edición
+    this.contractForm.reset({
+      title: contract.textTitle,
+      amount: contract.amount,
+      currency: contract.currency ?? 'USD',
+      profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
+      profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
+      profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
+      clauses: (contract as any).clauses ?? '',
+    });
+    this.contractForm.disable(); // Hacemos el formulario de solo lectura
+    this.accordionOpen.set(true);
+  }
+
+  rejectContract(contract: IContract): void {
     this.confirmSvc.confirm({
-      message: `¿Estás seguro de que quieres firmar y aceptar los términos del contrato "${contract.title}"? Esta acción no se puede deshacer.`,
-      header: 'Confirmar Firma de Contrato',
-      icon: 'pi pi-file-edit',
-      acceptLabel: 'Sí, firmar',
+      message: `¿Estás seguro de que quieres rechazar el contrato "${contract.textTitle}"? Esta acción no se puede deshacer.`,
+      header: 'Confirmar Rechazo',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, rechazar',
       rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         const studentId = this.currentUser?.id;
         if (!studentId) {
           this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al usuario.' });
           return;
         }
-        this.svc.signContract(contract.id, studentId).subscribe({
+        this.svc.cancelContractByStudent((contract as any).idContract, studentId).subscribe({
           next: (updatedContract) => {
             this.updateContractInList(updatedContract);
-            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Contrato firmado correctamente.' });
+            this.toast.add({ severity: 'warn', summary: 'Rechazado', detail: 'El contrato ha sido rechazado.' });
+            this.cancelEdit(); // Cierra el panel
           },
-          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo firmar el contrato.' })
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo rechazar el contrato.' })
         });
       }
     });
@@ -232,7 +329,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
   cancelContractByInvestor(contract: IContract): void {
     this.confirmSvc.confirm({
-      message: `¿Estás seguro de que quieres retirar la oferta del contrato "${contract.title}"?`,
+      message: `¿Estás seguro de que quieres retirar la oferta del contrato "${contract.textTitle}"?`,
       header: 'Confirmar Cancelación',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, retirar oferta',
@@ -243,7 +340,7 @@ export class ProyectosMaestroComponent implements OnInit {
           this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al usuario.' });
           return;
         }
-        this.svc.cancelContractByInvestor(contract.id, investorId).subscribe({
+        this.svc.cancelContractByInvestor((contract as any).idContract, investorId).subscribe({
           next: (updatedContract) => {
             this.updateContractInList(updatedContract);
             this.toast.add({ severity: 'info', summary: 'Cancelado', detail: 'La oferta de contrato ha sido retirada.' });
@@ -254,10 +351,56 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  /** Lógica de confirmación y firma, llamada desde saveContract */
+  private confirmAndSign(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres firmar y aceptar los términos del contrato "${contract.textTitle}"? Esta acción no se puede deshacer.`,
+      header: 'Confirmar Firma de Contrato',
+      icon: 'pi pi-file-edit',
+      acceptLabel: 'Sí, firmar',
+      rejectLabel: 'No',
+      accept: () => {
+        const studentId = this.currentUser?.id;
+        if (!studentId) {
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al usuario.' });
+          return;
+        }
+        this.svc.signContract((contract as any).idContract, studentId).subscribe({
+          next: (updatedContract) => {
+            this.updateContractInList(updatedContract);
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Contrato firmado correctamente.' });
+            this.cancelEdit(); // Cierra el panel
+          },
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo firmar el contrato.' })
+        });
+      }
+    });
+  }
+
   private updateContractInList(updated: IContract): void {
     this.contracts.update(list =>
-      list.map(c => c.id === updated.id ? updated : c)
+      list.map(c => c.idContract === updated.idContract ? updated : c)
     );
+  }
+
+  getProjectStatusLabel(status: string | null): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Progreso';
+      case 'PENDING_FUNDING': return 'Pendiente de Financiación';
+      case 'COMPLETED': return 'Completado';
+      default: return status || '—';
+    }
+  }
+
+  getContractStatusLabel(status: IContract['status'] | string | null): string {
+    switch (status) {
+      case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente Firma';
+      case 'SIGNED': return 'Firmado';
+      case 'CLOSED': return 'Cerrado';
+      case 'CANCELLED': return 'Cancelado';
+      case 'REFUNDED': return 'Devuelto';
+      default: return status || '—';
+    }
   }
 
   tagStyle(text: string, i = 0) {

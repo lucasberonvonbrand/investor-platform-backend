@@ -27,6 +27,7 @@ public class ResponseProjectDTO {
     private LocalDate endDate;
     private Long ownerId;
     private String ownerName; // opcional
+    private String tagName;
 
     // Lista de participantes
     private List<ResponseProjectStudentDTO> students;

@@ -63,18 +63,18 @@
   <div *ngIf="viewMode==='cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
     <div *ngFor="let row of filtered" class="border rounded-xl p-3 h-full flex flex-col">
       <div class="flex items-start justify-between gap-3">
-        <div class="font-semibold text-lg leading-tight">{{ row.title }}</div>
+        <div class="font-semibold text-lg leading-tight">{{ row.project.title }}</div>
       </div>
-      <div class="opacity-70 text-sm mt-1 line-clamp-3">{{ row.summary || '—' }}</div>
+      <div class="opacity-70 text-sm mt-1 line-clamp-3">{{ row.project.summary || '—' }}</div>
       <div class="mt-2 flex gap-2 flex-wrap">
-        <p-tag [value]="row.category || '—'" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag>
-        <p-tag [value]="row.status || '—'"   [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
-        <p-tag *ngIf="row.university" [value]="row.university" [ngStyle]="tagStyle(row.university, 2)"></p-tag>
+        <p-tag [value]="row.project.category || '—'" [ngStyle]="tagStyle(row.project.category || '—', 0)"></p-tag>
+        <p-tag [value]="getInvestmentStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        <p-tag *ngIf="row.project.university" [value]="row.project.university" [ngStyle]="tagStyle(row.project.university, 2)"></p-tag>
       </div>
       <div class="mt-3 flex-1"></div>
       <div class="mt-3 flex items-center justify-between">
         <button pButton type="button" label="Ver" icon="pi pi-eye" (click)="openDetail(row)"></button>
-        <span class="text-xs opacity-70" *ngIf="row.lastUpdated">Actualizado: {{ row.lastUpdated | date:'dd/MM/yyyy' }}</span>
+        <span class="text-xs opacity-70" *ngIf="row.project.lastUpdated">Actualizado: {{ row.project.lastUpdated | date:'dd/MM/yyyy' }}</span>
       </div>
     </div>
   </div>
@@ -87,21 +87,19 @@
     responsiveLayout="scroll">
     <ng-template pTemplate="header">
       <tr>
-        <th style="width:80px">ID</th>
+        <th style="width:120px">Nro. Inversión</th>
         <th>Título</th>
         <th>Categoría</th>
         <th>Estado</th>
-        <th>Universidad</th>
         <th style="width:120px; text-align:center">Acciones</th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-row>
       <tr>
-        <td class="text-right">{{ row.id }}</td>
-        <td>{{ row.title }}</td>
-        <td><p-tag [value]="row.category || '—'" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag></td>
-        <td><p-tag [value]="row.status || '—'"   [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag></td>
-        <td>{{ row.university || '—' }}</td>
+        <td class="text-right">{{ row.idInvestment }}</td>
+        <td>{{ row.project.title }}</td>
+        <td><p-tag [value]="row.project.category || '—'" [ngStyle]="tagStyle(row.project.category || '—', 0)"></p-tag></td>
+        <td><p-tag [value]="getInvestmentStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag></td>
         <td class="text-center">
           <button pButton type="button" pTooltip="Ver" icon="pi pi-eye" [text]="true" [rounded]="true" [size]="'small'"
                   (click)="openDetail(row)"></button>

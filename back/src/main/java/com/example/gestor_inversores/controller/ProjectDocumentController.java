@@ -1,30 +1,18 @@
 package com.example.gestor_inversores.controller;
 
-import com.example.gestor_inversores.dto.RequestProjectDocumentDTO;
+import com.example.gestor_inversores.dto.ResponseFile;
 import com.example.gestor_inversores.dto.ResponseProjectDocumentDTO;
-import com.example.gestor_inversores.model.ProjectDocument;
-import com.example.gestor_inversores.service.projectDocument.ProjectDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-import com.example.gestor_inversores.dto.ResponseProjectDocumentDTO;
 import com.example.gestor_inversores.service.projectDocument.IProjectDocumentService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/project-documents")
@@ -56,19 +44,12 @@ public class ProjectDocumentController {
 
     @GetMapping("/download/{id}")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
-        ResponseProjectDocumentDTO dto = projectDocumentService.findById(id);
-
-        File file = new File(dto.getFilePath());
-        if (!file.exists()) {
-            throw new RuntimeException("File not found");
-        }
-
-        Resource resource = new org.springframework.core.io.FileSystemResource(file);
+        ResponseFile fileData = projectDocumentService.downloadFile(id);
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + dto.getFileName() + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileData.getFileName() + "\"")
+                .contentType(MediaType.parseMediaType(fileData.getContentType()))
+                .body(fileData.getResource());
     }
 
 

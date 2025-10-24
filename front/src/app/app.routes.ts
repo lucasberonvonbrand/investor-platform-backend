@@ -68,6 +68,14 @@ export const routes: Routes = [
             .then(m => m.MyInvestmentsPanelComponent)
       },
 
+      // NUEVO: Detalle de una inversión específica
+      {
+        path: 'mis-inversiones/:investmentId',
+        canMatch: [investorMatch],
+        canActivate: [investorGuard],
+        loadComponent: () => import('./features/investors/my-investments-panel/investment-detail.component').then(m => m.InvestmentDetailComponent)
+      },
+
       // Detalle maestro del proyecto
       {
         path: 'proyectos-maestro/:id',

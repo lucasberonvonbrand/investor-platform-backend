@@ -53,7 +53,7 @@
 
           <div class="field">
             <label for="dni" class="font-medium">DNI <span class="text-red-500">*</span></label>
-            <input id="dni" type="text" pInputText formControlName="dni" class="w-full mt-1" />
+            <input id="dni" type="text" pInputText formControlName="dni" class="w-full mt-1" pKeyFilter="int" maxlength="8" />
             <small *ngIf="getFieldError('dni')" class="p-error">{{ getFieldError('dni') }}</small>
             <small *ngIf="dniError()" class="p-error">{{ dniError() }}</small>
           </div>
@@ -68,6 +68,12 @@
             <label for="dateOfBirth" class="font-medium">Fecha de Nacimiento <span class="text-red-500">*</span></label>
             <input id="dateOfBirth" type="date" pInputText formControlName="dateOfBirth" class="w-full mt-1" />
             <small *ngIf="getFieldError('dateOfBirth')" class="p-error">{{ getFieldError('dateOfBirth') }}</small>
+          </div>
+
+          <div class="field">
+            <label for="linkedinUrl" class="font-medium">URL de LinkedIn</label>
+            <input id="linkedinUrl" type="text" pInputText formControlName="linkedinUrl" class="w-full mt-1" placeholder="https://www.linkedin.com/in/tu-perfil" />
+            <small *ngIf="getFieldError('linkedinUrl')" class="p-error">{{ getFieldError('linkedinUrl') }}</small>
           </div>
 
           <!-- Sección Académica -->

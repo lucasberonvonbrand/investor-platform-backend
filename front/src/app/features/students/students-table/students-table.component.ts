@@ -19,6 +19,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { KeyFilterModule } from 'primeng/keyfilter';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { HttpClient } from '@angular/common/http';
@@ -69,7 +70,7 @@ interface IStudentView {
   imports: [
     CommonModule, FormsModule, StudentFormComponent,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TableModule, TagModule, ToastModule, ConfirmDialogModule, SelectButtonModule,
+    TableModule, TagModule, ToastModule, ConfirmDialogModule, SelectButtonModule, KeyFilterModule,
     DialogModule, PasswordModule, CheckboxModule, MultiSelectModule, DividerModule, TooltipModule
   ],
   providers: [MessageService, ConfirmationService],
@@ -274,7 +275,8 @@ export class StudentsTableComponent implements OnInit {
     const payload = {
       ...this.formModel,
       roles: rolesById,
-      password: (this.formModel.password && this.formModel.password.trim() !== '') ? this.formModel.password : undefined
+      password: (this.formModel.password && this.formModel.password.trim() !== '') ? this.formModel.password : undefined,
+      linkedinUrl: this.formModel.linkedinUrl
     };
     // Quitamos el id del payload para que no vaya en el body
     delete payload.id;

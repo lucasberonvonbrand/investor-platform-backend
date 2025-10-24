@@ -389,6 +389,30 @@ public class InvestmentService implements IInvestmentService {
         return mapper.toResponse(savedInvestment);
     }
 
+    @Override
+    public List<ResponseInvestmentDTO> getByInvestor(Long investorId, InvestmentStatus status) {
+        // 1. Validamos que el inversor exista
+        if (!investorRepo.existsById(investorId)) {
+            throw new InvestorNotFoundException("Inversor no encontrado con ID: " + investorId);
+        }
+
+        List<Investment> investments;
+
+        // 2. Lógica condicional para filtrar
+        if (status == null) {
+            // Si no se especifica estado, traer todas las del inversor
+            investments = investmentRepo.findByGeneratedBy_IdAndDeletedFalse(investorId);
+        } else {
+            // Si se especifica un estado, filtrar por inversor Y estado
+            investments = investmentRepo.findByGeneratedBy_IdAndDeletedFalseAndStatus(investorId, status);
+        }
+
+        // 3. Mapear y devolver la lista de DTOs
+        return investments.stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private void autoCancelContractIfNeeded(Investment inv) {
         if (inv.getContract() != null &&
                 (inv.getStatus() == InvestmentStatus.NOT_RECEIVED || inv.getStatus() == InvestmentStatus.CANCELLED)) {
