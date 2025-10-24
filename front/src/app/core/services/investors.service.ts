@@ -31,12 +31,19 @@ export class InvestorService {
     );
   }
 
+update(id: number, investorData: Partial<Investor>): Observable<Investor> {
+    return this.http.patch<Investor>(`${this.apiUrl}/${id}`, investorData).pipe( // <-- AQUÍ EL CAMBIO
+      tap(updated => this._investors.update(list => list.map(i => i.id === id ? updated : i)))
+    );
+  }
+
+/* COMENTO ESTO XQE NO FUNCIONA EL PUT APARENTEMENTE, CAMBIO A PATCH ARRIBA
   // 🔹 nuevo
   update(id: number, investorData: Partial<Investor>): Observable<Investor> {
     return this.http.put<Investor>(`${this.apiUrl}/${id}`, investorData).pipe(
       tap(updated => this._investors.update(list => list.map(i => i.id === id ? updated : i)))
     );
-  }
+  }*/
 
   updateByAdmin(id: number, payload: any): Observable<Investor> {
     return this.http.put<Investor>(`${this.apiUrl}/update-by-admin/${id}`, payload);
