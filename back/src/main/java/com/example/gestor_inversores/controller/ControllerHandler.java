@@ -28,7 +28,8 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
             UserNotFoundException.class, EmailNotFoundException.class,
             ProjectNotFoundException.class, ContractNotFoundException.class,
             EarningNotFoundException.class, RoleNotFoundException.class,
-            PermissionNotFoundException.class, DocumentFileNotFoundException.class
+            PermissionNotFoundException.class, DocumentFileNotFoundException.class,
+            ProjectTagException.class
     })
     public ResponseEntity<ApiError> handleNotFoundExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("Recurso no encontrado: " + ex.getMessage(), HttpStatus.NOT_FOUND, LocalDateTime.now());

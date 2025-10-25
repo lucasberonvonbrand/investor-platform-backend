@@ -9,8 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 //@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
@@ -76,5 +78,15 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.OK).body(restoredProject);
     }
 
+    @GetMapping("/tag/{tag}")
+    public ResponseEntity<List<ResponseProjectDTO>> getProjectsByTag(@PathVariable String tag) {
+        List<ResponseProjectDTO> projects = projectService.getProjectsByTag(tag);
+        return ResponseEntity.status(HttpStatus.OK).body(projects);
+    }
 
+    @GetMapping("by-investment/{investmentId}")
+        public ResponseEntity<List<ResponseProjectDTO>> getProjectsByInvestmentId(@PathVariable Long investmentId) {
+        List<ResponseProjectDTO> projects = projectService.getProjectsByInvestmentId(investmentId);
+        return ResponseEntity.status(HttpStatus.OK).body(projects);
+    }
 }

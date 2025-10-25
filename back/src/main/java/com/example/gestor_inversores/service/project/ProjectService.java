@@ -11,11 +11,11 @@ import com.example.gestor_inversores.mapper.ProjectStudentMapper;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
+import com.example.gestor_inversores.repository.IInvestmentRepository;
 import com.example.gestor_inversores.repository.IProjectRepository;
-import com.example.gestor_inversores.repository.IProjectTagRepository;
 import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.repository.IStudentRepository;
-import com.example.gestor_inversores.service.student.IStudentService;
+import com.example.gestor_inversores.service.projectTag.IProjectTagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -34,17 +34,10 @@ import java.util.stream.Collectors;
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
-    private final IStudentService studentService;
-    private final IProjectTagRepository projectTagRepository;
+    private final IProjectTagService projectTagService;
     private final GeminiService geminiService;
-    private final IStudentRepository studentRepository; // Inyectado para uso interno
-
-    /* @Autowired
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IStudentRepository studentRepository) {
-        this.projectRepository = projectRepository;
-        this.studentService = studentService;
-        this.studentRepository = studentRepository;
-    } */
+    private final IStudentRepository studentRepository;
+    private final IInvestmentRepository investmentRepository;
 
     @Transactional
     @Override
@@ -92,7 +85,7 @@ public class ProjectService implements IProjectService {
         System.out.println("Esta es la respuesta de gemini " + selectedTag);
         String cleanedTag = selectedTag.trim();
         System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
-        ProjectTag tag = projectTagRepository.findByName(cleanedTag);
+        ProjectTag tag = projectTagService.getTagByName(cleanedTag);
         project.setProjectTag(tag);
 
         Project savedProject;
@@ -258,6 +251,27 @@ public class ProjectService implements IProjectService {
         Project restored = projectRepository.save(project);
 
         return ProjectMapper.projectToResponseProjectDTO(restored);
+    }
+
+    @Override
+    public List<ResponseProjectDTO> getProjectsByTag(String tag) {
+        ProjectTag projectTag = projectTagService.getTagByName(tag);
+
+        List<Project> projects = projectRepository.findByProjectTagAndDeletedFalse(projectTag);
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
+    public List<ResponseProjectDTO> getProjectsByInvestmentId(Long investmentId) {
+        Set<Project> projects = investmentRepository.findDistinctProjectsByInvestorId(investmentId)
+                .orElseThrow(() -> new IllegalArgumentException("No se encontraron proyectos para ese inversor"));
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
     }
 
     private String promptToGenerateTagSelection(String description) {

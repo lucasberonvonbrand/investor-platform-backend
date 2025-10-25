@@ -1,6 +1,7 @@
 package com.example.gestor_inversores.repository;
 
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -31,4 +32,5 @@ public interface IProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByStudents_IdAndDeletedTrue(Long studentId);
 
     List<Project> findByDeletedTrue();
+    List<Project> findByProjectTagAndDeletedFalse(ProjectTag tag);
 }
