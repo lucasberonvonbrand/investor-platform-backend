@@ -34,7 +34,7 @@ interface IAddress {
 }
 
 interface IInvestorView {
-  id: number;
+  id?: number;
   username: string;
   email: string;
   photoUrl?: string | null;
@@ -57,7 +57,7 @@ interface IInvestorView {
 
 @Component({
   standalone: true,
-  selector: 'app-investors',
+  selector: 'app-investors-table',
   imports: [ InvestorFormComponent,
     CommonModule, FormsModule,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
@@ -68,7 +68,7 @@ interface IInvestorView {
   templateUrl: './investors-table.component.html',
   styleUrls: ['./investors-table.component.scss']
 })
-export class InvestorsComponent implements OnInit {
+export class InvestorsTableComponent implements OnInit {
   private svc = inject(InvestorService);
   private toast = inject(MessageService);
   private confirm = inject(ConfirmationService);
@@ -231,33 +231,29 @@ export class InvestorsComponent implements OnInit {
       return;
     }
 
-    const body: any = {
-      username: this.formModel.username,
-      email: this.formModel.email,
-      enabled: this.formModel.enabled,
-      accountNotExpired: this.formModel.accountNotExpired,
-      accountNotLocked: this.formModel.accountNotLocked,
-      credentialNotExpired: this.formModel.credentialNotExpired,
-      cuit: this.formModel.cuit,
-      contactPerson: this.formModel.contactPerson,
-      phone: this.formModel.phone,
-      webSite: this.formModel.webSite,
-      address: this.formModel.address
-    };
-    if (this.formModel.password && this.formModel.password.trim() !== '') {
-      body.password = this.formModel.password;
-    }
-
     this.loading = true;
-    this.svc.update(this.formModel.id, body).subscribe({
+    // El formulario de edición de admin es un PUT/PATCH completo
+    const payload = {
+      ...this.formModel,
+      password: (this.formModel.password && this.formModel.password.trim() !== '') ? this.formModel.password : undefined
+    };
+    // Quitamos el id del payload para que no vaya en el body
+    delete payload.id;
+
+    this.svc.updateByAdmin(this.formModel.id!, payload).subscribe({
       next: () => {
         this.toast.add({ severity: 'success', summary: 'Investor', detail: 'Actualizado' });
         this.showDialog = false;
         this.reload();
       },
-      error: (err) => {
-        console.error(err);
-        this.toast.add({ severity: 'error', summary: 'Investor', detail: 'No se pudo actualizar' });
+      error: (err: any) => {
+        const detail = err?.error?.message || 'No se pudo actualizar';
+        console.error('Error updating investor by admin:', err);
+        this.toast.add({
+          severity: 'error',
+          summary: 'Investor',
+          detail
+        });
       },
       complete: () => (this.loading = false)
     });
@@ -267,6 +263,10 @@ export class InvestorsComponent implements OnInit {
     this.confirm.confirm({
       message: `${enable ? '¿Activar' : '¿Desactivar'} ${row.username}?`,
       accept: () => {
+        if (row.id === undefined) {
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'ID de inversor no encontrado.' });
+          return;
+        }
         // primero intento endpoints dedicados
         const obs = enable ? this.svc.activate(row.id) : this.svc.deactivate(row.id);
         obs.subscribe({
@@ -276,7 +276,7 @@ export class InvestorsComponent implements OnInit {
           },
           error: () => {
             // fallback: PUT con enabled
-            this.svc.update(row.id, { enabled: enable }).subscribe({
+            this.svc.update(row.id!, { enabled: enable }).subscribe({
               next: () => {
                 this.toast.add({ severity: enable ? 'success' : 'warn', summary: 'Investor', detail: enable ? 'Activado' : 'Desactivado' });
                 this.reload();

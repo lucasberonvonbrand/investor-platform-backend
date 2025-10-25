@@ -38,6 +38,10 @@ export class InvestorService {
     );
   }
 
+  updateByAdmin(id: number, payload: any): Observable<Investor> {
+    return this.http.put<Investor>(`${this.apiUrl}/update-by-admin/${id}`, payload);
+  }
+
   // 🔹 opcionales (si tu backend los tiene; si no, el componente hace fallback con update)
   activate(id: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${id}/activate`, {});

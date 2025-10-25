@@ -5,12 +5,16 @@ import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.ContractMapper;
 import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.ContractStatus;
+import com.example.gestor_inversores.model.enums.Currency;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
+import com.example.gestor_inversores.model.enums.ProjectStatus;
 import com.example.gestor_inversores.repository.*;
+import com.example.gestor_inversores.service.currency.CurrencyConversionService;
 import com.example.gestor_inversores.service.earning.EarningService;
 import com.example.gestor_inversores.service.investment.InvestmentService;
 import com.example.gestor_inversores.service.mail.IMailService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -20,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class ContractService implements IContractService {
 
     private final IContractRepository contractRepository;
@@ -32,6 +35,21 @@ public class ContractService implements IContractService {
     private final InvestmentService investmentService;
     private final EarningService earningService;
     private final IMailService mailService;
+    private final CurrencyConversionService currencyConversionService;
+
+    @Autowired
+    public ContractService(IContractRepository contractRepository, IProjectRepository projectRepository, IInvestorRepository investorRepository, IStudentRepository studentRepository, ContractMapper contractMapper, IInvestmentRepository investmentRepo, @Lazy InvestmentService investmentService, EarningService earningService, IMailService mailService, CurrencyConversionService currencyConversionService) {
+        this.contractRepository = contractRepository;
+        this.projectRepository = projectRepository;
+        this.investorRepository = investorRepository;
+        this.studentRepository = studentRepository;
+        this.contractMapper = contractMapper;
+        this.investmentRepo = investmentRepo;
+        this.investmentService = investmentService;
+        this.earningService = earningService;
+        this.mailService = mailService;
+        this.currencyConversionService = currencyConversionService;
+    }
 
     @Override
     public ResponseContractDTO createContract(RequestContractDTO dto) {
@@ -41,6 +59,37 @@ public class ContractService implements IContractService {
         Investor investor = investorRepository.findById(dto.getCreatedByInvestorId())
                 .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
+        // 1. Validar que el título del contrato no se repita para el mismo inversor
+        if (dto.getTextTitle() != null && !dto.getTextTitle().isEmpty()) {
+            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getCreatedByInvestorId(), dto.getTextTitle())
+                .ifPresent(existingContract -> {
+                    throw new BusinessException("Ya tienes un contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                });
+        }
+
+        // 2. Validar que el proyecto aún necesite financiación
+        if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
+            throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
+        }
+
+        // 3. Validar que el monto no supere el presupuesto restante
+        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
+        BigDecimal offerAmountInUSD = dto.getAmount();
+
+        if (dto.getCurrency() != Currency.USD) {
+            if (currencyConversionService == null) {
+                throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
+            }
+            offerAmountInUSD = currencyConversionService.getConversionRate(dto.getCurrency().name(), "USD")
+                    .getRate().multiply(dto.getAmount());
+        }
+
+        if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
+            throw new BusinessException(String.format(
+                    "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
+                    offerAmountInUSD, remainingBudget));
+        }
+
         // Normalizar profits a fracción decimal antes de guardar
         BigDecimal profit1 = dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit1Year();
         BigDecimal profit2 = dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit2Years();
@@ -49,6 +98,8 @@ public class ContractService implements IContractService {
         Contract contract = Contract.builder()
                 .project(project)
                 .createdByInvestor(investor)
+                .textTitle(dto.getTextTitle())
+                .description(dto.getDescription())
                 .amount(dto.getAmount())
                 .currency(dto.getCurrency())
                 .status(ContractStatus.PENDING_STUDENT_SIGNATURE)
@@ -127,6 +178,10 @@ public class ContractService implements IContractService {
                 if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE) {
                     throw new ContractCannotBeModifiedException(
                             "Este contrato ya fue firmado, cancelado, cerrado o devuelto y no puede firmarse nuevamente.");
+                }
+                // Re-validar que el proyecto no se haya financiado mientras el contrato estaba pendiente
+                if (contract.getProject().getStatus() != ProjectStatus.PENDING_FUNDING) {
+                    throw new BusinessException("No se puede firmar el contrato. El proyecto ya ha sido financiado.");
                 }
             }
             case CLOSED -> {
@@ -268,6 +323,27 @@ public class ContractService implements IContractService {
 
         if (contract.getStatus() != ContractStatus.PENDING_STUDENT_SIGNATURE)
             throw new ContractCannotBeModifiedException("Solo contratos pendientes pueden modificarse.");
+
+        // Validar que el nuevo título no exista ya para otro contrato del mismo inversor
+        if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
+            contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
+                .ifPresent(existingContract -> {
+                    if (!existingContract.getIdContract().equals(contractId)) {
+                        throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                    }
+                });
+        }
+
+        // Normalizar profits a fracción decimal antes de guardar
+        if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit1Year(dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit2Years(dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
+        if (dto.getProfit3Years() != null && dto.getProfit3Years().compareTo(BigDecimal.ONE) > 0) {
+            dto.setProfit3Years(dto.getProfit3Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
+        }
 
         contractMapper.updateContractByInvestor(dto, contract);
         contractRepository.save(contract);

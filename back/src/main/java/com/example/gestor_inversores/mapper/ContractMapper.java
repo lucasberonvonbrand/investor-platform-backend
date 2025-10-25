@@ -23,6 +23,8 @@ public class ContractMapper {
                 .idContract(contract.getIdContract())
                 .projectId(contract.getProject() != null ? contract.getProject().getIdProject() : null)
                 .createdByInvestorId(contract.getCreatedByInvestor() != null ? contract.getCreatedByInvestor().getId() : null)
+                .textTitle(contract.getTextTitle()) // <-- CAMPO AÑADIDO
+                .description(contract.getDescription())
                 .amount(contract.getAmount())
                 .currency(contract.getCurrency())
                 .status(contract.getStatus())
@@ -44,6 +46,8 @@ public class ContractMapper {
 
 
     public void updateContractByInvestor(RequestContractUpdateByInvestorDTO dto, Contract contract) {
+        if (dto.getTextTitle() != null) contract.setTextTitle(dto.getTextTitle());
+        if (dto.getDescription() != null) contract.setDescription(dto.getDescription());
         if (dto.getAmount() != null) contract.setAmount(dto.getAmount());
         if (dto.getCurrency() != null) contract.setCurrency(dto.getCurrency());
         if (dto.getProfit1Year() != null) contract.setProfit1Year(dto.getProfit1Year());

@@ -24,6 +24,8 @@ public interface IProjectService {
     List<ResponseProjectDTO> getProjectsByTag(String tag);
     List<ResponseProjectDTO> getProjectsByInvestmentId(Long investmentId);
 
+    ResponseProjectDTO completeProject(Long projectId, Long ownerId);
 
+    ResponseProjectDTO cancelProject(Long projectId, Long ownerId);
 
 }

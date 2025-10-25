@@ -4,6 +4,7 @@ import com.example.gestor_inversores.model.enums.ContractStatus;
 import com.example.gestor_inversores.model.enums.Currency;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -49,6 +50,15 @@ public class Contract {
     private ContractStatus status;
 
     private LocalDate createdAt;
+
+    @Column(name = "text_title")
+    @NotBlank(message = "Título es obligatorio")
+    private String textTitle;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     /**
      * Porcentajes de ganancia según duración del proyecto

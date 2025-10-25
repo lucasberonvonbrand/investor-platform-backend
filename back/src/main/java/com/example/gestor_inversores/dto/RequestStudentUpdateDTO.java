@@ -45,7 +45,7 @@ public class RequestStudentUpdateDTO {
 
     private DegreeStatus degreeStatus;
 
-    @Pattern(regexp = "^(https?://).*$", message = "Si se proporciona, debe ser una URL válida")
+    @Pattern(regexp = "^(https?://.*|linkedin\\.com/.*)?$", message = "Si se proporciona, debe ser una URL válida")
     private String linkedinUrl;
 
     @Size(max = 500, message = "La descripción puede tener hasta 500 caracteres")

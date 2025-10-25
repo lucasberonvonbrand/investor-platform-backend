@@ -3,6 +3,7 @@ package com.example.gestor_inversores.controller;
 import com.example.gestor_inversores.dto.RequestContractActionByStudentDTO;
 import com.example.gestor_inversores.dto.RequestInvestmentActionByInvestorDTO;
 import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
+import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import com.example.gestor_inversores.service.investment.IInvestmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,13 @@ public class InvestmentController {
             @PathVariable("id") Long investmentId,
             @RequestBody @Valid RequestContractActionByStudentDTO dto) {
         return ResponseEntity.ok(service.markAsNotReceived(investmentId, dto.getStudentId()));
+    }
+
+    @PutMapping("/reject-overfunded/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> rejectOverfunded(
+            @PathVariable("id") Long investmentId,
+            @RequestBody @Valid RequestContractActionByStudentDTO dto) {
+        return ResponseEntity.ok(service.rejectOverfunded(investmentId, dto.getStudentId()));
     }
 
     // 💡 --- ACCIONES DEL INVERSOR ---
@@ -65,6 +73,13 @@ public class InvestmentController {
     @GetMapping("/investments-by-project/{projectId}")
     public ResponseEntity<List<ResponseInvestmentDTO>> getActiveByProjectForStudents(@PathVariable Long projectId) {
         return ResponseEntity.ok(service.getActiveByProjectForStudents(projectId));
+    }
+
+    @GetMapping("/by-investor/{investorId}")
+    public ResponseEntity<List<ResponseInvestmentDTO>> getByInvestor(
+            @PathVariable Long investorId,
+            @RequestParam(required = false) InvestmentStatus status) {
+        return ResponseEntity.ok(service.getByInvestor(investorId, status));
     }
 
     @DeleteMapping("/{id}")

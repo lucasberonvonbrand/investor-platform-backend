@@ -1,6 +1,5 @@
 package com.example.gestor_inversores.dto;
 
-import com.example.gestor_inversores.model.enums.ProjectStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,10 +26,7 @@ public class RequestProjectDTO {
     @PositiveOrZero(message = "El presupuesto objetivo debe ser mayor o igual a cero")
     @Digits(integer = 12, fraction = 2, message = "El formato del presupuesto no es válido")
     private BigDecimal budgetGoal;
-
-    @NotNull(message = "El estado del proyecto es obligatorio")
-    private ProjectStatus status;
-
+    
     @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate startDate;
 

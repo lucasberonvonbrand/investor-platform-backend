@@ -2,6 +2,7 @@ package com.example.gestor_inversores.service.investment;
 
 import com.example.gestor_inversores.dto.RequestInvestmentActionByInvestorDTO;
 import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
+import com.example.gestor_inversores.model.enums.InvestmentStatus;
 
 import java.util.List;
 
@@ -26,6 +27,11 @@ public interface IInvestmentService {
 
     ResponseInvestmentDTO markAsNotReceived(Long investmentId, Long studentId);
 
+    ResponseInvestmentDTO rejectOverfunded(Long investmentId, Long studentId);
+
     // 💡 Nueva acción del inversor
     ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
+
+    List<ResponseInvestmentDTO> getByInvestor(Long investorId, InvestmentStatus status);
+
 }
