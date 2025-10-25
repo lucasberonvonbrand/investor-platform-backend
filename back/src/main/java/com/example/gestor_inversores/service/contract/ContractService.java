@@ -451,6 +451,11 @@ public class ContractService implements IContractService {
                         contract.getStatus() != ContractStatus.CLOSED) {
                     throw new ContractCannotBeModifiedException("Solo contratos firmados o cerrados pueden devolverse al inversor.");
                 }
+                Project project = contract.getProject();
+                if (project.getStatus() != ProjectStatus.CANCELLED &&
+                    project.getStatus() != ProjectStatus.NOT_FUNDED) {
+                    throw new BusinessException("Solo se pueden reembolsar contratos de proyectos cancelados o no financiados.");
+                }
             }
             default -> throw new BusinessException("Acción no válida: " + actionStatus);
         }

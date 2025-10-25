@@ -4,6 +4,7 @@ import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.Student;
 
+import javax.transaction.Transactional;
 import java.util.List;
 
 public interface IProjectService {
@@ -31,4 +32,6 @@ public interface IProjectService {
 
     ResponseProjectDTO cancelProject(Long projectId, Long ownerId);
 
+    @Transactional
+    ResponseProjectDTO failFundingProject(Long projectId, Long ownerId);
 }

@@ -155,6 +155,10 @@ public class InvestmentService implements IInvestmentService {
         Project project = projectRepo.findById(inv.getProject().getIdProject())
                 .orElseThrow(() -> new ProjectNotFoundException("El proyecto asociado a la inversión no fue encontrado."));
 
+        if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
+            throw new BusinessException("No se pueden confirmar inversiones para un proyecto que no está en estado 'PENDING_FUNDING'. Estado actual: " + project.getStatus());
+        }
+
         Long projectOwnerId = project.getOwner().getId();
         if (!projectOwnerId.equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
@@ -324,8 +328,9 @@ public class InvestmentService implements IInvestmentService {
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
 
         // 🛡️ VALIDACIÓN DE SEGURIDAD
-        if (inv.getProject().getStatus() != ProjectStatus.CANCELLED) {
-            throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos que han sido cancelados.");
+        ProjectStatus projectStatus = inv.getProject().getStatus();
+        if (projectStatus != ProjectStatus.CANCELLED && projectStatus != ProjectStatus.NOT_FUNDED) {
+            throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos en estado CANCELLED o NOT_FUNDED.");
         }
 
         if (inv.getStatus() != InvestmentStatus.RECEIVED) {
