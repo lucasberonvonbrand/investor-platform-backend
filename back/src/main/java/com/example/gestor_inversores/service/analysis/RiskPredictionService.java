@@ -40,7 +40,6 @@ public class RiskPredictionService implements IRiskAnalysisService {
     private Classifier riskModel;
     private Instances modelHeader;
     private Map<String, Double> featureImportances; // Mapa para almacenar las importancias
-    private static final int FUNDING_DEADLINE_DAYS = 90;
 
     @PostConstruct
     public void trainModel() {
@@ -134,7 +133,8 @@ public class RiskPredictionService implements IRiskAnalysisService {
             response.setTimeElapsedPercentage(timeElapsedPercentage * 100);
             response.setFundingPace(fundingPace);
             response.setFundingStartDate(project.getCreatedAt().toLocalDate());
-            response.setFundingEndDate(project.getCreatedAt().toLocalDate().plusDays(FUNDING_DEADLINE_DAYS));
+            response.setFundingEndDate(project.getStartDate());
+            response.setEstimatedProjectEndDate(project.getEstimatedEndDate());
             response.setAnalysisFactors(factors);
             response.setProfitProjections(projections);
             response.setRiskChartData(chartData);
@@ -204,12 +204,19 @@ public class RiskPredictionService implements IRiskAnalysisService {
 
     private double calculateTimeElapsedPercentage(Project project) {
         LocalDateTime createdAt = project.getCreatedAt();
-        if (createdAt == null) {
-            return 1.0; // Si no hay fecha de creación, se asume 100% transcurrido
+        LocalDate startDate = project.getStartDate();
+
+        if (createdAt == null || startDate == null) {
+            return 1.0; // Si no hay fechas, se asume 100% transcurrido
+        }
+
+        long totalFundingDays = ChronoUnit.DAYS.between(createdAt.toLocalDate(), startDate);
+        if (totalFundingDays <= 0) {
+            return 1.0; // El período de financiación ya ha terminado o no es válido
         }
 
         long daysSinceCreation = ChronoUnit.DAYS.between(createdAt.toLocalDate(), LocalDate.now());
-        return Math.max(0, Math.min(1.0, (double) daysSinceCreation / FUNDING_DEADLINE_DAYS));
+        return Math.max(0, Math.min(1.0, (double) daysSinceCreation / totalFundingDays));
     }
 
     private double calculateFundingPace(double progress, double timeElapsedPercentage) {

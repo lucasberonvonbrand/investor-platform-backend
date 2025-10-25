@@ -30,6 +30,7 @@ public class ResponseRiskAnalysisDTO {
     // --- Contexto Temporal del Proyecto ---
     private LocalDate fundingStartDate;
     private LocalDate fundingEndDate;
+    private LocalDate estimatedProjectEndDate; // <-- NUEVO CAMPO
     private double timeElapsedPercentage;
     private double fundingPace;
 
