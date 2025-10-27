@@ -29,7 +29,8 @@ public interface IInvestmentService {
 
     ResponseInvestmentDTO rejectOverfunded(Long investmentId, Long studentId);
 
-    // 💡 Nueva acción del inversor
+    // 💡 Acciones del inversor
+    ResponseInvestmentDTO confirmPaymentSent(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
     ResponseInvestmentDTO confirmRefund(Long investmentId, RequestInvestmentActionByInvestorDTO dto);
 
     List<ResponseInvestmentDTO> getByInvestor(Long investorId, InvestmentStatus status);
