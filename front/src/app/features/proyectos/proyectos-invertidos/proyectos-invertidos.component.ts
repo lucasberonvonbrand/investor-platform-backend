@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -12,6 +12,7 @@ import { TableModule } from 'primeng/table';
 import { DividerModule } from 'primeng/divider';
 import { TooltipModule } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
+import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
 
 import { InvestedProjectsService, IInvestedProject } from '../../../core/services/my-invested-projects.service';
@@ -22,7 +23,8 @@ import { InvestedProjectsService, IInvestedProject } from '../../../core/service
   imports: [
     CommonModule, RouterModule, FormsModule,
     CardModule, ToolbarModule, ButtonModule, InputTextModule,
-    TagModule, TableModule, DividerModule, TooltipModule, ToastModule
+    TagModule, TableModule, DividerModule, TooltipModule, ToastModule,
+    DialogModule
   ],
   templateUrl: './proyectos-invertidos.component.html',
   styleUrls: ['./proyectos-invertidos.component.scss'],
@@ -30,31 +32,40 @@ import { InvestedProjectsService, IInvestedProject } from '../../../core/service
 })
 export class ProyectosInvertidosComponent implements OnInit {
   private svc = inject(InvestedProjectsService);
-  private route = inject(ActivatedRoute);
   private router = inject(Router);
   private toast = inject(MessageService);
 
-  // filtros
+  // filtros / UI
   q = '';
   selectedCategory = '';
   categories: string[] = [];
+  viewMode: 'cards' | 'table' = 'cards';
 
   // datos
   projects: IInvestedProject[] = [];
   filtered: IInvestedProject[] = [];
 
-  // vista
-  viewMode: 'cards' | 'table' = 'cards';
-
-  // loading / label
+  // estado
   loading = false;
   displayLabel = '';
 
-  // favorites
-  private favKey = 'pp_fav_invested_projects';
+  // dialog / selección
+  showDetail = false;
+  selected: IInvestedProject | null = null;
+
+  // KPIs
+  kpis = {
+    total: 0,
+    activos: 0,
+    recientes: 0,
+    conFinanciacion: 0
+  };
+
+  // favoritos (local)
+  private readonly favKey = 'pp_fav_invested_projects';
   favIds = new Set<number>();
 
-  // tag palette & helper
+  // colores para tags
   private readonly tagPalette = [
     { bg: '#22c55e', fg: '#ffffff' },
     { bg: '#3b82f6', fg: '#ffffff' },
@@ -64,31 +75,19 @@ export class ProyectosInvertidosComponent implements OnInit {
     { bg: '#14b8a6', fg: '#ffffff' },
     { bg: '#06b6d4', fg: '#111111' },
   ];
-  private hashKey(name: string): number { let h=0; for (let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))>>>0; return h; }
+  private hashKey(name: string): number { let h = 0; for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0; return h; }
   tagStyle(text: string, index: number) {
     const key = text ?? String(index);
     const c = this.tagPalette[this.hashKey(key) % this.tagPalette.length];
     return { 'background-color': c.bg, color: c.fg, 'border-color': 'transparent', 'border-radius': '8px', 'font-weight': 700, 'padding': '0 .5rem' };
   }
 
-  ngOnInit(): void {
-    this.restoreFavs();
-    this.route.paramMap.subscribe(pm => {
-      const raw = pm.get('investmentId') || pm.get('id');
-      if (!raw) {
-        this.toast.add({ severity: 'warn', summary: 'Proyectos invertidos', detail: 'No se indicó investmentId en la ruta' });
-        return;
-      }
-      const id = Number(raw);
-      if (Number.isNaN(id)) {
-        this.toast.add({ severity: 'error', summary: 'Proyectos invertidos', detail: 'investmentId inválido' });
-        return;
-      }
-      this.displayLabel = `Inversión #${id}`;
-      this.loadByInvestment(id);
-    });
-  }
+ngOnInit(): void {
+    this.restoreFavs();
+    this.loadByInvestment();
+  }
 
+  // favoritos localStorage
   private restoreFavs(): void {
     try {
       const raw = localStorage.getItem(this.favKey);
@@ -103,19 +102,37 @@ export class ProyectosInvertidosComponent implements OnInit {
   }
 
   isFav(id: number): boolean { return this.favIds.has(id); }
+
   toggleFav(p: IInvestedProject): void {
     if (!p?.id) return;
     this.favIds.has(p.id) ? this.favIds.delete(p.id) : this.favIds.add(p.id);
     this.persistFavs();
   }
 
-  private loadByInvestment(investmentId: number): void {
+  // recargar datos
+  reload(): void {
+    this.loadByInvestment();
+  }
+
+  // abrir modal detalle
+  openDetail(p: IInvestedProject): void {
+    if (!p?.id) return;
+    this.router.navigate(['/proyectos-invertidos-maestro', p.id]);
+  }
+
+  goBack(): void {
+    this.router.navigate(['/mismarquesinas']);
+  }
+
+  // carga desde el servicio
+  private loadByInvestment(): void {
     this.loading = true;
-    this.svc.getByInvestment(investmentId).subscribe({
+    this.svc.getByInvestment().subscribe({
       next: (list) => {
         this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
         this.applyFilters();
         this.buildCategories();
+        this.computeKpis(this.projects);
       },
       error: (err) => {
         console.error('Error fetching invested projects', err);
@@ -140,15 +157,19 @@ export class ProyectosInvertidosComponent implements OnInit {
 
   private buildCategories(): void {
     const set = new Set<string>(this.projects.map(p => p.category ?? '—'));
-    this.categories = Array.from(set).sort((a,b)=>a.localeCompare(b));
+    this.categories = Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
-  openDetail(p: IInvestedProject): void {
-    if (!p?.id) return;
-    this.router.navigate(['/proyectos-maestro', p.id]);
-  }
-
-  goBack(): void {
-    this.router.navigate(['/mismarquesinas']);
+  private computeKpis(list: IInvestedProject[]): void {
+    const now = new Date();
+    const days30 = 1000 * 60 * 60 * 24 * 30;
+    this.kpis.total = list.length;
+    this.kpis.activos = list.filter(p => (p.status || '').toUpperCase().includes('IN_PROGRESS') || (p.status || '').toUpperCase().includes('FUNDING')).length;
+    this.kpis.conFinanciacion = list.filter(p => (p.fundingRaised ?? 0) > 0).length;
+    this.kpis.recientes = list.filter(p => {
+      if (!p.lastUpdated) return false;
+      const d = new Date(p.lastUpdated);
+      return !isNaN(d.getTime()) && (now.getTime() - d.getTime()) <= days30;
+    }).length;
   }
 }

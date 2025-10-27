@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Set;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200")
 //@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
@@ -95,9 +94,9 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.OK).body(projects);
     }
 
-    @GetMapping("by-investment/{investmentId}")
-        public ResponseEntity<List<ResponseProjectDTO>> getProjectsByInvestmentId(@PathVariable Long investmentId) {
-        List<ResponseProjectDTO> projects = projectService.getProjectsByInvestmentId(investmentId);
+    @GetMapping("/by-investment/{investorId}")
+        public ResponseEntity<List<ResponseProjectDTO>> getProjectsByInvestmentId(@PathVariable Long investorId) {
+        List<ResponseProjectDTO> projects = projectService.getProjectsByInvestorId(investorId);
         return ResponseEntity.status(HttpStatus.OK).body(projects);
     }
 }

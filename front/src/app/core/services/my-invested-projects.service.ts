@@ -15,7 +15,8 @@ export interface IInvestedProjectApi {
   endDate?: string | null;
   ownerId?: number;
   ownerName?: string | null;
-  students?: Array<{ id:number; name:string }>;
+  students?: Array<{ id: number; name: string }>;
+  category?: string;
 }
 
 export interface IInvestedProject {
@@ -29,7 +30,7 @@ export interface IInvestedProject {
   owner?: string | null;
   category?: string | null;
   university?: string | null;
-  students?: Array<{ id:number; name:string }> | null;
+  students?: Array<{ id: number; name: string }> | null;
 }
 
 function adapt(p: IInvestedProjectApi): IInvestedProject {
@@ -51,12 +52,30 @@ function adapt(p: IInvestedProjectApi): IInvestedProject {
 @Injectable({ providedIn: 'root' })
 export class InvestedProjectsService {
   private http = inject(HttpClient);
-  private api = 'http://localhost:8080/api/projects';
+  private api = '/api/projects';
 
-  getByInvestment(investmentId: number): Observable<IInvestedProject[]> {
-    const url = `${this.api}/by-investment/${investmentId}`;
-    return this.http.get<IInvestedProjectApi[]>(url).pipe(
-      map(list => (list ?? []).map(adapt))
-    );
+  private getUserId(): number | null {
+    try {
+      const raw = localStorage.getItem('auth_user');
+      if (!raw) return null;
+      const u = JSON.parse(raw);
+      const id = Number(u?.id ?? u?.userId ?? u?.sub);
+      return Number.isFinite(id) ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  getByInvestment(): Observable<IInvestedProject[]> {
+    const investorId = this.getUserId();
+    console.log('Este es el id del usuario actual:', investorId);
+    const url = `${this.api}/by-investment/${investorId}`;
+
+  return this.http.get<IInvestedProjectApi[]>(url).pipe(
+      map(list => {
+        const data = list ?? [];
+        return data.map(adapt);
+      })
+    );
   }
 }

@@ -22,7 +22,7 @@ public interface IProjectService {
 
     ResponseProjectDTO activateProject(Long id);
     List<ResponseProjectDTO> getProjectsByTag(String tag);
-    List<ResponseProjectDTO> getProjectsByInvestmentId(Long investmentId);
+    List<ResponseProjectDTO> getProjectsByInvestorId(Long investorId);
 
     ResponseProjectDTO completeProject(Long projectId, Long ownerId);
 

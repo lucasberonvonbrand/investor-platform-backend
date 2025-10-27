@@ -74,7 +74,7 @@ return this.http.get<ProjectApi[]>(this.api).pipe(map(list => (list ?? []).map(a
 }
 
 getAllByTag(tag: string): Observable<IProject[]> {
-    const url = `http://localhost:8080/api/projects/tag/${encodeURIComponent(tag)}`;
+    const url = `/api/projects/tag/${encodeURIComponent(tag)}`;
     return this.http.get<ProjectApi[]>(url).pipe(map(list => (list ?? []).map(adapt)));
 }
 

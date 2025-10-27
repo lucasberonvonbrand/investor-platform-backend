@@ -363,8 +363,8 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
-    public List<ResponseProjectDTO> getProjectsByInvestmentId(Long investmentId) {
-        Set<Project> projects = investmentRepository.findDistinctProjectsByInvestorId(investmentId)
+    public List<ResponseProjectDTO> getProjectsByInvestorId(Long investorId) {
+        Set<Project> projects = investmentRepository.findDistinctProjectsByInvestorId(investorId)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontraron proyectos para ese inversor"));
 
         return projects.stream()

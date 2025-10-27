@@ -17,5 +17,6 @@ public interface IContractRepository extends JpaRepository<Contract, Long> {
     List<Contract> findByProjectOwnerId(Long ownerId);
 
     Optional<Contract> findByCreatedByInvestorIdAndTextTitleIgnoreCase(Long investorId, String textTitle);
+    Optional<List<Contract>> findByCreatedByInvestorIdAndProject_IdProject(Long investorId, Long projectId);
 
 }

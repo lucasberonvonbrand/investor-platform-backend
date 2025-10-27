@@ -37,6 +37,6 @@ public interface IInvestmentRepository extends JpaRepository<Investment, Long> {
     List<Investment> findByGeneratedBy_IdAndDeletedFalseAndStatus(Long investorId, InvestmentStatus status);
 
 
-    @Query("SELECT DISTINCT i.project FROM Investment i WHERE i.generatedBy.idUser = :investorId AND i.deleted = false")
+    @Query("SELECT DISTINCT i.project FROM Investment i WHERE i.generatedBy.id = :investorId AND i.deleted = false")
     Optional<Set<Project>> findDistinctProjectsByInvestorId(@Param("investorId") Long investorId);
 }

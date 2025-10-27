@@ -36,6 +36,8 @@ export const routes: Routes = [
       { path: 'Miperfil',         redirectTo: 'mi-perfil', pathMatch: 'full' },
       { path: 'mi-perfil',        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'mismarquesinas/tag/:tag',        loadComponent: () => import('./features/proyectos/mismarquesinas-projects-panel/mismarquesinas-projects-panel.component').then(m => m.MismarquesinasProjectsPanelComponent) },
+      { path: 'mis-proyectos-invertidos',        loadComponent: () => import('./features/proyectos/proyectos-invertidos/proyectos-invertidos.component').then(m => m.ProyectosInvertidosComponent) },
+      { path: 'proyectos-invertidos-maestro/:id',        loadComponent: () => import('./features/proyectos/proyectos-invertidos-maestro/proyectos-invertidos-maestro.component').then(m => m.ProyectosInvertidosMaestroComponent) },
 
       // SOLO estudiantes
       {

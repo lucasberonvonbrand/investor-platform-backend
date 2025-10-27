@@ -88,7 +88,7 @@ userItems = [
     if (isInvestor) {
       managementItems.push({ label: 'Mis Marquesinas', icon: 'pi pi-pencil', routerLink: '/mismarquesinas' });
       managementItems.push({ label: 'Mis Inversiones', icon: 'pi pi-dollar', routerLink: '/mis-inversiones' });
-      managementItems.push({ label: 'Mis proyectos Invertidos', icon: 'pi pi-briefcase', routerLink: '/proyectos-invertidos' });
+      managementItems.push({ label: 'Mis proyectos Invertidos', icon: 'pi pi-briefcase', routerLink: '/mis-proyectos-invertidos' });
       managementItems.push({ label: 'Noticias', icon: 'pi pi-bell', routerLink: '/noticias' });
     }
     // Items comunes para ambos roles logueados
