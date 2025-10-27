@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.service.earning;
 
+import com.example.gestor_inversores.dto.EarningsSummaryDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
 import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.EarningMapper;
@@ -19,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,7 +84,7 @@ public class EarningService implements IEarningService {
 
         Earning savedEarning = earningRepository.save(e);
 
-        // Notificación al inversor
+        // Notificación al inversor - Ajustada para el nuevo flujo
         Investor investor = contract.getCreatedByInvestor();
         String toInvestor = investor.getEmail();
         String subject = String.format("¡El ciclo del proyecto '%s' ha finalizado!", project.getName());
@@ -95,8 +97,7 @@ public class EarningService implements IEarningService {
             "Monto de la Ganancia: %.2f %s\n" +
             "------------------------------------\n" +
             "**Monto Total a Recibir: %.2f %s**\n\n" +
-            "Por favor, ponte en contacto con el estudiante %s %s para coordinar el pago de este monto total.\n\n" +
-            "Una vez que hayas recibido el pago, recuerda confirmarlo en la plataforma para cerrar el ciclo por completo.\n\n" +
+            "El estudiante %s %s, responsable del proyecto, iniciará el proceso de pago de esta ganancia. Por favor, mantente atento a una nueva notificación de su parte para confirmar el envío de los fondos.\n\n" +
             "Saludos,\nEl equipo de ProyPlus",
             investor.getUsername(),
             project.getName(),
@@ -116,6 +117,49 @@ public class EarningService implements IEarningService {
     }
 
     @Override
+    public ResponseEarningDTO confirmPaymentSent(Long earningId, Long studentId) {
+        Earning earning = earningRepository.findById(earningId)
+                .orElseThrow(() -> new EarningNotFoundException("Ganancia no encontrada"));
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        // Validar que el estudiante que envía el pago sea el dueño del proyecto que generó la ganancia
+        if (!earning.getGeneratedBy().getId().equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para confirmar el envío de esta ganancia. Solo el estudiante dueño del proyecto puede hacerlo.");
+        }
+
+        // Validar estado actual de la ganancia
+        if (earning.getStatus() != EarningStatus.IN_PROGRESS) {
+            throw new UpdateException("Esta ganancia no puede ser marcada como enviada en su estado actual. Se espera el estado 'IN_PROGRESS'. Estado actual: " + earning.getStatus());
+        }
+
+        earning.setStatus(EarningStatus.PENDING_CONFIRMATION);
+        earning.setConfirmedAt(LocalDate.now()); // Usamos confirmedAt para registrar la fecha de esta acción
+
+        Earning savedEarning = earningRepository.save(earning);
+
+        // Notificar al inversor (dueño de la ganancia)
+        Investor investor = savedEarning.getContract().getCreatedByInvestor();
+        String toInvestor = investor.getEmail();
+        String subject = String.format("¡Pago de ganancia enviado para tu proyecto '%s'!", savedEarning.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl estudiante %s %s ha confirmado que ha enviado el pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
+            "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la ganancia en la plataforma.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            investor.getUsername(),
+            student.getFirstName(),
+            student.getLastName(),
+            savedEarning.getAmount(),
+            savedEarning.getCurrency(),
+            savedEarning.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return earningMapper.toResponse(savedEarning);
+    }
+
+    @Override
     public ResponseEarningDTO confirmReceipt(Long earningId, Long investorId) {
         Earning earning = earningRepository.findById(earningId)
                 .orElseThrow(() -> new EarningNotFoundException("Ganancia no encontrada"));
@@ -128,22 +172,29 @@ public class EarningService implements IEarningService {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
         }
 
-        if (earning.getStatus() == EarningStatus.RECEIVED) {
-            throw new BusinessException("Esta ganancia ya fue confirmada como recibida.");
+        // Validar estado actual de la ganancia - Ahora debe ser PENDING_CONFIRMATION
+        if (earning.getStatus() != EarningStatus.PENDING_CONFIRMATION) {
+            throw new UpdateException("Esta ganancia no puede ser confirmada en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + earning.getStatus());
         }
 
-        earning.setStatus(EarningStatus.RECEIVED);
+        earning.setStatus(EarningStatus.RECEIVED); // Estado original
         earning.setConfirmedBy(investor);
         earning.setConfirmedAt(LocalDate.now());
 
         Project project = projectRepository.findById(earning.getProject().getIdProject())
                 .orElseThrow(() -> new BusinessException("La ganancia no está asociada a un proyecto válido"));
 
+        // Lógica para restar del currentGoal (si aplica, o si el dinero ya fue restado al generar la ganancia)
+        // Por ahora, asumo que el currentGoal se ajusta al pagar la ganancia base, no la ganancia total.
+        // Si la lógica de tu negocio es diferente, esto podría necesitar ajuste.
         BigDecimal currentGoal = project.getCurrentGoal() != null ? project.getCurrentGoal() : BigDecimal.ZERO;
         BigDecimal amountToSubtract = earning.getBaseAmount() != null ? earning.getBaseAmount() : BigDecimal.ZERO;
 
         if (currentGoal.compareTo(amountToSubtract) < 0) {
-            throw new BusinessException("El proyecto no tiene fondos suficientes para pagar esta ganancia");
+            // Esto podría indicar un problema si el currentGoal ya se usó para otras cosas
+            // O si la lógica es que el estudiante paga de su bolsillo.
+            // Por ahora, lanzamos una excepción para indicar que algo no cuadra.
+            throw new BusinessException("El proyecto no tiene fondos suficientes para cubrir la base de esta ganancia en el currentGoal.");
         }
 
         project.setCurrentGoal(currentGoal.subtract(amountToSubtract));
@@ -181,11 +232,12 @@ public class EarningService implements IEarningService {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
         }
 
-        if (earning.getStatus() == EarningStatus.RECEIVED) {
-            throw new BusinessException("No se puede marcar como 'no recibida' una ganancia que ya fue confirmada.");
+        // Validar estado actual de la ganancia - Ahora debe ser PENDING_CONFIRMATION
+        if (earning.getStatus() != EarningStatus.PENDING_CONFIRMATION) {
+            throw new UpdateException("Esta ganancia no puede ser marcada como 'no recibida' en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + earning.getStatus());
         }
 
-        earning.setStatus(EarningStatus.NOT_RECEIVED);
+        earning.setStatus(EarningStatus.NOT_RECEIVED); // Estado original
         earning.setConfirmedBy(investor);
         earning.setConfirmedAt(LocalDate.now());
 
@@ -210,9 +262,19 @@ public class EarningService implements IEarningService {
     }
 
     @Override
-    public List<ResponseEarningDTO> getByInvestor(Long investorId) {
-        return earningRepository.findByConfirmedBy_Id(investorId)
-                .stream()
+    public List<ResponseEarningDTO> getByInvestor(Long investorId, EarningStatus status) {
+        if (!investorRepository.existsById(investorId)) {
+            throw new InvestorNotFoundException("Inversor no encontrado con ID: " + investorId);
+        }
+
+        List<Earning> earnings;
+        if (status == null) {
+            earnings = earningRepository.findByContract_CreatedByInvestor_Id(investorId);
+        } else {
+            earnings = earningRepository.findByContract_CreatedByInvestor_IdAndStatus(investorId, status);
+        }
+
+        return earnings.stream()
                 .map(earningMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -231,5 +293,30 @@ public class EarningService implements IEarningService {
                 .stream()
                 .map(earningMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public EarningsSummaryDTO getEarningsSummary() {
+        List<Earning> allEarnings = earningRepository.findAll();
+
+        BigDecimal totalEarnings = allEarnings.stream()
+                .map(Earning::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalBaseAmount = allEarnings.stream()
+                .map(Earning::getBaseAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalProfitAmount = allEarnings.stream()
+                .map(Earning::getProfitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        long totalCount = allEarnings.size();
+
+        Map<String, BigDecimal> totalEarningsByCurrency = allEarnings.stream()
+                .collect(Collectors.groupingBy(e -> e.getCurrency().name(),
+                        Collectors.reducing(BigDecimal.ZERO, Earning::getAmount, BigDecimal::add)));
+
+        return new EarningsSummaryDTO(totalEarnings, totalBaseAmount, totalProfitAmount, totalCount, totalEarningsByCurrency);
     }
 }
