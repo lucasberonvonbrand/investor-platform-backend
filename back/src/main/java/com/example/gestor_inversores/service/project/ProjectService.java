@@ -18,8 +18,10 @@ import com.example.gestor_inversores.repository.IProjectRepository;
 import com.example.gestor_inversores.repository.IProjectTagRepository;
 import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.repository.IStudentRepository;
+import com.example.gestor_inversores.service.contract.IContractService;
 import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.service.mail.IMailService;
+import com.example.gestor_inversores.service.student.IStudentService;
 import com.example.gestor_inversores.service.projectTag.IProjectTagService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,7 +39,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
@@ -47,6 +48,19 @@ public class ProjectService implements IProjectService {
     private final IContractRepository contractRepository;
     private final IInvestmentRepository investmentRepository;
     private final IMailService mailService;
+    private final IContractService contractService;
+
+    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IProjectTagRepository projectTagRepository, GeminiService geminiService, IStudentRepository studentRepository, IContractRepository contractRepository, IInvestmentRepository investmentRepository, IMailService mailService, IContractService contractService) {
+        this.projectRepository = projectRepository;
+        this.studentService = studentService;
+        this.projectTagRepository = projectTagRepository;
+        this.geminiService = geminiService;
+        this.studentRepository = studentRepository;
+        this.contractRepository = contractRepository;
+        this.investmentRepository = investmentRepository;
+        this.mailService = mailService;
+        this.contractService = contractService;
+    }
 
     @Transactional
     @Override
@@ -351,6 +365,84 @@ public class ProjectService implements IProjectService {
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
     }
 
+    @Transactional
+    @Override
+    public ResponseProjectDTO failFundingProject(Long projectId, Long ownerId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no fue encontrado"));
+
+        if (!project.getOwner().getId().equals(ownerId)) {
+            throw new UnauthorizedOperationException("Solo el dueño del proyecto puede realizar esta acción.");
+        }
+
+        if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
+            throw new BusinessException("El proyecto solo puede marcarse como no financiado si está en estado 'PENDING_FUNDING'.");
+        }
+
+        project.setStatus(ProjectStatus.NOT_FUNDED);
+        project.setEndDate(LocalDate.now());
+        project.setModifiedAt(LocalDateTime.now());
+
+        List<Investment> allInvestments = investmentRepository.findByProject_IdProject(projectId);
+        Set<Investor> investorsToNotify = allInvestments.stream()
+                .map(Investment::getGeneratedBy)
+                .collect(Collectors.toSet());
+
+        for (Investor investor : investorsToNotify) {
+            List<Investment> investorSpecificInvestments = allInvestments.stream()
+                    .filter(inv -> inv.getGeneratedBy().equals(investor))
+                    .toList();
+
+            int investmentCount = investorSpecificInvestments.size();
+
+            Map<String, BigDecimal> sumsByCurrency = investorSpecificInvestments.stream()
+                    .collect(Collectors.groupingBy(
+                            inv -> inv.getCurrency().name(),
+                            Collectors.reducing(BigDecimal.ZERO, Investment::getAmount, BigDecimal::add)
+                    ));
+
+            String totalInvestedString = sumsByCurrency.entrySet().stream()
+                    .map(entry -> String.format("%.2f %s", entry.getValue(), entry.getKey()))
+                    .collect(Collectors.joining(" y "));
+
+            String investmentDetails;
+            if (investmentCount == 1) {
+                investmentDetails = String.format("tu inversión de %s", totalInvestedString);
+            } else {
+                investmentDetails = String.format("tus %d inversiones, que suman un total de %s", investmentCount, totalInvestedString);
+            }
+
+            String to = investor.getEmail();
+            String subject = String.format("Proyecto no financiado: '%s'", project.getName());
+            String body = String.format(
+                    "Hola %s,\n\nTe informamos que el proyecto '%s' no alcanzó su meta de financiación y ha sido marcado como no financiado.\n\n" +
+                    "El siguiente paso es la devolución de %s.\n\n" +
+                    "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante para coordinar la devolución.\n\n" +
+                    "Lamentamos los inconvenientes.\n\n" +
+                    "Saludos,\nEl equipo de ProyPlus",
+                    investor.getUsername(),
+                    project.getName(),
+                    investmentDetails
+            );
+            mailService.sendEmail(to, subject, body);
+        }
+
+        Project savedProject = projectRepository.save(project);
+
+        Student owner = savedProject.getOwner();
+        String toOwner = owner.getEmail();
+        String ownerSubject = String.format("Tu proyecto '%s' no ha alcanzado la financiación", savedProject.getName());
+        String ownerBody = String.format(
+                "Hola %s,\n\nEl período de financiación para tu proyecto '%s' ha finalizado sin alcanzar el objetivo.\n\n" +
+                "Ahora debes iniciar el proceso de devolución de las inversiones a cada participante.\n\n" +
+                "Puedes gestionar la devolución desde la sección de contratos de tu proyecto.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                owner.getFirstName(),
+                savedProject.getName()
+        );
+        mailService.sendEmail(toOwner, ownerSubject, ownerBody);
+
+        return ProjectMapper.projectToResponseProjectDTO(savedProject);
     @Override
     public List<ResponseProjectDTO> getProjectsByTag(String tag) {
         ProjectTag projectTag = projectTagService.getTagByName(tag);
@@ -406,6 +498,8 @@ public class ProjectService implements IProjectService {
                 OTROS
                 
                 Descripción del proyecto:
-                """ + description + "\n\nRespuesta de la etiqueta única:";
+                """ + description + """
+
+Respuesta de la etiqueta única:""";
     }
 }

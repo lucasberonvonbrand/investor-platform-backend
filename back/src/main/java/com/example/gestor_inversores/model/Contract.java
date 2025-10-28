@@ -73,6 +73,19 @@ public class Contract {
     private BigDecimal profit3Years;
 
     /**
+     * Campos para gestionar las firmas individuales del contrato
+     */
+    @Column(nullable = false)
+    private boolean investorSigned = false;
+
+    private LocalDate investorSignedDate;
+
+    @Column(nullable = false)
+    private boolean studentSigned = false;
+
+    private LocalDate studentSignedDate;
+
+    /**
      * Relación con ContractAction para registrar todas las acciones de los estudiantes
      */
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -3,6 +3,7 @@ package com.example.gestor_inversores.model.enums;
 public enum InvestmentStatus {
 
     IN_PROGRESS,      // La inversión ha sido creada, pendiente de transferencia
+    PENDING_CONFIRMATION, // El inversor ha confirmado que envió el dinero, pendiente de recepción del estudiante
     RECEIVED,         // El estudiante ha confirmado la recepción del dinero
     NOT_RECEIVED,     // El estudiante ha reportado que no recibió el dinero
     CANCELLED,        // La inversión ha sido cancelada

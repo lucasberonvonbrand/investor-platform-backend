@@ -42,6 +42,14 @@ public class InvestmentController {
     }
 
     // 💡 --- ACCIONES DEL INVERSOR ---
+
+    @PutMapping("/confirm-payment-sent/{id}")
+    public ResponseEntity<ResponseInvestmentDTO> confirmPaymentSent(
+            @PathVariable Long id,
+            @Valid @RequestBody RequestInvestmentActionByInvestorDTO dto) {
+        return ResponseEntity.ok(service.confirmPaymentSent(id, dto));
+    }
+
     @PutMapping("/cancel/{id}")
     public ResponseEntity<ResponseInvestmentDTO> cancelByInvestor(@PathVariable Long id) {
         return ResponseEntity.ok(service.cancelByInvestor(id));

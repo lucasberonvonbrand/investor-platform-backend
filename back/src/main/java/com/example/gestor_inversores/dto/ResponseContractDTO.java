@@ -30,6 +30,12 @@ public class ResponseContractDTO {
 
     private LocalDate createdAt;
 
+    // Campos de firma
+    private boolean investorSigned;
+    private LocalDate investorSignedDate;
+    private boolean studentSigned;
+    private LocalDate studentSignedDate;
+
     private BigDecimal profit1Year;
     private BigDecimal profit2Years;
     private BigDecimal profit3Years;

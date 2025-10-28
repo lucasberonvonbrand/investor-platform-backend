@@ -155,13 +155,17 @@ public class InvestmentService implements IInvestmentService {
         Project project = projectRepo.findById(inv.getProject().getIdProject())
                 .orElseThrow(() -> new ProjectNotFoundException("El proyecto asociado a la inversión no fue encontrado."));
 
+        if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
+            throw new BusinessException("No se pueden confirmar inversiones para un proyecto que no está en estado 'PENDING_FUNDING'. Estado actual: " + project.getStatus());
+        }
+
         Long projectOwnerId = project.getOwner().getId();
         if (!projectOwnerId.equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
         }
 
-        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
-            throw new UpdateException("Esta inversión ya fue procesada y no se puede modificar nuevamente.");
+        if (inv.getStatus() != InvestmentStatus.PENDING_CONFIRMATION) {
+            throw new UpdateException("Esta inversión no puede ser confirmada en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + inv.getStatus());
         }
 
         BigDecimal amountInUSD = inv.getAmount();
@@ -228,6 +232,46 @@ public class InvestmentService implements IInvestmentService {
             );
             mailService.sendEmail(toOwner, ownerSubject, ownerBody);
         }
+
+        return mapper.toResponse(savedInvestment);
+    }
+
+    @Override
+    public ResponseInvestmentDTO confirmPaymentSent(Long investmentId, RequestInvestmentActionByInvestorDTO dto) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Investor investor = investorRepo.findById(dto.getInvestorId())
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        if (!inv.getGeneratedBy().getId().equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para confirmar el envío de esta inversión.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
+            throw new UpdateException("Esta inversión no puede ser marcada como enviada en su estado actual. Se espera el estado 'IN_PROGRESS'. Estado actual: " + inv.getStatus());
+        }
+
+        inv.setStatus(InvestmentStatus.PENDING_CONFIRMATION);
+        inv.setConfirmedAt(LocalDate.now()); // Usamos confirmedAt para registrar la fecha de esta acción
+
+        Investment savedInvestment = investmentRepo.save(inv);
+
+        // Notificar al estudiante (dueño del proyecto)
+        Student student = savedInvestment.getProject().getOwner();
+        String toStudent = student.getEmail();
+        String subject = String.format("¡Inversión enviada para tu proyecto '%s'!", savedInvestment.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl inversor '%s' ha confirmado que ha enviado su inversión de %.2f %s para tu proyecto '%s'.\n\n" +
+            "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la inversión en la plataforma.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            student.getFirstName(),
+            investor.getUsername(),
+            savedInvestment.getAmount(),
+            savedInvestment.getCurrency(),
+            savedInvestment.getProject().getName()
+        );
+        mailService.sendEmail(toStudent, subject, body);
 
         return mapper.toResponse(savedInvestment);
     }
@@ -324,8 +368,9 @@ public class InvestmentService implements IInvestmentService {
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
 
         // 🛡️ VALIDACIÓN DE SEGURIDAD
-        if (inv.getProject().getStatus() != ProjectStatus.CANCELLED) {
-            throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos que han sido cancelados.");
+        ProjectStatus projectStatus = inv.getProject().getStatus();
+        if (projectStatus != ProjectStatus.CANCELLED && projectStatus != ProjectStatus.NOT_FUNDED) {
+            throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos en estado CANCELLED o NOT_FUNDED.");
         }
 
         if (inv.getStatus() != InvestmentStatus.RECEIVED) {

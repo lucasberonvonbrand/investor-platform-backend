@@ -1,7 +1,10 @@
 package com.example.gestor_inversores.controller;
 
+import com.example.gestor_inversores.dto.EarningsSummaryDTO;
+import com.example.gestor_inversores.dto.RequestEarningActionByStudentDTO;
 import com.example.gestor_inversores.dto.RequestEarningActionDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
+import com.example.gestor_inversores.model.enums.EarningStatus;
 import com.example.gestor_inversores.service.earning.IEarningService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +22,15 @@ public class EarningController {
 
     private final IEarningService earningService;
 
-    // 💡 --- NUEVOS ENDPOINTS PARA ACCIONES DEL INVERSOR ---
+    // 💡 --- NUEVO ENDPOINT PARA ACCIÓN DEL ESTUDIANTE ---
+    @PutMapping("/confirm-payment-sent/{id}")
+    public ResponseEntity<ResponseEarningDTO> confirmPaymentSent(
+            @PathVariable("id") Long earningId,
+            @RequestBody @Valid RequestEarningActionByStudentDTO dto) {
+        return ResponseEntity.ok(earningService.confirmPaymentSent(earningId, dto.getStudentId()));
+    }
+
+    // 💡 --- ENDPOINTS PARA ACCIONES DEL INVERSOR ---
     @PutMapping("/confirm-receipt/{id}")
     public ResponseEntity<ResponseEarningDTO> confirmReceipt(
             @PathVariable("id") Long earningId,
@@ -47,12 +58,19 @@ public class EarningController {
     }
 
     @GetMapping("/investor/{investorId}")
-    public ResponseEntity<List<ResponseEarningDTO>> getByInvestor(@PathVariable Long investorId) {
-        return ResponseEntity.ok(earningService.getByInvestor(investorId));
+    public ResponseEntity<List<ResponseEarningDTO>> getByInvestor(
+            @PathVariable Long investorId,
+            @RequestParam(required = false) EarningStatus status) {
+        return ResponseEntity.ok(earningService.getByInvestor(investorId, status));
     }
 
     @GetMapping("/student/{studentId}")
     public ResponseEntity<List<ResponseEarningDTO>> getByStudent(@PathVariable Long studentId) {
         return ResponseEntity.ok(earningService.getByStudent(studentId));
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<EarningsSummaryDTO> getEarningsSummary() {
+        return ResponseEntity.ok(earningService.getEarningsSummary());
     }
 }

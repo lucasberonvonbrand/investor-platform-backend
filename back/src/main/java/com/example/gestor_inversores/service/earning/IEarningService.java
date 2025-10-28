@@ -1,10 +1,14 @@
 package com.example.gestor_inversores.service.earning;
 
+import com.example.gestor_inversores.dto.EarningsSummaryDTO;
 import com.example.gestor_inversores.dto.ResponseEarningDTO;
+import com.example.gestor_inversores.model.enums.EarningStatus;
 
 import java.util.List;
 
 public interface IEarningService {
+
+    ResponseEarningDTO confirmPaymentSent(Long earningId, Long studentId);
 
     // 💡 NUEVOS MÉTODOS: Acciones específicas y seguras para el inversor
     ResponseEarningDTO confirmReceipt(Long earningId, Long investorId);
@@ -12,7 +16,9 @@ public interface IEarningService {
 
     // Consultas
     List<ResponseEarningDTO> getByProject(Long projectId);
-    List<ResponseEarningDTO> getByInvestor(Long investorId);
+    List<ResponseEarningDTO> getByInvestor(Long investorId, EarningStatus status);
     List<ResponseEarningDTO> getByStudent(Long studentId);
     List<ResponseEarningDTO> getAll();
+
+    EarningsSummaryDTO getEarningsSummary();
 }

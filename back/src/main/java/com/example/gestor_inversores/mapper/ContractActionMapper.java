@@ -22,7 +22,7 @@ public class ContractActionMapper {
 
     public ContractActionDTO toDTO(ContractAction action) {
         return ContractActionDTO.builder()
-                .id(action.getId())
+                .actionId(action.getId())
                 .contractId(action.getContract().getIdContract())
                 .studentId(action.getStudent().getId())
                 .status(action.getStatus())
