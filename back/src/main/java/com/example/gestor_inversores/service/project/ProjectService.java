@@ -13,10 +13,7 @@ import com.example.gestor_inversores.model.enums.ContractStatus;
 import com.example.gestor_inversores.model.enums.ProjectStatus;
 import com.example.gestor_inversores.repository.IContractRepository;
 import com.example.gestor_inversores.repository.IInvestmentRepository;
-import com.example.gestor_inversores.repository.IInvestmentRepository;
 import com.example.gestor_inversores.repository.IProjectRepository;
-import com.example.gestor_inversores.repository.IProjectTagRepository;
-import com.example.gestor_inversores.service.ia.GeminiService;
 import com.example.gestor_inversores.repository.IStudentRepository;
 import com.example.gestor_inversores.service.contract.IContractService;
 import com.example.gestor_inversores.service.ia.GeminiService;
@@ -39,9 +36,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ProjectService implements IProjectService {
 
     private final IProjectRepository projectRepository;
+    private final IStudentService studentService;
     private final IProjectTagService projectTagService;
     private final GeminiService geminiService;
     private final IStudentRepository studentRepository;
@@ -49,18 +48,6 @@ public class ProjectService implements IProjectService {
     private final IInvestmentRepository investmentRepository;
     private final IMailService mailService;
     private final IContractService contractService;
-
-    public ProjectService(IProjectRepository projectRepository, IStudentService studentService, IProjectTagRepository projectTagRepository, GeminiService geminiService, IStudentRepository studentRepository, IContractRepository contractRepository, IInvestmentRepository investmentRepository, IMailService mailService, IContractService contractService) {
-        this.projectRepository = projectRepository;
-        this.studentService = studentService;
-        this.projectTagRepository = projectTagRepository;
-        this.geminiService = geminiService;
-        this.studentRepository = studentRepository;
-        this.contractRepository = contractRepository;
-        this.investmentRepository = investmentRepository;
-        this.mailService = mailService;
-        this.contractService = contractService;
-    }
 
     @Transactional
     @Override
@@ -443,6 +430,8 @@ public class ProjectService implements IProjectService {
         mailService.sendEmail(toOwner, ownerSubject, ownerBody);
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
+    }
+
     @Override
     public List<ResponseProjectDTO> getProjectsByTag(String tag) {
         ProjectTag projectTag = projectTagService.getTagByName(tag);
@@ -457,7 +446,7 @@ public class ProjectService implements IProjectService {
     @Override
     public List<ResponseProjectDTO> getProjectsByInvestorId(Long investorId) {
         Set<Project> projects = investmentRepository.findDistinctProjectsByInvestorId(investorId)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontraron proyectos para ese inversor"));
+                .orElseThrow(() -> new ProjectNotFoundException("No se encontraron proyectos para el inversor con ID: " + investorId));
 
         return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
