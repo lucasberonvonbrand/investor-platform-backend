@@ -1,86 +1,94 @@
-
+/* Estilos Globales y Contenedor Principal */
 .home-container {
-  min-height: 100vh;
-  width: 100vw;
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-  font-family: Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+    min-height: 100vh;
+    width: 100%; 
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden; 
 }
 
+/* Título Principal */
 h1 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 10px;
+    font-size: 2.5rem;
+    color: #2c3e50; 
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 30px;
+    font-weight: 700;
 }
 
-p {
-  text-align: center;
-  color: #7f8c8d;
-  margin-bottom: 30px;
-}
-
-
-
+/* Estilos de la Cuadrícula (Grid)*/
 .cuadrados-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 32px;
-  width: 100vw;
-  height: calc(100vh - 120px);
-  margin: 0;
-  padding: 32px 0;
-  box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    width: 90%;
+    max-width: 1300px; 
+    margin: 0 auto 50px auto; 
+    padding: 0;
+    height: auto; 
+    box-sizing: border-box;
 }
 
-
+/* Estilos de la Tarjeta Individual (Cuadrado) */
 .cuadrado {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: stretch;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  transition: transform 0.2s, box-shadow 0.2s;
-  cursor: pointer;
-}
-.cuadrado:hover {
-  transform: translateY(-4px) scale(1.04);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
-}
-.cuadrado img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 16px;
-  margin: 0;
-}
-.cuadrado-text {
-  font-size: 1.15rem;
-  font-weight: 600;
-  text-align: center;
-  color: #2c3e50;
-  padding: 12px 0 8px 0;
-  background: rgba(255,255,255,0.85);
-  border-radius: 0 0 16px 16px;
-  width: 100%;
-  position: absolute;
-  bottom: 0;
-  left: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    position: relative;
+    display: block;
+    overflow: hidden; 
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    aspect-ratio: 16 / 9; 
 }
 
-app-marquesina:hover {
-  background-color: #e8f5e9; /* Un pequeño feedback visual al pasar el ratón */
-  cursor: pointer;
+/* Efecto Hover */
+.cuadrado:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+/* Imagen de la Tarjeta */
+.cuadrado img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    margin: 0;
+    display: block;
+    filter: brightness(0.85);
+    transition: filter 0.3s ease;
+}
+
+.cuadrado:hover img {
+    filter: brightness(1);
+}
+
+/* 🏷️ Texto de la Tarjeta - Diseño con Superposición Inferior */
+.cuadrado-text {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-align: left;
+    color: #ffffff;
+    
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
+    
+    padding: 40px 15px 15px 15px; 
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    box-sizing: border-box;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    
+    /* Media Query para Teléfonos: Reducir fuente si es necesario */
+    @media (max-width: 600px) {
+        font-size: 1.0rem;
+    }
 }

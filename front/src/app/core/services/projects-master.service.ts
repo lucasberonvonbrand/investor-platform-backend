@@ -86,6 +86,9 @@ export class ProjectsMasterService {
   getContracts(projectId: number): Observable<IContract[]> {
     return this.http.get<IContract[]>(`/api/contracts/by-project/${projectId}`);
   }
+  getContractsByInvestorAndProject(investorId: number, projectId: number): Observable<IContract[]> {
+    return this.http.get<IContract[]>(`/api/contracts/investor/${investorId}/project/${projectId}`);
+  }
   upsertContract(dto: Partial<IContract> & { projectId: number; createdByInvestorId?: number }): Observable<IContract> {
     if (dto.idContract) {
       // Para actualizar, el backend podría esperar un payload diferente.

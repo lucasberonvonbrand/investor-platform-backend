@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 // 👇 QUITAR esta línea porque no se usa en el template
 // import { MarquesinaComponent } from '../../features/marquesina/marquesina.component';
 
@@ -27,8 +28,30 @@ export class MismarquesinasComponent implements OnInit {
     { text: 'Comercio Electrónico', img: 'https://plus.unsplash.com/premium_photo-1681487769650-a0c3fbaed85a?q=80&w=1555&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
     { text: 'Alimentos y Bebidas', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80' },
     { text: 'Servicios Profesionales', img: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80' },
-    { text: 'Impacto Social', img: 'https://plus.unsplash.com/premium_photo-1663047248264-24aa25b1433e?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' }
+    { text: 'Impacto Social', img: 'https://plus.unsplash.com/premium_photo-1663047248264-24aa25b1433e?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
+    { text: 'Otros', img: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80' },
   ];
 
+  constructor(private router: Router) {}
+
   ngOnInit(): void {}
+
+  private slugify(tag: string): string {
+    return tag
+      .normalize('NFD')                    // separar diacríticos
+      .replace(/[\u0300-\u036f]/g, '')     // quitar acentos
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')        // quitar caracteres no alfanum
+      .trim()
+      .replace(/\s+/g, '-')                // espacios -> guiones
+      .replace(/-+/g, '-');                // compactar guiones
+  }
+
+openTag(item: CuadradoItem): void {
+  const clean = this.slugify(item.text);
+  console.log('openTag -> tag limpio:', clean);
+  this.router.navigateByUrl(`/mismarquesinas/tag/${encodeURIComponent(clean)}`)
+    .then(ok => console.log('navegación ok:', ok))
+    .catch(err => console.error('navegación error:', err));
+}
 }

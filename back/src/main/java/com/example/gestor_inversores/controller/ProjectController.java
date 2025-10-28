@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 //@PreAuthorize("hasRole('ADMIN')")
@@ -87,5 +88,15 @@ public class ProjectController {
         ResponseProjectDTO responseProjectDTO = projectService.cancelProject(id, ownerId);
         return ResponseEntity.ok(responseProjectDTO);
     }
+    @GetMapping("/tag/{tag}")
+    public ResponseEntity<List<ResponseProjectDTO>> getProjectsByTag(@PathVariable String tag) {
+        List<ResponseProjectDTO> projects = projectService.getProjectsByTag(tag);
+        return ResponseEntity.status(HttpStatus.OK).body(projects);
+    }
 
+    @GetMapping("/by-investment/{investorId}")
+        public ResponseEntity<List<ResponseProjectDTO>> getProjectsByInvestmentId(@PathVariable Long investorId) {
+        List<ResponseProjectDTO> projects = projectService.getProjectsByInvestorId(investorId);
+        return ResponseEntity.status(HttpStatus.OK).body(projects);
+    }
 }

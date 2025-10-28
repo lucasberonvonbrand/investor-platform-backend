@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.p-card {
+  border-radius: 1rem;
+}
+
+
+::ng-deep .p-card-content {
+  padding-top: 0;
+  padding-bottom: 0;
+}

@@ -18,14 +18,11 @@ public interface IProjectService {
     // Buscar por Student
     List<ResponseProjectDTO> getProjectsByOwner(Student owner);
 
-    /**
-    // Buscar por ownerId
-    List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId);
-     **/
-
     List<ResponseProjectDTO> getProjectsByOwnerId(Long ownerId, boolean active);
 
     ResponseProjectDTO activateProject(Long id);
+    List<ResponseProjectDTO> getProjectsByTag(String tag);
+    List<ResponseProjectDTO> getProjectsByInvestorId(Long investorId);
 
     ResponseProjectDTO completeProject(Long projectId, Long ownerId);
 
