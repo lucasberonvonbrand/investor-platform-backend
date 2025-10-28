@@ -26,6 +26,9 @@ export interface IInvestment {
   createdAt: string;
   confirmedAt: string | null;
   projectId: number;
+  profit1Year?: number;
+  profit2Years?: number;
+  profit3Years?: number;
 }
 
 export interface IInvestedProject extends IInvestment {
@@ -91,11 +94,33 @@ export class InvestmentsService {
     // Este método asume que el inversor actual es el que consulta.
     // Podríamos añadir una validación de seguridad en el backend.
     return this.http.get<IInvestment>(`/api/investments/${investmentId}`).pipe(
-      switchMap(investment => {
+      switchMap((investment: IInvestment) => {
         if (!investment) return of(null);
-        return this.projectsMasterSvc.getProjectById(investment.projectId).pipe(
-          map(project => ({ ...investment, project }))
-        );
+
+        const project$ = this.projectsMasterSvc.getProjectById(investment.projectId);
+
+        // Si la inversión ya trae los profits, genial.
+        if (investment.profit1Year != null) {
+          return project$.pipe(map(project => ({ ...investment, project })));
+        }
+
+        // Si no, los buscamos en los contratos del proyecto como fallback.
+        const contracts$ = this.projectsMasterSvc.getContracts(investment.projectId);
+
+        return combineLatest([project$, contracts$]).pipe(
+          map(([project, contracts]) => {
+            // Buscamos el primer contrato firmado que generó una inversión.
+            // Es una suposición más robusta que buscar por monto/moneda.
+            const relatedContract = contracts.find(c => c.status === 'SIGNED');
+            return {
+              ...investment,
+              project,
+              profit1Year: relatedContract?.profit1Year,
+              profit2Years: relatedContract?.profit2Years,
+              profit3Years: relatedContract?.profit3Years,
+            };
+          })
+        )
       })
     );
   }

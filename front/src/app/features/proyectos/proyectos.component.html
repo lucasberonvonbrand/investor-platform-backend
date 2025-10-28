@@ -1,113 +1,108 @@
 <p-toast></p-toast>
-<div class="container">
-  <div class="form-card">
-    <div class="header">
-      <img src="https://cdn-icons-png.flaticon.com/512/5956/5956592.png" alt="Proyect Logo" class="logo">
-      <div class="user-icon">👤</div>
-    </div>
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
+  <p-card header="Crear Nuevo Proyecto" subheader="Completá los datos para dar de alta tu iniciativa" styleClass="w-full max-w-4xl">
+    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
 
-    <h2>Crear nuevo proyecto</h2>
+      <!-- Sección Información General -->
+      <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Información General</h3>
 
-    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="projectName">Nombre del proyecto</label>
-        <input type="text"
-       id="projectName"
-       placeholder="Ingresá el nombre (3–80 caracteres)"
-       maxlength="80"
-       formControlName="name" />
+      <div class="md:col-span-2 field">
+        <label for="projectName" class="font-medium">Nombre del proyecto</label>
+        <input id="projectName" type="text" pInputText formControlName="name" class="w-full mt-1" placeholder="Ingresá el nombre (3–80 caracteres)" maxlength="80" />
       </div>
 
-      <div class="form-group">
-        <label for="projectDescription">Descripción</label>
-        <textarea id="projectDescription"
-          placeholder="Descripción del proyecto (10–500 caracteres)"
-          maxlength="500"
-          formControlName="description"></textarea>
-      </div>
-      <small class="error-text"
-        *ngIf="projectForm.get('description')?.errors?.['server']">
-        {{ projectForm.get('description')?.errors?.['server'] }}
-      </small>
-
-      <div class="form-group">
-        <label for="budgetGoal">Meta de presupuesto (USD)</label>
-        <input type="number" id="budgetGoal" placeholder="Ej: 150000" step="0.01" min="0" formControlName="budgetGoal" />
+      <div class="md:col-span-2 field">
+        <label for="projectDescription" class="font-medium">Descripción</label>
+        <textarea id="projectDescription" formControlName="description" class="w-full mt-1 p-inputtextarea p-inputtext p-component" rows="4" placeholder="Descripción detallada del proyecto (10–500 caracteres)" maxlength="500"></textarea>
+        <small class="p-error" *ngIf="projectForm.get('description')?.errors?.['server']">
+          {{ projectForm.get('description')?.errors?.['server'] }}
+        </small>
       </div>
 
-      <div class="form-group">
-        <label for="projectStatus">Estado</label>
-        <select id="projectStatus" formControlName="status">
+      <div class="field">
+        <label for="budgetGoal" class="font-medium">Meta de presupuesto (USD)</label>
+        <input id="budgetGoal" type="number" pInputText formControlName="budgetGoal" class="w-full mt-1" placeholder="Ej: 150000" step="0.01" min="0" />
+      </div>
+
+      <div class="field">
+        <label for="projectStatus" class="font-medium">Estado Inicial</label>
+        <select id="projectStatus" formControlName="status" class="w-full p-inputtext p-component mt-1">
           <option value="" disabled>Seleccione un estado</option>
-          <option value="PENDING_FUNDING">Financiamiento pendiente</option>
-          <option value="IN_PROGRESS">En progreso</option>
+          <option value="PENDING_FUNDING">Pendiente de Financiación</option>
+          <option value="IN_PROGRESS">En Progreso</option>
           <option value="COMPLETED">Completado</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label for="startDate">Fecha de inicio</label>
-        <input type="date" id="startDate" formControlName="startDate" />
+      <!-- Sección Fechas -->
+      <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Fechas y Plazos</h3>
+
+      <div class="field">
+        <label for="startDate" class="font-medium">Fecha de inicio</label>
+        <input id="startDate" type="date" pInputText formControlName="startDate" class="w-full mt-1" />
       </div>
 
-      <div class="form-group">
-        <label for="estimatedEndDate">Fecha de finalización estimada</label>
-        <input type="date" id="estimatedEndDate" formControlName="estimatedEndDate" />
+      <div class="field">
+        <label for="estimatedEndDate" class="font-medium">Fecha de finalización estimada</label>
+        <input id="estimatedEndDate" type="date" pInputText formControlName="estimatedEndDate" class="w-full mt-1" />
+        <small class="p-error" *ngIf="projectForm.get('estimatedEndDate')?.errors?.['server']">
+          {{ projectForm.get('estimatedEndDate')?.errors?.['server'] }}
+        </small>
       </div>
-      <small class="error-text"
-        *ngIf="projectForm.get('estimatedEndDate')?.errors?.['server']">
-        {{ projectForm.get('estimatedEndDate')?.errors?.['server'] }}
-      </small>
 
-      <!-- Responsable -->
-      <div class="form-group">
-        <label for="owner">Responsable</label>
-        <div class="p-input-icon-right w-full">
-          <i *ngIf="ownerLoading" class="pi pi-spinner pi-spin"></i>
-          <p-autoComplete
-            inputId="owner"
-            formControlName="owner"
-            [dropdown]="true"
-            [suggestions]="suggestionsOwners"
-            (completeMethod)="completeOwner($event)"
-            (onDropdownClick)="showAllOwners()"
-            [minLength]="0"
-            [forceSelection]="true"
-            [appendTo]="'body'"
-            [dataKey]="'id'"
-            optionLabel="fullName">
-          </p-autoComplete>
+      <!-- Sección Equipo -->
+      <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Equipo del Proyecto</h3>
+
+      <div class="field">
+        <label for="owner" class="font-medium">Responsable (Líder)</label>
+        <input id="owner" type="text" pInputText [value]="projectForm.get('owner')?.value?.fullName || ''" class="w-full mt-1" [disabled]="true" />
+        <small class="text-gray-500 dark:text-gray-400 mt-1 block">El responsable del proyecto es el usuario que ha iniciado sesión.</small>
+      </div>
+
+      <div class="field">
+        <label for="students" class="font-medium">Integrantes Adicionales</label>
+        <p-autoComplete
+          inputId="students"
+          formControlName="students"
+          [multiple]="true"
+          [dropdown]="true"
+          [suggestions]="suggestionsStudents"
+          (completeMethod)="completeStudents($event)"
+          (onDropdownClick)="showAllStudents()"
+          [minLength]="0"
+          [delay]="200"
+          [forceSelection]="true"
+          [appendTo]="'body'"
+          [dataKey]="'id'"
+          optionLabel="fullName"
+          styleClass="w-full"
+          inputStyleClass="w-full mt-1">
+          <ng-template pTemplate="item" let-item>
+            <div>{{ item.fullName }}</div>
+          </ng-template>
+        </p-autoComplete>
+        <small class="text-gray-500 dark:text-gray-400 mt-1 block">Agregá varios integrantes por nombre.</small>
+      </div>
+
+      <!-- Mensaje Informativo -->
+      <!-- Mensaje informativo sobre la documentación -->
+      <div class="col-span-full bg-blue-50 dark:bg-gray-700 border-l-4 border-blue-400 p-4 rounded-r-lg my-4">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <i class="pi pi-info-circle text-blue-500 text-xl"></i>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700 dark:text-blue-200">
+              <strong>Nota:</strong> La carga de documentos (como el plan de negocios, prototipos, etc.) se habilitará una vez que el proyecto haya sido creado.
+            </p>
+          </div>
         </div>
-        <small class="hint">Buscá por nombre y elegí el responsable.</small>
       </div>
 
-      <!-- Integrantes -->
-      <div class="form-group">
-        <label for="students">Estudiantes</label>
-        <div class="p-input-icon-right w-full">
-          <i *ngIf="studentsLoading" class="pi pi-spinner pi-spin"></i>
-          <p-autoComplete
-            inputId="students"
-            formControlName="students"
-            [multiple]="true"
-            [dropdown]="true"
-            [suggestions]="suggestionsStudents"
-            (completeMethod)="completeStudents($event)"
-            (onDropdownClick)="showAllStudents()"
-            [minLength]="0"
-            [delay]="200"
-            [forceSelection]="true"
-            [appendTo]="'body'"
-            [dataKey]="'id'"
-            optionLabel="fullName">
-          </p-autoComplete>
-        </div>
-        <small class="hint">Agregá varios integrantes por nombre.</small>
-      </div>
-
-      <div class="actions">
-        <button type="button" class="cancel-button" (click)="onCancel()">Cancelar</button>
-        <button type="submit" class="create-button" [disabled]="projectForm.invalid || isLoading">Crear</button>
+      <!-- Acciones -->
+      <div class="md:col-span-2 flex justify-end gap-2 mt-6">
+        <button pButton type="button" label="Cancelar" severity="secondary" (click)="onCancel()"></button>
+        <button pButton type="submit" label="Crear Proyecto" icon="pi pi-check" [disabled]="projectForm.invalid || isLoading" [loading]="isLoading" loadingIcon="pi pi-spinner pi-spin"></button>
       </div>
     </form>
 
@@ -122,5 +117,5 @@
         <p class="progress-text">{{ progress }}%</p>
       </div>
     </div>
-  </div>
+  </p-card>
 </div>

@@ -17,10 +17,11 @@ import { AccordionModule } from 'primeng/accordion';
 import { SliderModule } from 'primeng/slider';
 import { EditorModule } from 'primeng/editor';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { MessageService, ConfirmationService } from 'primeng/api';
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { AuthService } from '../../auth/login/auth.service';
@@ -36,7 +37,7 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule,
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [
@@ -110,6 +111,8 @@ export class ProyectosMaestroComponent implements OnInit {
     profit3Years: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
     clauses: [''], // Campo para el editor de texto
   });
+  
+  contractTemplates: MenuItem[] = [];
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -120,6 +123,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.projectId.set(id);
     this.loadProject();
     this.loadContracts();
+    this.setupContractTemplates();
   }
 
   goBack(): void {
@@ -129,7 +133,10 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadProject(): void {
     this.loading.set(true);
     this.svc.getProjectById(this.projectId()).subscribe({
-      next: (p: IMyProject | null) => this.project.set(p || null),
+      next: (p: IMyProject | null) => {
+        this.project.set(p || null);
+        this.setupContractTemplates(); // Volver a generar las plantillas con el título del proyecto
+      },
       error: () => this.toast.add({ severity: 'error', summary: 'Proyecto', detail: 'No se pudo cargar' }),
       complete: () => this.loading.set(false),
     });
@@ -176,7 +183,7 @@ export class ProyectosMaestroComponent implements OnInit {
       title: row.title,
       amount: row.amount,
       currency: row.currency ?? 'USD',
-      clauses: (row as any).clauses ?? '', // Cargar cláusulas si existen
+      clauses: (row as any).description ?? '', // Cargar la descripción en el campo 'clauses' del form
     });
     this.accordionOpen.set(true);
   }
@@ -199,7 +206,7 @@ export class ProyectosMaestroComponent implements OnInit {
     // Si no, es un inversor creando/editando. Validamos.
     if (this.contractForm.invalid || !this.isInvestor()) return;
 
-    let dto: Partial<IContract> & { projectId: number };
+    let dto: any; // Usamos 'any' para permitir el campo 'description' que no está en IContract
     const raw = this.contractForm.getRawValue();
 
     if (this.editing) {
@@ -213,7 +220,7 @@ export class ProyectosMaestroComponent implements OnInit {
         profit1Year: raw.profit1Year,
         profit2Years: raw.profit2Years,
         profit3Years: raw.profit3Years,
-        clauses: raw.clauses,
+        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
         status: this.editing.status, // Mantenemos el status actual al editar
         createdByInvestorId: this.currentUser?.id,
       };
@@ -228,7 +235,7 @@ export class ProyectosMaestroComponent implements OnInit {
         profit1Year: raw.profit1Year,
         profit2Years: raw.profit2Years,
         profit3Years: raw.profit3Years,
-        clauses: raw.clauses,
+        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
       };
     }
     
@@ -246,8 +253,12 @@ export class ProyectosMaestroComponent implements OnInit {
         this.cancelEdit();
       },
       error: (err: any) => {
-        const detail = err?.error?.message || 'No se pudo guardar el contrato.';
-        this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 5000 });
+        let detail = err?.error?.message || 'No se pudo guardar el contrato.';
+        // Captura el error específico de truncamiento de datos
+        if (typeof detail === 'string' && detail.includes("Data too long for column 'description'")) {
+          detail = 'El contenido de las cláusulas es demasiado largo. Por favor, reduce el texto o el formato.';
+        }
+        this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 6000 });
       }
     });
   }
@@ -264,6 +275,134 @@ export class ProyectosMaestroComponent implements OnInit {
     return (baseAmount * percentage) / 100;
   }
 
+  // ===== Lógica de Plantillas de Contrato =====
+  private setupContractTemplates(): void {
+    const projectTitle = this.project()?.title ?? '[Nombre del Proyecto]';
+    const projectOwner = this.project()?.owner ?? '[Nombre del Líder del Proyecto]';
+    const currentDate = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    this.contractTemplates = [
+      {
+        label: 'Contrato de Inversión Estándar',
+        icon: 'pi pi-file',
+        command: () => {
+          const template = `
+            <p>En la ciudad de [Ciudad], a ${currentDate}.</p>
+            <br>
+            <h1><strong>CONTRATO DE INVERSIÓN ESTÁNDAR</strong></h1>
+            <br>
+            <h2><strong>PARTES INTERVINIENTES</strong></h2>
+            <p><strong>DE UNA PARTE,</strong> como "El Inversor":</p>
+            <ul><li><strong>Nombre:</strong> [Nombre Completo del Inversor]</li><li><strong>DNI/Identificación:</strong> [Número de Identificación]</li><li><strong>Domicilio:</strong> [Domicilio del Inversor]</li></ul>
+            <p><strong>DE OTRA PARTE,</strong> como "El Equipo del Proyecto":</p>
+            <ul><li><strong>Representante:</strong> ${projectOwner}</li><li><strong>Proyecto:</strong> ${projectTitle}</li></ul>
+            <br>
+            <h2><strong>CLÁUSULAS</strong></h2>
+            <h3><strong>PRIMERA: OBJETO DEL CONTRATO</strong></h3>
+            <p>El Inversor se compromete a realizar una aportación de capital destinada exclusivamente a la financiación y desarrollo del proyecto "${projectTitle}". El Equipo del Proyecto se compromete a la correcta administración de dichos fondos.</p>
+            <h3><strong>SEGUNDA: APORTACIÓN DE CAPITAL</strong></h3>
+            <p>La aportación se fija en la cantidad de <strong>[Monto de la Inversión]</strong> en la moneda <strong>[Moneda]</strong>, que será transferida en un plazo no superior a 10 días hábiles desde la firma del presente documento.</p>
+            <h3><strong>TERCERA: PARTICIPACIÓN Y RENTABILIDAD</strong></h3>
+            <p>A cambio de su aportación, el Inversor recibirá una participación en los beneficios futuros del proyecto, según los porcentajes de rentabilidad anual definidos en la oferta.</p>
+            <h3><strong>CUARTA: OBLIGACIONES</strong></h3>
+            <p>El Equipo del Proyecto se obliga a presentar informes de avance trimestrales y a notificar cualquier desviación significativa. El Inversor se obliga a mantener la confidencialidad de la información sensible del proyecto.</p>
+            <br><p>En prueba de conformidad, ambas partes firman el presente contrato.</p>`;
+          this.insertTemplate(template);
+        }
+      },
+      {
+        label: 'Acuerdo con Confidencialidad (NDA)',
+        icon: 'pi pi-lock',
+        command: () => {
+          const template = `
+            <p>En la ciudad de [Ciudad], a ${currentDate}.</p>
+            <br>
+            <h1><strong>ACUERDO DE INVERSIÓN CON CLÁUSULA DE CONFIDENCIALIDAD</strong></h1>
+            <br>
+            <p>Este acuerdo se celebra entre <strong>[Nombre Completo del Inversor]</strong> ("El Inversor") y el equipo del proyecto <strong>${projectTitle}</strong>, representado por ${projectOwner} ("El Equipo").</p>
+            <br>
+            <h2><strong>CLÁUSULAS PRINCIPALES</strong></h2>
+            <h3><strong>1. OBJETO Y APORTACIÓN</strong></h3>
+            <p>El Inversor realizará una aportación de capital para el desarrollo del proyecto a cambio de la rentabilidad pactada.</p>
+            <h3><strong>2. ACUERDO DE NO DIVULGACIÓN (NDA)</strong></h3>
+            <p>Toda la información técnica, financiera, de mercado y estratégica relacionada con el proyecto es considerada <strong>INFORMACIÓN CONFIDENCIAL</strong>. El Inversor se compromete a no divulgar, copiar o utilizar esta información para fines ajenos al presente acuerdo durante un período de 5 años desde la firma del mismo. Esta obligación subsistirá incluso si el acuerdo de inversión finaliza.</p>
+            <h3><strong>3. PROPIEDAD INTELECTUAL</strong></h3>
+            <p>La propiedad intelectual generada durante el desarrollo del proyecto pertenecerá íntegramente al Equipo del Proyecto, salvo que se pacten condiciones diferentes en un anexo a este contrato.</p>
+            <h3><strong>4. LEY APLICABLE Y JURISDICCIÓN</strong></h3>
+            <p>Este contrato se regirá por las leyes de [País/Provincia]. Para cualquier disputa, las partes se someten a la jurisdicción de los tribunales de [Ciudad].</p>`;
+          this.insertTemplate(template);
+        }
+      },
+      { separator: true },
+      {
+        label: 'Inversión por Hitos (Fases)',
+        icon: 'pi pi-sitemap',
+        command: () => {
+          const template = `
+            <p>En la ciudad de [Ciudad], a ${currentDate}.</p>
+            <br>
+            <h1><strong>CONTRATO DE INVERSIÓN POR HITOS</strong></h1>
+            <br>
+            <p>Celebrado entre <strong>[Nombre Completo del Inversor]</strong> ("El Inversor") y el equipo del proyecto <strong>${projectTitle}</strong>, representado por ${projectOwner} ("El Equipo").</p>
+            <br>
+            <h2><strong>CLÁUSULAS</strong></h2>
+            <h3><strong>PRIMERA: OBJETO</strong></h3>
+            <p>El Inversor acuerda financiar el proyecto "${projectTitle}" mediante desembolsos progresivos condicionados al cumplimiento de los hitos definidos en este contrato.</p>
+            <h3><strong>SEGUNDA: DESEMBOLSOS POR HITOS</strong></h3>
+            <p>La inversión total de <strong>[Monto Total] [Moneda]</strong> se liberará de la siguiente manera:</p>
+            <ul>
+                <li><strong>Hito 1 - [Descripción del Hito 1, ej: Prototipo funcional]:</strong> Desembolso de [Monto Hito 1]. Fecha límite: [Fecha Hito 1].</li>
+                <li><strong>Hito 2 - [Descripción del Hito 2, ej: Primeros 100 usuarios]:</strong> Desembolso de [Monto Hito 2]. Fecha límite: [Fecha Hito 2].</li>
+                <li><strong>Hito 3 - [Descripción del Hito 3, ej: Acuerdo de distribución]:</strong> Desembolso de [Monto Hito 3]. Fecha límite: [Fecha Hito 3].</li>
+            </ul>
+            <h3><strong>TERCERA: VERIFICACIÓN DE HITOS</strong></h3>
+            <p>El Equipo deberá presentar la documentación o evidencia necesaria para verificar el cumplimiento de cada hito. El Inversor dispondrá de 5 días hábiles para validar y autorizar el siguiente desembolso.</p>
+            <h3><strong>CUARTA: INCUMPLIMIENTO</strong></h3>
+            <p>En caso de no alcanzar un hito en la fecha estipulada, las partes acuerdan [Definir consecuencias, ej: renegociar plazos, suspender futuros desembolsos, etc.].</p>`;
+          this.insertTemplate(template);
+        }
+      },
+      {
+        label: 'Préstamo Simple (Mutuo)',
+        icon: 'pi pi-undo',
+        command: () => {
+          const template = `
+            <p>En la ciudad de [Ciudad], a ${currentDate}.</p>
+            <br>
+            <h1><strong>CONTRATO DE PRÉSTAMO (MUTUO)</strong></h1>
+            <br>
+            <p>Entre <strong>[Nombre Completo del Inversor]</strong>, en adelante "El Prestamista", y <strong>${projectOwner}</strong>, en representación del proyecto <strong>${projectTitle}</strong>, en adelante "El Prestatario".</p>
+            <br>
+            <h2><strong>TÉRMINOS Y CONDICIONES</strong></h2>
+            <h3><strong>1. OBJETO DEL PRÉSTAMO</strong></h3>
+            <p>El Prestamista entrega al Prestatario la suma de <strong>[Monto del Préstamo] [Moneda]</strong>, que el Prestatario se compromete a devolver en los términos aquí establecidos. Los fondos serán utilizados para el desarrollo del proyecto "${projectTitle}".</p>
+            <h3><strong>2. INTERESES</strong></h3>
+            <p>El capital prestado devengará un interés fijo del <strong>[Tasa de Interés Anual]%</strong> anual. Los intereses se calcularán sobre el saldo pendiente.</p>
+            <h3><strong>3. PLAZO Y FORMA DE PAGO</strong></h3>
+            <p>El capital más los intereses serán devueltos en un pago único en la fecha <strong>[Fecha de Vencimiento]</strong>. Opcionalmente, se pueden pactar cuotas: [Número de cuotas] cuotas mensuales/trimestrales de [Monto de la cuota] cada una, comenzando el [Fecha de primer pago].</p>
+            <h3><strong>4. MORA</strong></h3>
+            <p>La falta de pago en la fecha de vencimiento generará un interés punitorio del [Tasa de Interés por Mora]% diario sobre el monto adeudado.</p>`;
+          this.insertTemplate(template);
+        }
+      }
+    ];
+  }
+
+  private insertTemplate(templateContent: string): void {
+    const currentContent = this.contractForm.controls.clauses.value;
+    if (currentContent && currentContent.length > 10) { // Si hay algo escrito
+      this.confirmSvc.confirm({
+        message: 'Ya hay contenido en el editor. ¿Deseas reemplazarlo con la plantilla seleccionada?',
+        header: 'Confirmar Reemplazo',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sí, reemplazar',
+        rejectLabel: 'No, cancelar',
+        accept: () => this.contractForm.controls.clauses.setValue(templateContent)
+      });
+    } else {
+      this.contractForm.controls.clauses.setValue(templateContent);
+    }
+  }
   // ===== Acciones de Contrato (Firma y Cancelación) =====
 
   /** Abre el panel para ver un contrato en modo solo lectura */
@@ -278,7 +417,7 @@ export class ProyectosMaestroComponent implements OnInit {
       profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
       profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
       profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).clauses ?? '',
+      clauses: (contract as any).description ?? '',
     });
     this.contractForm.disable();
     this.accordionOpen.set(true);
@@ -295,7 +434,7 @@ export class ProyectosMaestroComponent implements OnInit {
       profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
       profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
       profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).clauses ?? '',
+      clauses: (contract as any).description ?? '',
     });
     this.contractForm.disable(); // Hacemos el formulario de solo lectura
     this.accordionOpen.set(true);
