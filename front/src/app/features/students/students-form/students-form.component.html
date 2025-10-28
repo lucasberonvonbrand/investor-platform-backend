@@ -53,7 +53,7 @@
 
           <div class="field">
             <label for="dni" class="font-medium">DNI <span class="text-red-500">*</span></label>
-            <input id="dni" type="text" pInputText formControlName="dni" class="w-full mt-1" />
+            <input id="dni" type="text" pInputText formControlName="dni" class="w-full mt-1" pKeyFilter="int" maxlength="8" />
             <small *ngIf="getFieldError('dni')" class="p-error">{{ getFieldError('dni') }}</small>
             <small *ngIf="dniError()" class="p-error">{{ dniError() }}</small>
           </div>
@@ -70,6 +70,12 @@
             <small *ngIf="getFieldError('dateOfBirth')" class="p-error">{{ getFieldError('dateOfBirth') }}</small>
           </div>
 
+          <div class="field">
+            <label for="linkedinUrl" class="font-medium">URL de LinkedIn</label>
+            <input id="linkedinUrl" type="text" pInputText formControlName="linkedinUrl" class="w-full mt-1" placeholder="https://www.linkedin.com/in/tu-perfil" />
+            <small *ngIf="getFieldError('linkedinUrl')" class="p-error">{{ getFieldError('linkedinUrl') }}</small>
+          </div>
+
           <!-- Sección Académica -->
           <div class="md:col-span-2 mt-4">
             <h3 class="text-lg font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">Datos Académicos</h3>
@@ -77,7 +83,7 @@
 
           <div class="field">
             <label for="university" class="font-medium">Universidad <span class="text-red-500">*</span></label>
-            <select id="university" formControlName="university" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="university" formControlName="university" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona una universidad</option>
               <option *ngFor="let uni of universities" [value]="uni">{{ uni }}</option>
             </select>
@@ -92,7 +98,7 @@
 
           <div class="field">
             <label for="degreeStatus" class="font-medium">Estado de la Carrera <span class="text-red-500">*</span></label>
-            <select id="degreeStatus" formControlName="degreeStatus" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="degreeStatus" formControlName="degreeStatus" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona un estado</option>
               <option *ngFor="let status of degreeStatuses" [value]="status">{{ status }}</option>
             </select>
@@ -130,7 +136,7 @@
 
           <div class="field md:col-span-2">
             <label for="province" class="font-medium">Provincia <span class="text-red-500">*</span></label>
-            <select id="province" formControlName="province" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 mt-1">
+            <select id="province" formControlName="province" class="w-full p-inputtext p-component mt-1">
               <option value="" disabled>Selecciona una provincia</option>
               <option *ngFor="let prov of provinces" [value]="prov">{{ prov }}</option>
             </select>
@@ -139,8 +145,11 @@
 
         </div>
 
-        <div class="mt-8 flex justify-end">
-          <button pButton type="submit" label="Crear Cuenta" class="w-full md:w-auto" [disabled]="!form.valid"></button>
+        <div class="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <a routerLink="/auth/login" class="font-medium text-primary-600 hover:underline dark:text-primary-500 text-sm">
+            ‹ Volver a Iniciar Sesión
+          </a>
+          <button pButton type="submit" label="Crear Cuenta" class="w-full md:w-auto" [disabled]="!form.valid || showModal()"></button>
         </div>
       </form>
     </div>

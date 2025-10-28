@@ -1,7 +1,9 @@
 package com.example.gestor_inversores.service.projectDocument;
 
 import com.example.gestor_inversores.dto.RequestProjectDocumentDTO;
+import com.example.gestor_inversores.dto.ResponseFile;
 import com.example.gestor_inversores.dto.ResponseProjectDocumentDTO;
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -12,6 +14,7 @@ public interface IProjectDocumentService {
     List<ResponseProjectDocumentDTO> getAllByProject(Long projectId);
     void delete(Long id);
     ResponseProjectDocumentDTO findById(Long id);
+    ResponseFile downloadFile(Long id);
 
 
 

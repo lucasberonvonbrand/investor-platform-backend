@@ -13,7 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Router } from '@angular/router';
 
-import { InvestmentsService, IMyProject } from '../../../core/services/investments.service';
+import { InvestmentsService, IInvestedProject, IMyProject } from '../../../core/services/investments.service';
 
 @Component({
   standalone: true,
@@ -39,8 +39,8 @@ export class MyInvestmentsPanelComponent implements OnInit {
   categories: string[] = [];
 
   // datos
-  projects: IMyProject[] = [];
-  filtered: IMyProject[] = [];
+  investments: IInvestedProject[] = [];
+  filtered: IInvestedProject[] = [];
   recommended: IMyProject[] = [];
 
   // vista
@@ -60,7 +60,7 @@ export class MyInvestmentsPanelComponent implements OnInit {
     this.loading = true;
     this.svc.getMyInvestedProjects().subscribe({
       next: (list) => {
-        this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
+        this.investments = list || [];
         this.applyFilters();
         this.computeKpis();
         this.buildRecommended();
@@ -77,53 +77,62 @@ export class MyInvestmentsPanelComponent implements OnInit {
     const q = (this.q || '').toLowerCase().trim();
     const cat = (this.selectedCategory || '').toLowerCase();
 
-    this.filtered = this.projects.filter(p => {
+    this.filtered = this.investments.filter(inv => {
       const matchesQ =
         !q ||
-        p.title?.toLowerCase().includes(q) ||
-        p.summary?.toLowerCase().includes(q) ||
-        p.university?.toLowerCase().includes(q) ||
-        p.category?.toLowerCase().includes(q);
-      const matchesCat = !cat || (p.category?.toLowerCase() === cat);
+        inv.project.title?.toLowerCase().includes(q) ||
+        inv.project.summary?.toLowerCase().includes(q) ||
+        inv.project.university?.toLowerCase().includes(q) ||
+        inv.project.category?.toLowerCase().includes(q);
+      const matchesCat = !cat || (inv.project.category?.toLowerCase() === cat);
       return matchesQ && matchesCat;
     });
 
-    const set = new Set<string>(this.projects.map(p => p.category ?? '—'));
+    const set = new Set<string>(this.investments.map(inv => inv.project.category ?? '—'));
     this.categories = Array.from(set).sort((a,b)=>a.localeCompare(b));
   }
 
   computeKpis(): void {
     const now = Date.now(), recentMs = 30*24*60*60*1000;
-    this.kpis.total = this.projects.length;
-    this.kpis.activos = this.projects.filter(p => (p.status||'') !== 'COMPLETED').length;
-    this.kpis.recientes = this.projects.filter(p => {
-      const t = p.lastUpdated ? Date.parse(p.lastUpdated) : 0;
+    this.kpis.total = this.investments.length;
+    this.kpis.activos = this.investments.filter(inv => (inv.project.status||'') !== 'COMPLETED').length;
+    this.kpis.recientes = this.investments.filter(inv => {
+      const t = inv.project.lastUpdated ? Date.parse(inv.project.lastUpdated) : 0;
       return t && (now - t) <= recentMs;
     }).length;
-    this.kpis.conFinanciacion = this.projects.filter(p => p.fundingGoal != null).length;
+    this.kpis.conFinanciacion = this.investments.filter(inv => inv.project.fundingGoal != null).length;
   }
 
   buildRecommended(): void {
-    const base = this.filtered.length ? this.filtered : this.projects;
-    const scored = base.map(p => {
+    const base = this.filtered.length ? this.filtered : this.investments;
+    const scored = base.map(inv => {
       let s = 0;
-      if ((p.status||'') !== 'COMPLETED') s += 2;
-      if (p.lastUpdated) {
-        const days = (Date.now() - Date.parse(p.lastUpdated)) / (1000*60*60*24);
+      if ((inv.project.status||'') !== 'COMPLETED') s += 2;
+      if (inv.project.lastUpdated) {
+        const days = (Date.now() - Date.parse(inv.project.lastUpdated)) / (1000*60*60*24);
         if (!Number.isNaN(days)) s += Math.max(0, 10 - Math.min(10, Math.floor(days/7)));
       }
-      if (p.fundingGoal != null) s += 3;
-      if (p.fundingRaised != null) s += 2;
-      return { p, s };
+      if (inv.project.fundingGoal != null) s += 3;
+      if (inv.project.fundingRaised != null) s += 2;
+      return { p: inv.project, s };
     });
 
-    this.recommended = scored.sort((a,b)=>b.s-a.s).slice(0,6).map(x=>x.p);
+    this.recommended = scored.sort((a, b) => b.s - a.s).slice(0, 6).map(x => x.p);
   }
 
   // navegación al maestro
-  openDetail(p: IMyProject) {
-    if (!p?.id) return;
-    this.router.navigate(['/proyectos-maestro', p.id]);
+  openDetail(inv: IInvestedProject) {
+    if (!inv?.idInvestment) return;
+    this.router.navigate(['/mis-inversiones', inv.idInvestment]);
+  }
+
+  getInvestmentStatusLabel(status: string | null): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Progreso';
+      case 'RECEIVED': return 'Recibida';
+      case 'NOT_RECEIVED': return 'No Recibida';
+      default: return status || 'Desconocido';
+    }
   }
 
   // tags colores

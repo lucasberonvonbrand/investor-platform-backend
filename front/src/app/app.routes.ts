@@ -21,6 +21,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'proyectos-panel' },
+      { path: '', pathMatch: 'full', redirectTo: 'mismarquesinas' },
       { path: 'dashboard',        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.PanelComponent) },
       { path: 'proyectos-panel',  loadComponent: () => import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'roles',            loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
@@ -28,13 +29,15 @@ export const routes: Routes = [
       { path: 'estudiante-perfil', canActivate: [authGuard, roleGuard('ROLE_STUDENT')], loadComponent: () => import('./features/students/students-update-form/students-update-form.component').then(m => m.StudentsUpdateComponent)},
       { path: 'inversor-perfil',canActivate: [authGuard, roleGuard('ROLE_INVESTOR')],loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateComponent)},
       { path: 'proyectos',        loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
-      { path: 'marquesinas',      loadComponent: () => import('./features/marquesina/marquesina.component').then(m => m.MarquesinaComponent) },
       { path: 'mismarquesinas',   loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
       { path: 'noticias',         loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
-      { path: 'estudiantes',      loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.EstudiantesComponent) },
-      { path: 'inversores',       loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsComponent) },      
+      { path: 'estudiantes',      loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.StudentsTableComponent) },
+      { path: 'inversores',       loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsTableComponent) },
       { path: 'Miperfil',         redirectTo: 'mi-perfil', pathMatch: 'full' },
       { path: 'mi-perfil',        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'mismarquesinas/tag/:tag',        loadComponent: () => import('./features/proyectos/mismarquesinas-projects-panel/mismarquesinas-projects-panel.component').then(m => m.MismarquesinasProjectsPanelComponent) },
+      { path: 'mis-proyectos-invertidos',        loadComponent: () => import('./features/proyectos/proyectos-invertidos/proyectos-invertidos.component').then(m => m.ProyectosInvertidosComponent) },
+      { path: 'proyectos-invertidos-maestro/:id',        loadComponent: () => import('./features/proyectos/proyectos-invertidos-maestro/proyectos-invertidos-maestro.component').then(m => m.ProyectosInvertidosMaestroComponent) },
 
       // SOLO estudiantes
       {
@@ -66,6 +69,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/investors/my-investments-panel/my-investments-panel.component')
             .then(m => m.MyInvestmentsPanelComponent)
+      },
+
+      // NUEVO: Detalle de una inversión específica
+      {
+        path: 'mis-inversiones/:investmentId',
+        canMatch: [investorMatch],
+        canActivate: [investorGuard],
+        loadComponent: () => import('./features/investors/my-investments-panel/investment-detail.component').then(m => m.InvestmentDetailComponent)
       },
 
       // Detalle maestro del proyecto

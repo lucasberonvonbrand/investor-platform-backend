@@ -1,0 +1,26 @@
+<div *ngIf="shouldShowChatbot">
+  <div class="chat-fab" (click)="toggleChat()" [class.open]="isChatOpen">
+    <!-- <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen"> -->
+    <img src="/assets/images/chatbot-icon.PNG" alt="Abrir chat" class="chat-icon" *ngIf="!isChatOpen">
+    <span class="minimize-icon" *ngIf="isChatOpen">—</span>
+  </div>
+  <div class="chat-window" [class.open]="isChatOpen">
+    <div class="chat-header">
+      <h3>Asistente Virtual</h3>
+      <button class="close-btn" (click)="toggleChat()">❌</button>
+    </div>
+    <div class="chat-body">
+      <div *ngFor="let message of messages" class="message" [ngClass]="message.type">
+        <div [innerHTML]="toHtml(message.text)"></div>
+      </div>
+      <div class="preset-questions">
+        <button class="preset-btn" (click)="selectQuestion('Crear proyecto')">Crear proyecto</button>
+        <button class="preset-btn" (click)="selectQuestion('Crear inversión')">Crear inversión</button>
+      </div>
+    </div>
+    <div class="chat-footer">
+      <input type="text" placeholder="Escribe tu mensaje..." [(ngModel)]="userMessage" (keyup.enter)="sendMessage()" />
+      <button (click)="sendMessage()">Enviar</button>
+    </div>
+  </div>
+</div>

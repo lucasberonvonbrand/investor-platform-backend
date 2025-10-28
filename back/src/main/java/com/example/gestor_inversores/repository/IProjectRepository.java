@@ -1,6 +1,7 @@
 package com.example.gestor_inversores.repository;
 
 import com.example.gestor_inversores.model.Project;
+import com.example.gestor_inversores.model.ProjectTag;
 import com.example.gestor_inversores.model.Student;
 import com.example.gestor_inversores.model.enums.ProjectStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,5 @@ public interface IProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByDeletedTrue();
 
     List<Project> findByStatusAndStartDateBeforeAndDeletedFalse(ProjectStatus status, LocalDate date);
+    List<Project> findByProjectTagAndDeletedFalse(ProjectTag tag);
 }

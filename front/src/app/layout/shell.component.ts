@@ -8,6 +8,7 @@ import { Button } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
 import { Avatar } from 'primeng/avatar';
 
+import { ChatbotComponent } from '../features/chatbot/chatbot.component';
 import { AuthService } from '../features/auth/login/auth.service';
 
 import { StudentService } from '../core/services/students.service';
@@ -25,7 +26,7 @@ import { InvestorService } from '../core/services/investors.service';
     Menu,
     Button,
     Avatar,
-    
+    ChatbotComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss']
@@ -85,9 +86,9 @@ userItems = [
       managementItems.push({ label: 'Proyectos donde participo', icon: 'pi pi-pencil', routerLink: '/proyectos-participo' });
     }
     if (isInvestor) {
-      managementItems.push({ label: 'Marquesinas', icon: 'pi pi-table', routerLink: '/marquesinas' });
       managementItems.push({ label: 'Mis Marquesinas', icon: 'pi pi-pencil', routerLink: '/mismarquesinas' });
       managementItems.push({ label: 'Mis Inversiones', icon: 'pi pi-dollar', routerLink: '/mis-inversiones' });
+      managementItems.push({ label: 'Mis proyectos Invertidos', icon: 'pi pi-briefcase', routerLink: '/mis-proyectos-invertidos' });
       managementItems.push({ label: 'Noticias', icon: 'pi pi-bell', routerLink: '/noticias' });
     }
     // Items comunes para ambos roles logueados

@@ -1,16 +1,25 @@
 package com.example.gestor_inversores.service.projectDocument;
 
+import com.example.gestor_inversores.dto.ResponseFile;
 import com.example.gestor_inversores.dto.ResponseProjectDocumentDTO;
+import com.example.gestor_inversores.exception.DocumentFileException;
+import com.example.gestor_inversores.exception.DocumentFileNotFoundException;
 import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.ProjectDocument;
 import com.example.gestor_inversores.repository.IProjectDocumentRepository;
 import com.example.gestor_inversores.repository.IProjectRepository;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
@@ -20,7 +29,8 @@ public class ProjectDocumentService implements IProjectDocumentService {
     private final IProjectDocumentRepository documentRepository;
     private final IProjectRepository projectRepository;
 
-    private final String uploadFolder = System.getProperty("user.home") + "/Desktop/projects/files/";
+    @Value("${app.upload.dir}")
+    private String uploadFolder;
 
     @Transactional
     @Override
@@ -29,16 +39,20 @@ public class ProjectDocumentService implements IProjectDocumentService {
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
         try {
-            File folder = new File(uploadFolder);
-            if (!folder.exists()) folder.mkdirs();
 
-            String filePath = uploadFolder + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            File dest = new File(filePath);
-            file.transferTo(dest);
+            Path folderPath = Paths.get(uploadFolder);
+
+            if (!Files.exists(folderPath)) {
+                Files.createDirectories(folderPath);
+            }
+
+            String fileNameToSave = uploadFolder + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = folderPath.resolve(fileNameToSave);
+            file.transferTo(filePath);
 
             ProjectDocument document = new ProjectDocument();
             document.setFileName(file.getOriginalFilename());
-            document.setFilePath(filePath);
+            document.setFilePath(filePath.toString());
             document.setProject(project);
 
             ProjectDocument saved = documentRepository.save(document);
@@ -50,8 +64,8 @@ public class ProjectDocumentService implements IProjectDocumentService {
                     .projectId(saved.getProject().getIdProject())
                     .build();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Could not store file: " + e.getMessage());
+        } catch (IOException | IllegalStateException e) {
+            throw new DocumentFileException("Could not store file: " + e.getMessage());
         }
     }
 
@@ -70,7 +84,7 @@ public class ProjectDocumentService implements IProjectDocumentService {
     @Override
     public ResponseProjectDocumentDTO findById(Long id) {
         ProjectDocument doc = documentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Document not found"));
+                .orElseThrow(() -> new DocumentFileNotFoundException("Document not found"));
 
         return ResponseProjectDocumentDTO.builder()
                 .idProjectDocument(doc.getIdProjectDocument())
@@ -84,6 +98,52 @@ public class ProjectDocumentService implements IProjectDocumentService {
     @Transactional
     @Override
     public void delete(Long id) {
+        ProjectDocument doc = documentRepository.findById(id)
+                .orElseThrow(() -> new DocumentFileNotFoundException("Document not found"));
+
+        Path filePath = Paths.get(doc.getFilePath());
+        try {
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            } else {
+                throw new DocumentFileNotFoundException("The file is not found on the server ");
+            }
+        } catch (IOException e) {
+            throw new DocumentFileException("Could not delete file: " + e.getMessage());
+        }
+
+        Project project = doc.getProject();
+        if (project != null) {
+            project.getDocuments().remove(doc);
+        }
+
         documentRepository.deleteById(id);
+    }
+
+    @Override
+    public ResponseFile downloadFile(Long id) {
+        ResponseProjectDocumentDTO dto = this.findById(id);
+
+        Path filePath = Paths.get(dto.getFilePath());
+
+        if (!Files.exists(filePath)) {
+            throw new DocumentFileNotFoundException("The file with ID " + id + " was not found.");
+        }
+
+        Resource resource = new FileSystemResource(filePath.toFile());
+
+        if (!resource.isReadable()) {
+            throw new DocumentFileException("The file could not be read.");
+        }
+
+        String fileName = resource.getFilename();
+        String contentType;
+        try {
+            contentType = Files.probeContentType(filePath);
+        } catch (IOException e) {
+            contentType = "application/octet-stream";
+        }
+
+        return new ResponseFile(resource, fileName, contentType);
     }
 }

@@ -112,9 +112,20 @@ export class LoginComponent implements OnDestroy {
     const { username, password } = this.form.getRawValue();
 
     this.auth.login(username!, password!).subscribe({
-      next: () => this.router.navigateByUrl("/proyectos-panel", { replaceUrl: true }),
+      next: () => {
+        // auth.login ya persiste la sesión; ahora leemos el rol
+        const role = (this.auth.getUserRole() || '').toUpperCase();
+
+        if (role.includes('INVESTOR')) {
+          this.router.navigateByUrl('/mismarquesinas', { replaceUrl: true });
+        } else if (role.includes('STUDENT')) {
+          this.router.navigateByUrl('/misproyectos', { replaceUrl: true });
+        } else {
+          // fallback
+          this.router.navigateByUrl('/mismarquesinas', { replaceUrl: true });
+        }
+      },
       error: (err) => {
-        // err ya viene normalizado por mapAuthError en el service
         this.serverError.set(err);
         this.loading.set(false);
       },

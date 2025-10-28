@@ -1,12 +1,16 @@
 package com.example.gestor_inversores.repository;
 
 import com.example.gestor_inversores.model.Investment;
+import com.example.gestor_inversores.model.Project;
 import com.example.gestor_inversores.model.enums.InvestmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface IInvestmentRepository extends JpaRepository<Investment, Long> {
@@ -33,4 +37,6 @@ public interface IInvestmentRepository extends JpaRepository<Investment, Long> {
     List<Investment> findByGeneratedBy_IdAndDeletedFalseAndStatus(Long investorId, InvestmentStatus status);
 
 
+    @Query("SELECT DISTINCT i.project FROM Investment i WHERE i.generatedBy.id = :investorId AND i.deleted = false")
+    Optional<Set<Project>> findDistinctProjectsByInvestorId(@Param("investorId") Long investorId);
 }

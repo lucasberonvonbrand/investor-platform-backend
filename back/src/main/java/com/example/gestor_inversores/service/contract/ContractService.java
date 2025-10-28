@@ -605,6 +605,15 @@ public class ContractService implements IContractService {
                 .toList();
     }
 
+    @Override
+    public List<ResponseContractDTO> getContractsByInvestorAndProject(Long investorId, Long projectId) {
+        List<Contract> contracts = contractRepository.findByCreatedByInvestorIdAndProject_IdProject(investorId, projectId)
+                .orElseThrow(() -> new ContractNotFoundException("No contracts for that project were found for that investor."));
+        return contracts.stream()
+                .map(contractMapper::toResponseDTO)
+                .toList();
+    }
+
     public void saveContract(Contract contract) {
         contractRepository.save(contract);
     }

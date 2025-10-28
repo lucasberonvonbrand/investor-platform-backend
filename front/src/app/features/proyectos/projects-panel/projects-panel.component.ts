@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { CardModule } from 'primeng/card';
@@ -15,6 +16,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 import { ProjectsService, IProject } from '../../../core/services/projects.service';
+import { AuthService } from '../../auth/login/auth.service';
 
 @Component({
   standalone: true,
@@ -31,6 +33,8 @@ import { ProjectsService, IProject } from '../../../core/services/projects.servi
 export class ProjectsPanelComponent implements OnInit {
   private svc = inject(ProjectsService);
   private toast = inject(MessageService);
+  private router = inject(Router);
+  private auth = inject(AuthService);
 
   // filtros
   q = '';
@@ -152,7 +156,15 @@ export class ProjectsPanelComponent implements OnInit {
   }
 
   // UI
-  openDetail(p: IProject) { this.selected = p; this.showDetail = true; }
+  openDetail(p: IProject) {
+    if (!p?.id) return;
+    const session = this.auth.getSession();
+    if (session?.roles.includes('ROLE_INVESTOR')) {
+      this.router.navigate(['/proyectos-maestro', p.id]);
+    } else {
+      this.selected = p; this.showDetail = true;
+    }
+  }
 
   // tags colores
   private readonly tagPalette: Array<{bg: string; fg: string}> = [

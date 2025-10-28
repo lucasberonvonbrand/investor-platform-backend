@@ -27,8 +27,9 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
             InvestorNotFoundException.class, StudentNotFoundException.class,
             UserNotFoundException.class, EmailNotFoundException.class,
             ProjectNotFoundException.class, ContractNotFoundException.class,
-            EarningNotFoundException.class, RoleNotFoundException.class, // Añadida
-            PermissionNotFoundException.class // Añadida
+            EarningNotFoundException.class, RoleNotFoundException.class,
+            PermissionNotFoundException.class, DocumentFileNotFoundException.class,
+            ProjectTagException.class
     })
     public ResponseEntity<ApiError> handleNotFoundExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("Recurso no encontrado: " + ex.getMessage(), HttpStatus.NOT_FOUND, LocalDateTime.now());
@@ -80,7 +81,7 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     // --- 500 INTERNAL SERVER ERROR ---
     @ExceptionHandler({
             EmailSendException.class, CurrencyConversionException.class,
-            Exception.class // Genérico como último recurso
+            DocumentFileException.class, Exception.class // Genérico como último recurso
     })
     public ResponseEntity<ApiError> handleInternalServerExceptions(Exception ex) {
         ApiError apiError = new ApiError("Error interno del servidor: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, LocalDateTime.now());

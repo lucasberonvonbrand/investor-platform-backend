@@ -13,9 +13,12 @@ export interface IMyProject {
   summary: string | null;
   status: string | null;
   lastUpdated: string | null;
+  startDate?: string | null;
+  estimatedEndDate?: string | null;
   fundingGoal: number | null;
   fundingRaised: number | null;
   owner?: string | null;
+  ownerId?: number;
   category?: string | null;
   university?: string | null;
   tags?: string[];
@@ -23,13 +26,20 @@ export interface IMyProject {
 }
 
 export interface IContract {
-  id: number;
+  idContract: number;
   projectId: number;
-  title: string;
+  createdByInvestorId?: number; // Requerido para crear
+  title?: string; // El título que viene del listado
+  textTitle?: string; // El título que se envía al crear
   amount: number;
-  status: 'borrador' | 'activo' | 'finalizado' | 'cancelado';
+  status: 'PENDING_STUDENT_SIGNATURE' | 'SIGNED' | 'CLOSED' | 'CANCELLED' | 'REFUNDED';
+  currency?: 'USD' | 'ARS' | 'CNY' | 'EUR';
+  profit1Year?: number;
+  profit2Years?: number;
+  profit3Years?: number;
   startDate?: string | null;
   endDate?: string | null;
+  clauses?: string | null;
 }
 
 export interface IChatMessage {
@@ -41,23 +51,68 @@ export interface IChatMessage {
   createdAt: string; // ISO
 }
 
+/**
+ * Adapta la respuesta de la API de un proyecto al formato que espera la UI (IMyProject).
+ * @param p El objeto de proyecto de la API.
+ */
+function adaptProject(p: any): IMyProject {
+  return {
+    id: p.id,
+    title: p.name, // API 'name' -> UI 'title'
+    summary: p.description, // API 'description' -> UI 'summary'
+    status: p.status,
+    startDate: p.startDate,
+    estimatedEndDate: p.estimatedEndDate,
+    lastUpdated: p.startDate, // API 'startDate' -> UI 'lastUpdated'
+    fundingGoal: p.budgetGoal, // API 'budgetGoal' -> UI 'fundingGoal'
+    fundingRaised: p.currentGoal, // API 'currentGoal' -> UI 'fundingRaised'
+    owner: p.ownerName, // API 'ownerName' -> UI 'owner'
+    ownerId: p.ownerId,
+    category: p.tagName, // API 'tagName' -> UI 'category'
+    university: p.university, // Asumiendo que podría venir
+    tags: p.tags,
+    students: p.students,
+  };
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProjectsMasterService {
   private http = inject(HttpClient);
+  
+  // ======== API REAL ========
+  getProjectById(id: number): Observable<IMyProject> {
+    return this.http.get<any>(`/api/projects/${id}`).pipe(map(adaptProject));
+  }
+  getContracts(projectId: number): Observable<IContract[]> {
+    return this.http.get<IContract[]>(`/api/contracts/by-project/${projectId}`);
+  }
+  getContractsByInvestorAndProject(investorId: number, projectId: number): Observable<IContract[]> {
+    return this.http.get<IContract[]>(`/api/contracts/investor/${investorId}/project/${projectId}`);
+  }
+  upsertContract(dto: Partial<IContract> & { projectId: number; createdByInvestorId?: number }): Observable<IContract> {
+    if (dto.idContract) {
+      // Para actualizar, el backend podría esperar un payload diferente.
+      // Por ahora, mantenemos la lógica de PUT.
+      return this.http.put<IContract>(`/api/contracts/${dto.idContract}`, dto);
+    } else {
+      // Para crear, usamos el payload específico que necesita el backend.
+      return this.http.post<IContract>(`/api/contracts`, dto);
+    }
+  }
 
-  // ======== API REAL (descomentá y ajustá) ========
-  // getProjectById(id: number): Observable<IMyProject> {
-  //   return this.http.get<IMyProject>(`/api/projects/${id}`);
-  // }
-  // getContracts(projectId: number): Observable<IContract[]> {
-  //   return this.http.get<IContract[]>(`/api/projects/${projectId}/contracts`);
-  // }
-  // upsertContract(dto: Partial<IContract> & { projectId: number }): Observable<IContract> {
-  //   return dto.id
-  //     ? this.http.put<IContract>(`/api/contracts/${dto.id}`, dto)
-  //     : this.http.post<IContract>(`/api/contracts`, dto);
-  // }
-  // getChat(projectId: number): Observable<IChatMessage[]> {
+  signContract(contractId: number, studentId: number): Observable<IContract> { // Es un PUT
+    return this.http.put<IContract>(`/api/contracts/sign/${contractId}`, { studentId });
+  }
+
+  cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
+    return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
+  }
+
+  cancelContractByStudent(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/cancel-by-student/${contractId}`, { studentId });
+  }
+
+  // getChat(projectId: number): Observable<IChatMessage[]> { // MOCK
   //   return this.http.get<IChatMessage[]>(`/api/projects/${projectId}/chat`);
   // }
   // sendMessage(msg: Omit<IChatMessage, 'id' | 'createdAt'>): Observable<IChatMessage> {
@@ -78,6 +133,7 @@ export class ProjectsMasterService {
       fundingGoal: 10000,
       fundingRaised: 4200,
       owner: 'Equipo IoT',
+      ownerId: 1, // ID de ejemplo para el dueño
       category: 'IoT',
       university: 'UNLAM',
       tags: ['iot', 'sensors'],
@@ -86,44 +142,14 @@ export class ProjectsMasterService {
   ];
 
   private _contracts: IContract[] = [
-    { id: 1, projectId: 101, title: 'Contrato Semilla', amount: 2500, status: 'activo', startDate: '2025-09-01', endDate: null },
-    { id: 2, projectId: 101, title: 'Acuerdo NDA', amount: 0, status: 'finalizado', startDate: '2025-08-15', endDate: '2025-09-15' },
+    { idContract: 1, projectId: 101, title: 'Contrato Semilla', amount: 2500, status: 'SIGNED', startDate: '2025-09-01', endDate: null },
+    { idContract: 2, projectId: 101, title: 'Acuerdo NDA', amount: 0, status: 'CLOSED', startDate: '2025-08-15', endDate: '2025-09-15' },
   ];
 
   private _chat$ = new BehaviorSubject<IChatMessage[]>([
     { id: 1, projectId: 101, authorId: 4,  authorName: 'Inversor Juan', message: '¿Cómo viene el hito 1?', createdAt: new Date().toISOString() },
     { id: 2, projectId: 101, authorId: 15, authorName: 'Estudiante Sofía', message: 'Hoy subo el informe.', createdAt: new Date().toISOString() },
   ]);
-
-  getProjectById(id: number): Observable<IMyProject> {
-    const p = this._projects.find(x => x.id === id);
-    return of(p as IMyProject).pipe(delay(200));
-  }
-
-  getContracts(projectId: number): Observable<IContract[]> {
-    return of(this._contracts.filter(c => c.projectId === projectId)).pipe(delay(200));
-  }
-
-  upsertContract(dto: Partial<IContract> & { projectId: number }): Observable<IContract> {
-    if (dto.id) {
-      const idx = this._contracts.findIndex(c => c.id === dto.id);
-      if (idx >= 0) this._contracts[idx] = { ...this._contracts[idx], ...dto } as IContract;
-      return of(this._contracts[idx]).pipe(delay(150));
-    } else {
-      const newId = Math.max(0, ...this._contracts.map(c => c.id)) + 1;
-      const created: IContract = {
-        id: newId,
-        title: dto.title || 'Sin título',
-        amount: dto.amount ?? 0,
-        status: (dto.status as IContract['status']) || 'borrador',
-        startDate: dto.startDate ?? null,
-        endDate: dto.endDate ?? null,
-        projectId: dto.projectId,
-      };
-      this._contracts.unshift(created);
-      return of(created).pipe(delay(150));
-    }
-  }
 
   getChat(projectId: number): Observable<IChatMessage[]> {
     return this._chat$.pipe(map(list => list.filter(m => m.projectId === projectId)));

@@ -30,4 +30,5 @@ public interface IContractService {
     List<ResponseContractDTO> getContractsByProject(Long projectId);
     List<ResponseContractDTO> getContractsByInvestor(Long investorId);
     List<ResponseContractDTO> getContractsByOwner(Long ownerId);
+    List<ResponseContractDTO> getContractsByInvestorAndProject(Long investorId, Long projectId);
 }

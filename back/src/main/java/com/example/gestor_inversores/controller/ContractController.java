@@ -4,6 +4,7 @@ import com.example.gestor_inversores.dto.*;
 import com.example.gestor_inversores.service.contract.IContractService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,5 +105,14 @@ public class ContractController {
     @GetMapping("/by-owner/{studentId}")
     public ResponseEntity<List<ResponseContractDTO>> getContractsByOwner(@PathVariable Long studentId) {
         return ResponseEntity.ok(contractService.getContractsByOwner(studentId));
+    }
+
+    @GetMapping("/investor/{investorId}/project/{projectId}")
+    public ResponseEntity<List<ResponseContractDTO>> getInvestorContractsForProject(
+            @PathVariable Long investorId,
+            @PathVariable Long projectId) {
+            List<ResponseContractDTO> contracts = contractService.getContractsByInvestorAndProject(investorId, projectId);
+
+            return ResponseEntity.status(HttpStatus.OK).body(contracts);
     }
 }
