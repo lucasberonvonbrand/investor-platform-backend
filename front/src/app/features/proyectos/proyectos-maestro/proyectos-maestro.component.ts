@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router'; // RouterLink ya estaba en una de las versiones
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ToolbarModule } from 'primeng/toolbar';
@@ -21,6 +21,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService } from 'primeng/api';
+import { MenuModule } from 'primeng/menu'; // Módulo que faltaba
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { AuthService } from '../../auth/login/auth.service';
@@ -36,7 +37,8 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule,
+    // Versión corregida y unificada de los imports
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [

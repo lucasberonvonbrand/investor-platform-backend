@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Observable } from 'rxjs'; // Necesario para tipar la nueva función loadContracts
 
@@ -36,7 +36,7 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule,
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, RouterLink,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [

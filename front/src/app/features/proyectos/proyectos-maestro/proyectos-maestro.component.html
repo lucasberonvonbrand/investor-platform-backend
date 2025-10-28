@@ -94,8 +94,11 @@
   <button pButton icon="pi pi-plus" label="Iniciar Contrato"
           (click)="openCreateContract()"
           class="p-button-warning p-button-lg"></button>
-  <button pButton label="+ ANALIZAR RIESGO"
-          class="p-button-warning p-button-lg"></button>
+  <button *ngIf="project()?.status === 'PENDING_FUNDING'"
+          pButton label="+ ANALIZAR RIESGO"
+          class="p-button-warning p-button-lg"
+          [routerLink]="['/analysis/risk', project()?.id]"
+          [disabled]="!project()"></button>
 </div>
 
 <!-- ===== Panel Desplegable para Crear/Editar Contrato (solo inversor, se despliega con animación) ===== -->
