@@ -38,13 +38,10 @@ export class ProjectsPanelComponent implements OnInit {
 
   // filtros
   q = '';
-  selectedCategory = '';
-  categories: string[] = [];
 
   // datos
   projects: IProject[] = [];
   filtered: IProject[] = [];
-  recommended: IProject[] = [];
 
   // vista
   viewMode: 'cards' | 'table' = 'cards';
@@ -59,12 +56,7 @@ export class ProjectsPanelComponent implements OnInit {
   // KPIs
   kpis = { total: 0, activos: 0, recientes: 0, conFinanciacion: 0 };
 
-  // Favoritos (localStorage)
-  private favKey = 'pp_fav_projects';
-  favIds = new Set<number>();
-
   ngOnInit(): void {
-    this.restoreFavs();
     this.reload();
   }
 
@@ -79,7 +71,6 @@ export class ProjectsPanelComponent implements OnInit {
         }));
         this.applyFilters();
         this.computeKpis();
-        this.buildRecommended();
       },
       error: (err) => {
         console.error(err);
@@ -91,7 +82,6 @@ export class ProjectsPanelComponent implements OnInit {
 
   applyFilters(): void {
     const q = (this.q || '').toLowerCase().trim();
-    const cat = (this.selectedCategory || '').toLowerCase();
 
     this.filtered = this.projects.filter(p => {
       const matchesQ =
@@ -100,12 +90,8 @@ export class ProjectsPanelComponent implements OnInit {
         p.summary?.toLowerCase().includes(q) ||
         p.university?.toLowerCase().includes(q) ||
         p.category?.toLowerCase().includes(q);
-      const matchesCat = !cat || (p.category?.toLowerCase() === cat);
-      return matchesQ && matchesCat;
+      return matchesQ;
     });
-
-    const set = new Set<string>(this.projects.map(p => p.category ?? '—'));
-    this.categories = Array.from(set).sort((a,b)=>a.localeCompare(b));
   }
 
   computeKpis(): void {
@@ -119,42 +105,6 @@ export class ProjectsPanelComponent implements OnInit {
     this.kpis.conFinanciacion = this.projects.filter(p => p.fundingGoal != null).length;
   }
 
-  buildRecommended(): void {
-    const base = this.filtered.length ? this.filtered : this.projects;
-    const scored = base.map(p => {
-      let s = 0;
-      if ((p.status||'') !== 'COMPLETED') s += 2;
-      if (p.lastUpdated) {
-        const days = (Date.now() - Date.parse(p.lastUpdated)) / (1000*60*60*24);
-        if (!Number.isNaN(days)) s += Math.max(0, 10 - Math.min(10, Math.floor(days/7)));
-      }
-      if (p.fundingGoal != null) s += 3;
-      if (p.fundingRaised != null) s += 2;
-      return { p, s };
-    });
-
-    this.recommended = scored.sort((a,b)=>b.s-a.s).slice(0,6).map(x=>x.p);
-  }
-
-  // ===== Favoritos =====
-  private restoreFavs(): void {
-    try {
-      const raw = localStorage.getItem(this.favKey);
-      this.favIds = new Set(raw ? (JSON.parse(raw) as number[]) : []);
-    } catch {
-      this.favIds = new Set<number>();
-    }
-  }
-  private persistFavs(): void {
-    localStorage.setItem(this.favKey, JSON.stringify(Array.from(this.favIds)));
-  }
-  isFav(id: number): boolean { return this.favIds.has(id); }
-  toggleFav(p: IProject): void {
-    if (!p?.id) return;
-    this.favIds.has(p.id) ? this.favIds.delete(p.id) : this.favIds.add(p.id);
-    this.persistFavs();
-  }
-
   // UI
   openDetail(p: IProject) {
     if (!p?.id) return;
@@ -164,6 +114,23 @@ export class ProjectsPanelComponent implements OnInit {
     } else {
       this.selected = p; this.showDetail = true;
     }
+  }
+
+  getProjectStatusLabel(status: string | null | undefined): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Progreso';
+      case 'PENDING_FUNDING': return 'Pendiente de Financiación';
+      case 'COMPLETED': return 'Completado';
+      case 'CANCELLED': return 'Cancelado';
+      case 'IDEA': return 'Idea';
+      case 'MVP': return 'MVP';
+      case 'FUNDING': return 'En Financiación';
+      default: return status || 'No definido';
+    }
+  }
+
+  getCategoryLabel(category: string | null | undefined): string {
+    return !category || category === '—' ? 'Sin categoría' : category;
   }
 
   // tags colores

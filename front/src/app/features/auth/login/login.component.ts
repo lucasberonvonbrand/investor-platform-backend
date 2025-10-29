@@ -117,12 +117,12 @@ export class LoginComponent implements OnDestroy {
         const role = (this.auth.getUserRole() || '').toUpperCase();
 
         if (role.includes('INVESTOR')) {
-          this.router.navigateByUrl('/mismarquesinas', { replaceUrl: true });
+          this.router.navigateByUrl('/marquesinas', { replaceUrl: true });
         } else if (role.includes('STUDENT')) {
           this.router.navigateByUrl('/misproyectos', { replaceUrl: true });
         } else {
           // fallback
-          this.router.navigateByUrl('/mismarquesinas', { replaceUrl: true });
+          this.router.navigateByUrl('/marquesinas', { replaceUrl: true });
         }
       },
       error: (err) => {

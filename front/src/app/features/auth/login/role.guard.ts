@@ -11,7 +11,8 @@ export function roleGuard(requiredRole: string): CanActivateFn {
     const session = auth.getSession();
 
     if (!session?.roles.includes(requiredRole)) {
-      router.navigateByUrl('/dashboard');
+      // Redirigir a una página segura y accesible para evitar bucles infinitos.
+      router.navigateByUrl('/marquesinas');
       return false;
     }
 

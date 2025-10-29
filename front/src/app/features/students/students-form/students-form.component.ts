@@ -8,12 +8,13 @@ import { Router, RouterLink } from '@angular/router';
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 import { KeyFilterModule } from 'primeng/keyfilter';
 
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule],
   templateUrl: './students-form.component.html',
   styleUrls: ['./students-form.component.scss']
 })

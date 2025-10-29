@@ -15,27 +15,39 @@
           </div>
 
           <div class="field">
-            <label for="username" class="font-medium">Nombre de Usuario <span class="text-red-500">*</span></label>
+            <label for="username" class="font-medium flex items-center gap-2">
+              <span>Nombre de Usuario <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Elige un nombre de usuario único para identificarte en la plataforma."></i>
+            </label>
             <input id="username" type="text" pInputText formControlName="username" class="w-full mt-1" autocomplete="off" />
             <small *ngIf="getFieldError('username')" class="p-error">{{ getFieldError('username') }}</small>
             <small *ngIf="usernameError()" class="p-error">{{ usernameError() }}</small>
           </div>
 
           <div class="field">
-            <label for="password" class="font-medium">Contraseña <span class="text-red-500">*</span></label>
+            <label for="password" class="font-medium flex items-center gap-2">
+              <span>Contraseña <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Debe tener al menos 6 caracteres. Combina letras y números para mayor seguridad."></i>
+            </label>
             <input id="password" type="password" pInputText formControlName="password" class="w-full mt-1" autocomplete="new-password" />
             <small *ngIf="getFieldError('password')" class="p-error">{{ getFieldError('password') }}</small>
           </div>
 
           <div class="field">
-            <label for="email" class="font-medium">Email <span class="text-red-500">*</span></label>
+            <label for="email" class="font-medium flex items-center gap-2">
+              <span>Email <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Usaremos este email para enviarte notificaciones importantes sobre tus inversiones y contratos."></i>
+            </label>
             <input id="email" type="email" pInputText formControlName="email" class="w-full mt-1" />
             <small *ngIf="getFieldError('email')" class="p-error">{{ getFieldError('email') }}</small>
             <small *ngIf="emailError()" class="p-error">{{ emailError() }}</small>
           </div>
 
           <div class="field">
-            <label for="cuit" class="font-medium">CUIT <span class="text-red-500">*</span></label>
+            <label for="cuit" class="font-medium flex items-center gap-2">
+              <span>CUIT <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu Clave Única de Identificación Tributaria (11 dígitos, sin guiones)."></i>
+            </label>
             <input id="cuit" type="text" pInputText formControlName="cuit" class="w-full mt-1" />
             <small *ngIf="getFieldError('cuit')" class="p-error">{{ getFieldError('cuit') }}</small>
             <small *ngIf="cuitError()" class="p-error">{{ cuitError() }}</small>
@@ -47,25 +59,37 @@
           </div>
 
           <div class="field">
-            <label for="contactPerson" class="font-medium">Persona de Contacto <span class="text-red-500">*</span></label>
+            <label for="contactPerson" class="font-medium flex items-center gap-2">
+              <span>Persona de Contacto <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Nombre completo de la persona o representante principal de la cuenta."></i>
+            </label>
             <input id="contactPerson" type="text" pInputText formControlName="contactPerson" class="w-full mt-1" />
             <small *ngIf="getFieldError('contactPerson')" class="p-error">{{ getFieldError('contactPerson') }}</small>
           </div>
 
           <div class="field">
-            <label for="phone" class="font-medium">Teléfono <span class="text-red-500">*</span></label>
+            <label for="phone" class="font-medium flex items-center gap-2">
+              <span>Teléfono <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Un número de teléfono de contacto directo."></i>
+            </label>
             <input id="phone" type="text" pInputText formControlName="phone" class="w-full mt-1" />
             <small *ngIf="getFieldError('phone')" class="p-error">{{ getFieldError('phone') }}</small>
           </div>
 
           <div class="field">
-            <label for="webSite" class="font-medium">Sitio Web</label>
+            <label for="webSite" class="font-medium flex items-center gap-2">
+              <span>Sitio Web</span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="La página web de tu empresa o portfolio de inversor (opcional)."></i>
+            </label>
             <input id="webSite" type="text" pInputText formControlName="webSite" class="w-full mt-1" />
             <small *ngIf="getFieldError('webSite')" class="p-error">{{ getFieldError('webSite') }}</small>
           </div>
 
           <div class="field">
-            <label for="linkedinUrl" class="font-medium">LinkedIn</label>
+            <label for="linkedinUrl" class="font-medium flex items-center gap-2">
+              <span>LinkedIn</span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu perfil de LinkedIn (opcional)."></i>
+            </label>
             <input id="linkedinUrl" type="text" pInputText formControlName="linkedinUrl" class="w-full mt-1" />
             <small *ngIf="getFieldError('linkedinUrl')" class="p-error">{{ getFieldError('linkedinUrl') }}</small>
           </div>
@@ -76,25 +100,37 @@
           </div>
 
           <div class="field">
-            <label for="street" class="font-medium">Calle <span class="text-red-500">*</span></label>
+            <label for="street" class="font-medium flex items-center gap-2">
+              <span>Calle <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Nombre de la calle de tu domicilio fiscal."></i>
+            </label>
             <input id="street" type="text" pInputText formControlName="street" class="w-full mt-1" />
             <small *ngIf="getFieldError('street')" class="p-error">{{ getFieldError('street') }}</small>
           </div>
 
           <div class="field">
-            <label for="number" class="font-medium">Número <span class="text-red-500">*</span></label>
+            <label for="number" class="font-medium flex items-center gap-2">
+              <span>Número <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Altura de la calle."></i>
+            </label>
             <input id="number" type="number" pInputText formControlName="number" class="w-full mt-1" />
             <small *ngIf="getFieldError('number')" class="p-error">{{ getFieldError('number') }}</small>
           </div>
 
           <div class="field">
-            <label for="postalCode" class="font-medium">Código Postal <span class="text-red-500">*</span></label>
+            <label for="postalCode" class="font-medium flex items-center gap-2">
+              <span>Código Postal <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu código postal."></i>
+            </label>
             <input id="postalCode" type="text" pInputText formControlName="postalCode" class="w-full mt-1" />
             <small *ngIf="getFieldError('postalCode')" class="p-error">{{ getFieldError('postalCode') }}</small>
           </div>
 
           <div class="field">
-            <label for="city" class="font-medium">Ciudad <span class="text-red-500">*</span></label>
+            <label for="city" class="font-medium flex items-center gap-2">
+              <span>Ciudad <span class="text-red-500">*</span></span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="La ciudad de tu domicilio."></i>
+            </label>
             <input id="city" type="text" pInputText formControlName="city" class="w-full mt-1" />
             <small *ngIf="getFieldError('city')" class="p-error">{{ getFieldError('city') }}</small>
           </div>

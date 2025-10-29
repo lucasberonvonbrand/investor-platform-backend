@@ -20,14 +20,6 @@
       <input pInputText type="text" placeholder="Buscar mis proyectos..."
              [(ngModel)]="q" (input)="applyFilters()" />
     </span>
-
-    <!-- Select nativo para categoría -->
-    <span class="ml-2">
-      <select class="p-inputtext p-component" [(ngModel)]="selectedCategory" (change)="applyFilters()">
-        <option [ngValue]="''">Todas las categorías</option>
-        <option *ngFor="let c of categories" [ngValue]="c">{{ c }}</option>
-      </select>
-    </span>
   </div>
 
   <div class="p-toolbar-group-right flex items-center gap-2">
@@ -89,8 +81,7 @@
       <div class="mt-3 flex-1"></div>
       <div class="mt-4 border-t pt-3">
         <button pButton type="button" label="Ver Detalles" icon="pi pi-arrow-right" iconPos="right"
-                class="w-full p-button-secondary p-button-outlined"
-                (click)="openDetail(row)"></button>
+                class="w-full p-button-secondary p-button-outlined" (click)="openDetail(row)"></button>
       </div>
     </div>
   </div>

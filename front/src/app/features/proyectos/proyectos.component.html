@@ -7,12 +7,18 @@
       <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Información General</h3>
 
       <div class="md:col-span-2 field">
-        <label for="projectName" class="font-medium">Nombre del proyecto</label>
+        <label for="projectName" class="font-medium flex items-center gap-2">
+          <span>Nombre del proyecto</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Elige un nombre claro y conciso que describa tu proyecto. Será lo primero que vean los inversores."></i>
+        </label>
         <input id="projectName" type="text" pInputText formControlName="name" class="w-full mt-1" placeholder="Ingresá el nombre (3–80 caracteres)" maxlength="80" />
       </div>
 
       <div class="md:col-span-2 field">
-        <label for="projectDescription" class="font-medium">Descripción</label>
+        <label for="projectDescription" class="font-medium flex items-center gap-2">
+          <span>Descripción</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Detalla aquí la visión, los objetivos y el problema que resuelve tu proyecto. Esta descripción es clave para que la IA lo clasifique correctamente."></i>
+        </label>
         <textarea id="projectDescription" formControlName="description" class="w-full mt-1 p-inputtextarea p-inputtext p-component" rows="4" placeholder="Descripción detallada del proyecto (10–500 caracteres)" maxlength="500"></textarea>
         <small class="p-error" *ngIf="projectForm.get('description')?.errors?.['server']">
           {{ projectForm.get('description')?.errors?.['server'] }}
@@ -20,12 +26,18 @@
       </div>
 
       <div class="field">
-        <label for="budgetGoal" class="font-medium">Meta de presupuesto (USD)</label>
+        <label for="budgetGoal" class="font-medium flex items-center gap-2">
+          <span>Meta de presupuesto (USD)</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Define la cantidad total de dinero que necesitas para llevar a cabo tu proyecto. Sé realista y justifica este monto en tu plan de negocio."></i>
+        </label>
         <input id="budgetGoal" type="number" pInputText formControlName="budgetGoal" class="w-full mt-1" placeholder="Ej: 150000" step="0.01" min="0" />
       </div>
 
       <div class="field">
-        <label for="projectStatus" class="font-medium">Estado Inicial</label>
+        <label for="projectStatus" class="font-medium flex items-center gap-2">
+          <span>Estado Inicial</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Selecciona la fase actual de tu proyecto. 'Pendiente de Financiación' es ideal si ya tienes un plan claro y estás listo para buscar inversores."></i>
+        </label>
         <select id="projectStatus" formControlName="status" class="w-full p-inputtext p-component mt-1">
           <option value="" disabled>Seleccione un estado</option>
           <option value="PENDING_FUNDING">Pendiente de Financiación</option>
@@ -38,12 +50,18 @@
       <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Fechas y Plazos</h3>
 
       <div class="field">
-        <label for="startDate" class="font-medium">Fecha de inicio</label>
+        <label for="startDate" class="font-medium flex items-center gap-2">
+          <span>Fecha de inicio</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="La fecha en la que planeas comenzar a trabajar activamente en el proyecto."></i>
+        </label>
         <input id="startDate" type="date" pInputText formControlName="startDate" class="w-full mt-1" />
       </div>
 
       <div class="field">
-        <label for="estimatedEndDate" class="font-medium">Fecha de finalización estimada</label>
+        <label for="estimatedEndDate" class="font-medium flex items-center gap-2">
+          <span>Fecha de finalización estimada</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Una fecha aproximada de cuándo esperas completar los objetivos principales del proyecto."></i>
+        </label>
         <input id="estimatedEndDate" type="date" pInputText formControlName="estimatedEndDate" class="w-full mt-1" />
         <small class="p-error" *ngIf="projectForm.get('estimatedEndDate')?.errors?.['server']">
           {{ projectForm.get('estimatedEndDate')?.errors?.['server'] }}
@@ -54,13 +72,19 @@
       <h3 class="md:col-span-2 text-lg font-semibold border-b pb-2 mt-4 mb-2">Equipo del Proyecto</h3>
 
       <div class="field">
-        <label for="owner" class="font-medium">Responsable (Líder)</label>
+        <label for="owner" class="font-medium flex items-center gap-2">
+          <span>Responsable (Líder)</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Eres el dueño y principal punto de contacto del proyecto. Este campo no se puede editar."></i>
+        </label>
         <input id="owner" type="text" pInputText [value]="projectForm.get('owner')?.value?.fullName || ''" class="w-full mt-1" [disabled]="true" />
         <small class="text-gray-500 dark:text-gray-400 mt-1 block">El responsable del proyecto es el usuario que ha iniciado sesión.</small>
       </div>
 
       <div class="field">
-        <label for="students" class="font-medium">Integrantes Adicionales</label>
+        <label for="students" class="font-medium flex items-center gap-2">
+          <span>Integrantes Adicionales</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Busca y añade a otros estudiantes que formarán parte de tu equipo."></i>
+        </label>
         <p-autoComplete
           inputId="students"
           formControlName="students"
