@@ -106,7 +106,10 @@
   <p-card [header]="editing ? 'Editar Contrato' : (reviewingToSign ? 'Revisar Contrato para Firmar' : 'Crear Nuevo Contrato')" styleClass="shadow-sm">
     <form [formGroup]="contractForm" class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
       <div class="md:col-span-2">
-        <label class="text-sm font-medium">Título</label>
+        <label class="text-sm font-medium flex items-center gap-2">
+          <span>Título</span>
+          <i class="pi pi-info-circle cursor-pointer" pTooltip="Dale un nombre único a tu oferta de contrato para identificarla fácilmente."></i>
+        </label>
         <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" />
         <small class="text-red-500" *ngIf="contractForm.controls.title.invalid && contractForm.controls.title.touched">
           Título es requerido
@@ -114,14 +117,20 @@
       </div>
       <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
         <div class="md:col-span-2">
-          <label class="text-sm font-medium">Monto</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Monto</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="La cantidad de dinero que ofreces invertir en el proyecto."></i>
+          </label>
           <p-inputNumber formControlName="amount" [min]="0" [useGrouping]="true" [minFractionDigits]="0" [maxFractionDigits]="2"></p-inputNumber>
           <small class="text-red-500" *ngIf="contractForm.controls.amount.invalid && contractForm.controls.amount.touched">
             Monto inválido
           </small>
         </div>
         <div class="md:col-span-2">
-          <label class="text-sm font-medium">Moneda</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Moneda</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="La divisa en la que se realizará la inversión. El sistema la convertirá a USD para calcular el progreso de financiación."></i>
+          </label>
           <select
             formControlName="currency"
             class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600">
@@ -129,7 +138,10 @@
           </select>
         </div>
         <div class="md:col-span-1 flex flex-col justify-end">
-          <label class="text-sm font-medium">Estado</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Estado</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="El estado actual del contrato. Comienza como 'Pendiente Firma' y cambia a 'Firmado' cuando el estudiante lo acepta."></i>
+          </label>
           <p-tag [value]="currentContractStatusLabel()"
                  [ngStyle]="tagStyle(currentContractStatus())"></p-tag>
         </div>
@@ -138,7 +150,10 @@
       <!-- Rentabilidad -->
       <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-3 mt-1">
         <div>
-          <label class="text-sm font-medium">Rent. 1er año</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Rent. 1er año</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="El porcentaje de ganancia que esperas recibir sobre tu inversión después del primer año."></i>
+          </label>
           <div class="flex items-center gap-2 mt-2">
             <p-slider formControlName="profit1Year" [min]="0" [max]="100" class="flex-1" (onChange)="contractForm.controls.profit1Year.setValue($event.value)"></p-slider>
             <p-inputNumber formControlName="profit1Year" [min]="0" [max]="100" [showButtons]="false" suffix="%" inputStyleClass="w-10 text-right" class="w-16 -mr-2" (onInput)="contractForm.controls.profit1Year.setValue($event.value)"></p-inputNumber>
@@ -148,7 +163,10 @@
           </small>
         </div>
         <div>
-          <label class="text-sm font-medium">Rent. 2do año</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Rent. 2do año</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="El porcentaje de ganancia que esperas recibir sobre tu inversión después del segundo año."></i>
+          </label>
           <div class="flex items-center gap-2 mt-2">
             <p-slider formControlName="profit2Years" [min]="0" [max]="100" class="flex-1" (onChange)="contractForm.controls.profit2Years.setValue($event.value)"></p-slider>
             <p-inputNumber formControlName="profit2Years" [min]="0" [max]="100" [showButtons]="false" suffix="%" inputStyleClass="w-10 text-right" class="w-16 -mr-2" (onInput)="contractForm.controls.profit2Years.setValue($event.value)"></p-inputNumber>
@@ -158,7 +176,10 @@
           </small>
         </div>
         <div>
-          <label class="text-sm font-medium">Rent. 3er año</label>
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Rent. 3er año</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="El porcentaje de ganancia que esperas recibir sobre tu inversión después del tercer año."></i>
+          </label>
           <div class="flex items-center gap-2 mt-2">
             <p-slider formControlName="profit3Years" [min]="0" [max]="100" class="flex-1" (onChange)="contractForm.controls.profit3Years.setValue($event.value)"></p-slider>
             <p-inputNumber formControlName="profit3Years" [min]="0" [max]="100" [showButtons]="false" suffix="%" inputStyleClass="w-10 text-right" class="w-16 -mr-2" (onInput)="contractForm.controls.profit3Years.setValue($event.value)"></p-inputNumber>
@@ -170,8 +191,26 @@
       </div>
       <!-- Editor de Cláusulas -->
       <div class="md:col-span-2">
-        <label class="text-sm font-medium">Cláusulas y Detalles del Contrato</label>
-        <p-editor formControlName="clauses" [style]="{ height: '250px' }"></p-editor>
+        <div class="flex justify-between items-center mb-1">
+          <label class="text-sm font-medium flex items-center gap-2">
+            <span>Cláusulas y Detalles del Contrato</span>
+            <i class="pi pi-info-circle cursor-pointer" pTooltip="Aquí puedes detallar los términos, condiciones, obligaciones y cualquier otra cláusula relevante para el acuerdo."></i>
+          </label>
+          <button pButton type="button" icon="pi pi-book" label="Plantillas" (click)="menu.toggle($event)" class="p-button-text p-button-sm"></button>
+          <p-menu #menu [model]="contractTemplates" [popup]="true"></p-menu>
+        </div>
+        <p-editor formControlName="clauses" [style]="{ height: '250px' }">
+          <ng-template pTemplate="header">
+            <span class="ql-formats">
+              <button type="button" class="ql-bold" aria-label="Bold"></button>
+              <button type="button" class="ql-italic" aria-label="Italic"></button>
+              <button type="button" class="ql-underline" aria-label="Underline"></button>
+              <button type="button" class="ql-list" value="ordered" aria-label="Ordered List"></button>
+              <button type="button" class="ql-list" value="bullet" aria-label="Unordered List"></button>
+              <button type="button" class="ql-link" aria-label="Link"></button>
+            </span>
+          </ng-template>
+        </p-editor>
       </div>
     </form>
     <div class="mt-3 flex gap-2">
@@ -219,34 +258,33 @@
         <td><p-tag [value]="getContractStatusLabel(row.status)" [ngStyle]="tagStyle(row.status)"></p-tag></td>
         <td>{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
         <td class="text-center">
-          <!-- Acciones para Contratos Cancelados -->
-          <ng-container *ngIf="row.status === 'CANCELLED'">
-            <button pButton [text]="true" [rounded]="true" [size]="'small'" icon="pi pi-eye" pTooltip="Ver Detalles" (click)="viewContract(row)"></button>
+          <!-- ==================================================================== -->
+          <!-- Botón de "Ver" (siempre visible para ambos roles) -->
+          <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                  icon="pi pi-eye" pTooltip="Ver Detalles"
+                  (click)="viewContract(row)"></button>
+
+          <!-- ==================================================================== -->
+          <!-- Acciones condicionales según el rol y el estado del contrato -->
+
+          <!-- Acciones para el Inversor (si el contrato está pendiente) -->
+          <ng-container *ngIf="isInvestor() && row.status === 'PENDING_STUDENT_SIGNATURE'">
+            <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                    icon="pi pi-pencil" pTooltip="Editar Oferta" severity="warning"
+                    (click)="editContract(row)">
+            </button>
+            <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                    icon="pi pi-times-circle" pTooltip="Retirar Oferta" severity="danger"
+                    (click)="cancelContractByInvestor(row)">
+            </button>
           </ng-container>
 
-          <!-- Acciones para otros estados -->
-          <ng-container *ngIf="row.status !== 'CANCELLED'">
-            <!-- Acciones para el Inversor -->
-            <ng-container *ngIf="isInvestor()">
-              <button *ngIf="row.status === 'PENDING_STUDENT_SIGNATURE'"
-                      pButton [text]="true" [rounded]="true" [size]="'small'"
-                      icon="pi pi-pencil" pTooltip="Editar Oferta" severity="warning"
-                      (click)="editContract(row)">
-              </button>
-              <button *ngIf="row.status === 'PENDING_STUDENT_SIGNATURE'"
-                      pButton [text]="true" [rounded]="true" [size]="'small'"
-                      icon="pi pi-times-circle" pTooltip="Retirar Oferta" severity="danger"
-                      (click)="cancelContractByInvestor(row)">
-              </button>
-            </ng-container>
-            <!-- Acciones para el Dueño del Proyecto -->
-            <ng-container *ngIf="isOwner()">
-              <button *ngIf="row.status === 'PENDING_STUDENT_SIGNATURE'"
-                      pButton [text]="true" [rounded]="true" [size]="'small'"
-                      icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"
-                      (click)="reviewAndSignContract(row)">
-              </button>
-            </ng-container>
+          <!-- Acciones para el Dueño del Proyecto (si el contrato está pendiente) -->
+          <ng-container *ngIf="isOwner() && row.status === 'PENDING_STUDENT_SIGNATURE'">
+            <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                    icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"
+                    (click)="reviewAndSignContract(row)">
+            </button>
           </ng-container>
         </td>
       </tr>

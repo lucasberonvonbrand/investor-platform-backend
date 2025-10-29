@@ -17,6 +17,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { SliderModule } from 'primeng/slider';
 import { EditorModule } from 'primeng/editor';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
@@ -113,6 +114,8 @@ export class ProyectosMaestroComponent implements OnInit {
     profit3Years: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
     clauses: [''], // Campo para el editor de texto
   });
+  
+  contractTemplates: MenuItem[] = [];
 
   // ===== Formulario de Contacto =====
   contactDialogVisible = signal(false);
@@ -131,6 +134,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.projectId.set(id);
     this.loadProject();
     this.loadContracts();
+    this.setupContractTemplates();
   }
 
   goBack(): void {
@@ -140,7 +144,10 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadProject(): void {
     this.loading.set(true);
     this.svc.getProjectById(this.projectId()).subscribe({
-      next: (p: IMyProject | null) => this.project.set(p || null),
+      next: (p: IMyProject | null) => {
+        this.project.set(p || null);
+        this.setupContractTemplates(); // Volver a generar las plantillas con el título del proyecto
+      },
       error: () => this.toast.add({ severity: 'error', summary: 'Proyecto', detail: 'No se pudo cargar' }),
       complete: () => this.loading.set(false),
     });
@@ -174,7 +181,7 @@ export class ProyectosMaestroComponent implements OnInit {
       title: row.title,
       amount: row.amount,
       currency: row.currency ?? 'USD',
-      clauses: (row as any).clauses ?? '', // Cargar cláusulas si existen
+      clauses: (row as any).description ?? '', // Cargar la descripción en el campo 'clauses' del form
     });
     this.accordionOpen.set(true);
   }
@@ -197,7 +204,7 @@ export class ProyectosMaestroComponent implements OnInit {
     // Si no, es un inversor creando/editando. Validamos.
     if (this.contractForm.invalid || !this.isInvestor()) return;
 
-    let dto: Partial<IContract> & { projectId: number };
+    let dto: any; // Usamos 'any' para permitir el campo 'description' que no está en IContract
     const raw = this.contractForm.getRawValue();
 
     if (this.editing) {
@@ -211,7 +218,7 @@ export class ProyectosMaestroComponent implements OnInit {
         profit1Year: raw.profit1Year,
         profit2Years: raw.profit2Years,
         profit3Years: raw.profit3Years,
-        clauses: raw.clauses,
+        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
         status: this.editing.status, // Mantenemos el status actual al editar
         createdByInvestorId: this.currentUser?.id,
       };
@@ -226,7 +233,7 @@ export class ProyectosMaestroComponent implements OnInit {
         profit1Year: raw.profit1Year,
         profit2Years: raw.profit2Years,
         profit3Years: raw.profit3Years,
-        clauses: raw.clauses,
+        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
       };
     }
     
@@ -244,8 +251,12 @@ export class ProyectosMaestroComponent implements OnInit {
         this.cancelEdit();
       },
       error: (err: any) => {
-        const detail = err?.error?.message || 'No se pudo guardar el contrato.';
-        this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 5000 });
+        let detail = err?.error?.message || 'No se pudo guardar el contrato.';
+        // Captura el error específico de truncamiento de datos
+        if (typeof detail === 'string' && detail.includes("Data too long for column 'description'")) {
+          detail = 'El contenido de las cláusulas es demasiado largo. Por favor, reduce el texto o el formato.';
+        }
+        this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 6000 });
       }
     });
   }
@@ -331,7 +342,7 @@ export class ProyectosMaestroComponent implements OnInit {
       profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
       profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
       profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).clauses ?? '',
+      clauses: (contract as any).description ?? '',
     });
     this.contractForm.disable();
     this.accordionOpen.set(true);
@@ -348,7 +359,7 @@ export class ProyectosMaestroComponent implements OnInit {
       profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
       profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
       profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).clauses ?? '',
+      clauses: (contract as any).description ?? '',
     });
     this.contractForm.disable(); // Hacemos el formulario de solo lectura
     this.accordionOpen.set(true);

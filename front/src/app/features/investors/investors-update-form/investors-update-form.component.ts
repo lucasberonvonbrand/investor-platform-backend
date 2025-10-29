@@ -57,29 +57,30 @@ ngOnInit(): void {
         error: (err) => {
           console.error('Error cargando inversor:', err);
           this.isLoading = false;
-          this.router.navigateByUrl('/configuracion');
+          this.router.navigateByUrl('/dashboard');
         }
       });
     } else {
-      this.router.navigateByUrl('/configuracion');
+      this.router.navigateByUrl('/dashboard');
     }
   }
 
   private buildForm(investor: Investor): void {
     this.investorsUpdateForm = this.fb.group({
-      username: [investor.username ?? '', [Validators.required, Validators.maxLength(50)]],
-      email: [investor.email ?? '', [Validators.required, Validators.email]],
-      photoUrl: [(investor as any).photoUrl ?? ''],
+      username: [investor.username ?? '', [Validators.required, Validators.maxLength(15), Validators.pattern('^[A-Za-z0-9 ./,!&]+$')]],
+      email: [investor.email ?? '', [Validators.required, Validators.email, Validators.maxLength(30)]],
+
+      photoUrl: [investor.photoUrl ?? '', [Validators.maxLength(50),Validators.pattern('https?://.+')]],
       cuit: [investor.cuit ?? '', [Validators.required, Validators.pattern('^[0-9]+$'), Validators.minLength(11), Validators.maxLength(11)]],
-      contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
-      phone: [investor.phone ?? '', [Validators.required, Validators.pattern('\\+?\\d{8,15}')]],
-      webSite: [investor.webSite ?? '', Validators.maxLength(100)],
+      contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(15), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+      phone: [investor.phone ?? '', [Validators.required, Validators.maxLength(13), Validators.pattern('^[0-9]+$')]],
+      webSite: [investor.webSite ?? '', [Validators.maxLength(50),Validators.pattern('https?://.+')]],
       address: this.fb.group({
-        street: [investor.address?.street ?? '', Validators.required],
-        number: [investor.address?.number ?? null, Validators.required],
-        city: [investor.address?.city ?? '', Validators.required],
-        province: [investor.address?.province ?? '', Validators.required],
-        postalCode: [investor.address?.postalCode ?? null, Validators.required]
+        street: [investor.address?.street ?? '', [Validators.required, Validators.maxLength(50), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+        number: [investor.address?.number ?? '', [Validators.required, Validators.maxLength(5), Validators.pattern('^[0-9]+$')]],
+        city: [investor.address?.city ?? '', [Validators.required,Validators.maxLength(50), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+        province: [investor.address?.province ?? '', [Validators.required,Validators.maxLength(30), Validators.pattern('^[A-Za-zÀ-ÿ ]+$')]],
+        postalCode: [investor.address?.postalCode ?? null, [Validators.required,Validators.maxLength(5), Validators.pattern('^[0-9]+$')]]
       })
     });
   }
@@ -106,7 +107,9 @@ ngOnInit(): void {
       });
     } else {
       this.investorsUpdateForm.markAllAsTouched();
+      this.investorsUpdateForm.updateValueAndValidity();
       this.toast.add({ severity: 'warn', summary: 'Atención', detail: 'Por favor, completa todos los campos requeridos.' });
+      return;
     }
   }
 
