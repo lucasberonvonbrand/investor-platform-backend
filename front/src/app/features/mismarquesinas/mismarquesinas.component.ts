@@ -30,6 +30,7 @@ export class MismarquesinasComponent implements OnInit {
     { text: 'Servicios Profesionales', img: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80' },
     { text: 'Impacto Social', img: 'https://plus.unsplash.com/premium_photo-1663047248264-24aa25b1433e?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
     { text: 'Otros', img: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80' },
+    { text: 'Ver Todos', img: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D' },
   ];
 
   constructor(private router: Router) {}
@@ -48,10 +49,20 @@ export class MismarquesinasComponent implements OnInit {
   }
 
 openTag(item: CuadradoItem): void {
+  // Caso especial para la tarjeta "Ver Todos"
+  if (item.text === 'Ver Todos') {
+    this.router.navigate(['/proyectos-panel']);
+    return;
+  }
+
   const clean = this.slugify(item.text);
   console.log('openTag -> tag limpio:', clean);
-  this.router.navigateByUrl(`/mismarquesinas/tag/${encodeURIComponent(clean)}`)
+  this.router.navigateByUrl(`/marquesinas/tag/${encodeURIComponent(clean)}`)
     .then(ok => console.log('navegación ok:', ok))
     .catch(err => console.error('navegación error:', err));
-}
+  }
+
+  goToProjectsPanel(): void {
+    this.router.navigate(['/proyectos-panel']);
+  }
 }

@@ -35,8 +35,6 @@ export class MyInvestmentsPanelComponent implements OnInit {
 
   // filtros
   q = '';
-  selectedCategory = '';
-  categories: string[] = [];
 
   // datos
   investments: IInvestedProject[] = [];
@@ -75,7 +73,6 @@ export class MyInvestmentsPanelComponent implements OnInit {
 
   applyFilters(): void {
     const q = (this.q || '').toLowerCase().trim();
-    const cat = (this.selectedCategory || '').toLowerCase();
 
     this.filtered = this.investments.filter(inv => {
       const matchesQ =
@@ -84,12 +81,8 @@ export class MyInvestmentsPanelComponent implements OnInit {
         inv.project.summary?.toLowerCase().includes(q) ||
         inv.project.university?.toLowerCase().includes(q) ||
         inv.project.category?.toLowerCase().includes(q);
-      const matchesCat = !cat || (inv.project.category?.toLowerCase() === cat);
-      return matchesQ && matchesCat;
+      return matchesQ;
     });
-
-    const set = new Set<string>(this.investments.map(inv => inv.project.category ?? '—'));
-    this.categories = Array.from(set).sort((a,b)=>a.localeCompare(b));
   }
 
   computeKpis(): void {

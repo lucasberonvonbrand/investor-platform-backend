@@ -7,6 +7,7 @@ import { ToastModule } from 'primeng/toast';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -30,7 +31,8 @@ type StudentWithFullName = StudentName & { fullName: string };
     ToastModule,
     CardModule,
     InputTextModule, // InputTextarea está incluido en InputTextModule en algunas versiones
-    ButtonModule
+    ButtonModule,
+    TooltipModule
   ],
   providers: [MessageService],
 })

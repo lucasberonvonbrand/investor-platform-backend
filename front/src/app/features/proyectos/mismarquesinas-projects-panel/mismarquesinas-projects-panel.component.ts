@@ -129,6 +129,6 @@ reload(): void {
   }
 
   goBack(): void {
-    this.router.navigate(['/mismarquesinas']);
+    this.router.navigate(['/marquesinas']);
   }
 }

@@ -37,8 +37,6 @@ export class ProyectosInvertidosComponent implements OnInit {
 
   // filtros / UI
   q = '';
-  selectedCategory = '';
-  categories: string[] = [];
   viewMode: 'cards' | 'table' = 'cards';
 
   // datos
@@ -121,7 +119,7 @@ ngOnInit(): void {
   }
 
   goBack(): void {
-    this.router.navigate(['/mismarquesinas']);
+    this.router.navigate(['/marquesinas']);
   }
 
   // carga desde el servicio
@@ -131,7 +129,6 @@ ngOnInit(): void {
       next: (list) => {
         this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
         this.applyFilters();
-        this.buildCategories();
         this.computeKpis(this.projects);
       },
       error: (err) => {
@@ -147,17 +144,10 @@ ngOnInit(): void {
 
   applyFilters(): void {
     const q = (this.q || '').toLowerCase().trim();
-    const cat = (this.selectedCategory || '').toLowerCase();
     this.filtered = this.projects.filter(p => {
       const matchesQ = !q || (p.title || '').toLowerCase().includes(q) || (p.summary || '').toLowerCase().includes(q);
-      const matchesCat = !cat || (p.category || '').toLowerCase() === cat;
-      return matchesQ && matchesCat;
+      return matchesQ;
     });
-  }
-
-  private buildCategories(): void {
-    const set = new Set<string>(this.projects.map(p => p.category ?? '—'));
-    this.categories = Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 
   private computeKpis(list: IInvestedProject[]): void {

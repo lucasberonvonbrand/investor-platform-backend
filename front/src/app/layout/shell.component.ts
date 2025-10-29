@@ -69,7 +69,7 @@ userItems = [
     const isAdmin = roles.includes('ROLE_ADMIN');
 
     const menu: MenuItem[] = [
-      { label: 'Inicio', icon: 'pi pi-home', routerLink: '/proyectos-panel' },
+      { label: 'Inicio', icon: 'pi pi-home', routerLink: '/marquesinas' },
     ];
 
     // --- Sección de Gestión (Dinámica) ---
@@ -80,7 +80,6 @@ userItems = [
       managementItems.push({ label: 'Proyectos donde participo', icon: 'pi pi-pencil', routerLink: '/proyectos-participo' });
     }
     if (isInvestor) {
-      managementItems.push({ label: 'Mis Marquesinas', icon: 'pi pi-pencil', routerLink: '/mismarquesinas' });
       managementItems.push({ label: 'Mis Inversiones', icon: 'pi pi-dollar', routerLink: '/mis-inversiones' });
       managementItems.push({ label: 'Mis proyectos Invertidos', icon: 'pi pi-briefcase', routerLink: '/mis-proyectos-invertidos' });
       managementItems.push({ label: 'Noticias', icon: 'pi pi-bell', routerLink: '/noticias' });

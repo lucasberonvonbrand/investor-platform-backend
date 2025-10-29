@@ -8,11 +8,12 @@ import { Router, RouterLink } from '@angular/router';
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-investor-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, TooltipModule],
   templateUrl: './investors-form.component.html',
   styleUrls: ['./investors-form.component.scss']
 })
