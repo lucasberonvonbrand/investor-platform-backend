@@ -4,7 +4,7 @@
   </div>
 
   <div class="p-toolbar-group-right flex items-center gap-2">
-    <button pButton icon="pi pi-user" label="Contactar" (click)="contactStudent()" [disabled]="!project()"></button>
+    <button pButton icon="pi pi-user" label="Contactar" (click)="openContactDialog()" [disabled]="!project()"></button>
   </div>
 </p-toolbar>
 
@@ -262,3 +262,29 @@
 
 <p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>
+
+<!-- DIÁLOGO DE CONTACTO (COPIADO DE proyectos-maestro) -->
+<p-dialog header="Contactar al Líder del Proyecto" [(visible)]="contactDialogVisible" [modal]="true" [style]="{ width: '50vw', 'min-width': '350px' }">
+  <form [formGroup]="contactForm">
+    <div class="flex flex-col gap-4 pt-2">
+      <div>
+        <label for="subject" class="font-medium">Asunto</label>
+        <input pInputText id="subject" formControlName="subject" class="w-full mt-1" />
+        <small class="p-error" *ngIf="contactForm.controls.subject.invalid && contactForm.controls.subject.touched">
+          El asunto es requerido.
+        </small>
+      </div>
+      <div>
+        <label for="message" class="font-medium">Mensaje</label>
+        <textarea pInputTextarea id="message" formControlName="message" rows="6" class="w-full mt-1"></textarea>
+        <small class="p-error" *ngIf="contactForm.controls.message.invalid && contactForm.controls.message.touched">
+          El mensaje es requerido.
+        </small>
+      </div>
+    </div>
+  </form>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancelar" severity="secondary" (click)="contactDialogVisible.set(false)"></button>
+    <button pButton label="Enviar Mensaje" icon="pi pi-send" (click)="sendContactEmail()" [disabled]="contactForm.invalid"></button>
+  </ng-template>
+</p-dialog>

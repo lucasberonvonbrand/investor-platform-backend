@@ -31,4 +31,6 @@ public interface IProjectService {
 
     @Transactional
     ResponseProjectDTO failFundingProject(Long projectId, Long ownerId);
+
+    void contactProjectOwner(Long projectId, ContactOwnerDTO contactOwnerDTO);
 }

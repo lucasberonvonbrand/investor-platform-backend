@@ -8,7 +8,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
+import { ButtonModule } from 'primeng/button'; // (lo podés quitar si ya no usás el modal)
 import { DialogModule } from 'primeng/dialog';            // (lo podés quitar si ya no usás el modal)
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -24,7 +24,8 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { MenuModule } from 'primeng/menu'; // Módulo que faltaba
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
-import { AuthService } from '../../auth/login/auth.service';
+import { AuthService, Session } from '../../auth/login/auth.service';
+import type { ContactOwnerDTO } from '../../../core/services/projects-master.service';
 import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
 
 type Student = { id: number; name: string; email?: string };
@@ -113,6 +114,14 @@ export class ProyectosMaestroComponent implements OnInit {
     clauses: [''], // Campo para el editor de texto
   });
 
+  // ===== Formulario de Contacto =====
+  contactDialogVisible = signal(false);
+  contactForm = this.fb.group({
+    subject: ['', Validators.required],
+    message: ['', Validators.required],
+  });
+
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
@@ -143,19 +152,6 @@ export class ProyectosMaestroComponent implements OnInit {
         this.contracts.set(list || []);
       }
     });
-  }
-
-  contactStudent(): void {
-    const studentWithEmail = this.team.find(s => !!s.email);
-    const email = studentWithEmail?.email;
-    const p = this.project();
-    if (!email || !p) {
-      this.toast.add({ severity: 'info', summary: 'Contacto', detail: 'No hay email de estudiante disponible' });
-      return;
-    }
-    const subject = encodeURIComponent(`Consulta sobre el proyecto: ${p.title ?? ''}`);
-    const body = encodeURIComponent('Hola, ¿podemos coordinar para revisar los avances?');
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   }
 
   // ===== Crear / Editar contrato (Acordeón) =====
@@ -264,6 +260,61 @@ export class ProyectosMaestroComponent implements OnInit {
       return 0;
     }
     return (baseAmount * percentage) / 100;
+  }
+
+  // ===== Lógica de Contacto al Dueño del Proyecto =====
+
+  /**
+   * Abre el diálogo para contactar al líder del proyecto.
+   */
+  openContactDialog(): void {
+    this.contactForm.reset();
+    this.contactDialogVisible.set(true);
+  }
+
+  /**
+   * Envía el correo electrónico al líder del proyecto a través del backend.
+   */
+  sendContactEmail(): void {
+    if (this.contactForm.invalid) {
+      this.contactForm.markAllAsTouched();
+      return;
+    }
+
+    // 1. Obtener la sesión actual.
+    const session = this.auth.getSession();
+    const projectId = this.projectId();
+
+    // 2. Validar que la sesión y el email existan.
+    if (!session || !session.email) {
+      this.toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo identificar tu email. Por favor, inicia sesión de nuevo.'
+      });
+      return;
+    }
+
+    // 3. Construir el payload con los datos REALES de la sesión.
+    const contactData: ContactOwnerDTO = {
+      fromEmail: session.email,       // <-- USA EL EMAIL REAL
+      fromName: session.username,     // <-- USA EL USERNAME PARA EL NOMBRE
+      subject: this.contactForm.value.subject!,
+      message: this.contactForm.value.message!,
+    };
+
+    // 3. Realizar la petición POST con el payload corregido
+    this.svc.contactProjectOwner(projectId, contactData).subscribe({
+      next: () => {
+        this.contactDialogVisible.set(false);
+        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Mensaje enviado correctamente.' });
+      },
+      error: (err) => {
+        console.error('Error al enviar el mensaje de contacto:', err);
+        const detail = err?.error?.message || 'No se pudo enviar el mensaje. Inténtalo de nuevo más tarde.';
+        this.toast.add({ severity: 'error', summary: 'Error de envío', detail });
+      },
+    });
   }
 
   // ===== Acciones de Contrato (Firma y Cancelación) =====

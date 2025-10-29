@@ -1,5 +1,6 @@
 package com.example.gestor_inversores.service.project;
 
+import com.example.gestor_inversores.dto.ContactOwnerDTO;
 import com.example.gestor_inversores.dto.RequestProjectDTO;
 import com.example.gestor_inversores.dto.RequestProjectUpdateDTO;
 import com.example.gestor_inversores.dto.ResponseProjectDTO;
@@ -429,6 +430,32 @@ public class ProjectService implements IProjectService {
         mailService.sendEmail(toOwner, ownerSubject, ownerBody);
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
+    }
+
+    @Override
+    public void contactProjectOwner(Long projectId, ContactOwnerDTO contactOwnerDTO) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException("El proyecto no fue encontrado"));
+
+        Student owner = project.getOwner();
+        String ownerEmail = owner.getEmail();
+
+        String subject = String.format("Mensaje sobre tu proyecto '%s': %s", project.getName(), contactOwnerDTO.getSubject());
+        String body = String.format(
+            "Hola %s,\n\nHas recibido un mensaje de '%s' sobre tu proyecto '%s'.\n\n" +
+            "--------------------------------------------------\n" +
+            "Mensaje:\n%s\n" +
+            "--------------------------------------------------\n\n" +
+            "Para continuar la conversación, puedes responder directamente a este correo.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            owner.getFirstName(),
+            contactOwnerDTO.getFromName(),
+            project.getName(),
+            contactOwnerDTO.getMessage()
+        );
+
+        // Usamos el nuevo método para establecer la dirección de respuesta
+        mailService.sendEmail(ownerEmail, subject, body, contactOwnerDTO.getFromEmail());
     }
 
     @Override

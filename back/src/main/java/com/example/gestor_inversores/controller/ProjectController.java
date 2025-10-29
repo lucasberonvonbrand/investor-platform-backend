@@ -99,4 +99,12 @@ public class ProjectController {
         List<ResponseProjectDTO> projects = projectService.getProjectsByInvestorId(investorId);
         return ResponseEntity.status(HttpStatus.OK).body(projects);
     }
+
+    @PostMapping("/{projectId}/contact")
+    public ResponseEntity<Void> contactProjectOwner(
+            @PathVariable Long projectId,
+            @RequestBody @Valid ContactOwnerDTO contactOwnerDTO) {
+        projectService.contactProjectOwner(projectId, contactOwnerDTO);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
 }

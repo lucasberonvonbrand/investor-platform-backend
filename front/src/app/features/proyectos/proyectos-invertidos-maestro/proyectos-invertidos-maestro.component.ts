@@ -22,7 +22,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { DatePickerModule } from 'primeng/datepicker';
-import { ProjectsMasterService } from '../../../core/services/projects-master.service'; 
+import { ProjectsMasterService, ContactOwnerDTO } from '../../../core/services/projects-master.service'; 
 import { AuthService } from '../../auth/login/auth.service';
 import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
 
@@ -160,19 +160,6 @@ export class ProyectosInvertidosMaestroComponent implements OnInit {
     });
   }
 
-  contactStudent(): void {
-    const studentWithEmail = this.team.find(s => !!s.email);
-    const email = studentWithEmail?.email;
-    const p = this.project();
-    if (!email || !p) {
-      this.toast.add({ severity: 'info', summary: 'Contacto', detail: 'No hay email de estudiante disponible' });
-      return;
-    }
-    const subject = encodeURIComponent(`Consulta sobre el proyecto: ${p.title ?? ''}`);
-    const body = encodeURIComponent('Hola, ¿podemos coordinar para revisar los avances?');
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  }
-
   openCreateContract(): void {
     if (!this.isInvestor()) return;
     this.editing = null;
@@ -278,6 +265,53 @@ export class ProyectosInvertidosMaestroComponent implements OnInit {
     return (baseAmount * percentage) / 100;
   }
 
+  // ===== Lógica de Contacto al Dueño del Proyecto (COPIADA DE proyectos-maestro) =====
+  contactDialogVisible = signal(false);
+  contactForm = this.fb.group({
+    subject: ['', Validators.required],
+    message: ['', Validators.required],
+  });
+
+  openContactDialog(): void {
+    this.contactForm.reset();
+    this.contactDialogVisible.set(true);
+  }
+
+  sendContactEmail(): void {
+    if (this.contactForm.invalid) {
+      this.contactForm.markAllAsTouched();
+      return;
+    }
+
+    const session = this.auth.getSession();
+    const projectId = this.projectId();
+
+    if (!session || !session.email) {
+      this.toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo identificar tu email. Por favor, inicia sesión de nuevo.'
+      });
+      return;
+    }
+
+    const contactData: ContactOwnerDTO = {
+      fromEmail: session.email,
+      fromName: session.username,
+      subject: this.contactForm.value.subject!,
+      message: this.contactForm.value.message!,
+    };
+
+    this.svc.contactProjectOwner(projectId, contactData).subscribe({
+      next: () => {
+        this.contactDialogVisible.set(false);
+        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Mensaje enviado correctamente.' });
+      },
+      error: (err) => {
+        this.toast.add({ severity: 'error', summary: 'Error de envío', detail: err?.error?.message || 'No se pudo enviar el mensaje.' });
+      },
+    });
+  }
   // ===== Acciones de Contrato (Firma y Cancelación) =====
 
   viewContract(contract: IContract): void {

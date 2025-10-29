@@ -15,30 +15,38 @@ public class MailService implements IMailService {
 
     private final JavaMailSender mailSender;
 
-    // Inyectamos el email remitente desde application.properties para mayor claridad
     @Value("${spring.mail.username}")
     private String fromEmail;
 
     @Override
-    @Async // ¡MAGIA! Esto hace que el método se ejecute en un hilo separado.
+    @Async
     public void sendEmail(String to, String subject, String body) {
+        // Llama a la versión sobrecargada sin dirección de respuesta
+        this.sendEmail(to, subject, body, null);
+    }
+
+    @Override
+    @Async
+    public void sendEmail(String to, String subject, String body, String replyTo) {
         if (to == null || to.isBlank()) {
-            // Retorno silencioso para no romper la lógica de negocio si falta un email.
             return;
         }
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail); // Hacemos explícito quién envía el correo
+            message.setFrom(fromEmail);
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
 
+            // ¡LA MAGIA! Aquí se establece la dirección de respuesta
+            if (replyTo != null && !replyTo.isBlank()) {
+                message.setReplyTo(replyTo);
+            }
+
             mailSender.send(message);
 
         } catch (MailException ex) {
-            // Atrapamos la excepción específica de Spring Mail.
-            // Mantenemos la excepción personalizada para el manejo global.
             throw new EmailSendException("Error al intentar enviar el correo a " + to);
         }
     }

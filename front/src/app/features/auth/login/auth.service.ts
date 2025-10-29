@@ -8,6 +8,7 @@ import { mapAuthError } from "../shared/auth-errors";
 interface LoginResponse {
   id: number;            // <-- agregado: ID viene del backend
   username: string;
+  email: string; // <-- AÑADIR ESTA LÍNEA
   message: string;
   jwt: string;
   status: boolean;
@@ -21,6 +22,7 @@ interface ApiResponse {
 export interface Session {
   id: number;            // <-- agregado
   username: string;
+  email: string; // <-- AÑADIR ESTA LÍNEA
   roles: string[];
   jwt: string;
   exp: number; // epoch seconds
@@ -93,6 +95,7 @@ export class AuthService {
       return {
         id: meta.id, // <-- incluido
         username: meta.username,
+        email: meta.email ?? '', // <-- AÑADIR ESTA LÍNEA
         roles: meta.roles ?? [],
         exp: meta.exp ?? 0,
         jwt
@@ -143,6 +146,7 @@ getUserId(): string | null {
     const exp = Number(payload?.exp ?? 0);
     const username = res.username || payload?.sub || "";
 
+    const email = res.email || ''; // <-- AÑADIR ESTA LÍNEA
     // Toma id del response; fallback por si algún día viene en el JWT
     const id =
       typeof (res as any).id === "number"
@@ -151,7 +155,7 @@ getUserId(): string | null {
 
     if (!Number.isFinite(id)) throw new Error("Login inválido: id ausente");
 
-    return { id, username, roles, jwt, exp };
+    return { id, username, email, roles, jwt, exp };
   }
 
   /** Persiste token + metadatos (incluye id) */
@@ -161,6 +165,7 @@ getUserId(): string | null {
       USER_KEY,
       JSON.stringify({
         id: s.id,                // <-- incluido
+        email: s.email, // <-- AÑADIR ESTA LÍNEA
         username: s.username,
         roles: s.roles,
         exp: s.exp

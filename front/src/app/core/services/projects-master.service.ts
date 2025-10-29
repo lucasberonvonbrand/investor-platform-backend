@@ -42,6 +42,13 @@ export interface IContract {
   clauses?: string | null;
 }
 
+export interface ContactOwnerDTO {
+  fromEmail: string;
+  fromName: string;
+  subject: string;
+  message: string;
+}
+
 export interface IChatMessage {
   id: number;
   projectId: number;
@@ -110,6 +117,10 @@ export class ProjectsMasterService {
 
   cancelContractByStudent(contractId: number, studentId: number): Observable<IContract> {
     return this.http.put<IContract>(`/api/contracts/cancel-by-student/${contractId}`, { studentId });
+  }
+
+  contactProjectOwner(projectId: number, data: ContactOwnerDTO): Observable<void> {
+    return this.http.post<void>(`/api/projects/${projectId}/contact`, data);
   }
 
   // getChat(projectId: number): Observable<IChatMessage[]> { // MOCK
