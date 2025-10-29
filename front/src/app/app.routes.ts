@@ -39,6 +39,12 @@ export const routes: Routes = [
       { path: 'mis-proyectos-invertidos',        loadComponent: () => import('./features/proyectos/proyectos-invertidos/proyectos-invertidos.component').then(m => m.ProyectosInvertidosComponent) },
       { path: 'proyectos-invertidos-maestro/:id',        loadComponent: () => import('./features/proyectos/proyectos-invertidos-maestro/proyectos-invertidos-maestro.component').then(m => m.ProyectosInvertidosMaestroComponent) },
 
+      // ✅ NUEVA RUTA PARA EL ANÁLISIS DE RIESGO
+      {
+        path: 'analysis/risk/:projectId',
+        loadComponent: () => import('./features/analysis/risk-analysis.component').then(m => m.RiskAnalysisComponent)
+      },
+
       // SOLO estudiantes
       {
         path: 'misproyectos', // CORREGIDO: Coincide con el routerLink del menú

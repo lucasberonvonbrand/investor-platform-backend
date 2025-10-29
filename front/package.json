@@ -13,6 +13,7 @@
     "@ngx-translate/core": "^17.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
     "@primeuix/themes": "^1.2.3",
+    "@swimlane/ngx-charts": "^23.1.0",
     "chart.js": "^4.x.x",
     "marked": "^16.4.1",
     "primeflex": "^4.0.0",
