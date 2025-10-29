@@ -21,8 +21,7 @@ import { MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { MessageService, ConfirmationService } from 'primeng/api';
-import { MenuModule } from 'primeng/menu'; // Módulo que faltaba
+import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { AuthService, Session } from '../../auth/login/auth.service';
@@ -39,8 +38,7 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    // Versión corregida y unificada de los imports
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink,
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink, // TooltipModule ya estaba aquí
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [
@@ -271,6 +269,61 @@ export class ProyectosMaestroComponent implements OnInit {
       return 0;
     }
     return (baseAmount * percentage) / 100;
+  }
+
+  // ===== Lógica de Plantillas de Contrato =====
+  private setupContractTemplates(): void {
+    const projectTitle = this.project()?.title ?? '[Nombre del Proyecto]';
+    const projectOwner = this.project()?.owner ?? '[Nombre del Líder del Proyecto]';
+    const currentDate = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    this.contractTemplates = [
+      {
+        label: 'Contrato de Inversión Estándar',
+        icon: 'pi pi-file',
+        command: () => {
+          const template = `
+            <p>En la ciudad de [Ciudad], a ${currentDate}.</p>
+            <br>
+            <h1><strong>CONTRATO DE INVERSIÓN ESTÁNDAR</strong></h1>
+            <br>
+            <h2><strong>PARTES INTERVINIENTES</strong></h2>
+            <p><strong>DE UNA PARTE,</strong> como "El Inversor":</p>
+            <ul><li><strong>Nombre:</strong> [Nombre Completo del Inversor]</li><li><strong>DNI/Identificación:</strong> [Número de Identificación]</li><li><strong>Domicilio:</strong> [Domicilio del Inversor]</li></ul>
+            <p><strong>DE OTRA PARTE,</strong> como "El Equipo del Proyecto":</p>
+            <ul><li><strong>Representante:</strong> ${projectOwner}</li><li><strong>Proyecto:</strong> ${projectTitle}</li></ul>
+            <br>
+            <h2><strong>CLÁUSULAS</strong></h2>
+            <h3><strong>PRIMERA: OBJETO DEL CONTRATO</strong></h3>
+            <p>El Inversor se compromete a realizar una aportación de capital destinada exclusivamente a la financiación y desarrollo del proyecto "${projectTitle}". El Equipo del Proyecto se compromete a la correcta administración de dichos fondos.</p>
+            <h3><strong>SEGUNDA: APORTACIÓN DE CAPITAL</strong></h3>
+            <p>La aportación se fija en la cantidad de <strong>[Monto de la Inversión]</strong> en la moneda <strong>[Moneda]</strong>, que será transferida en un plazo no superior a 10 días hábiles desde la firma del presente documento.</p>
+            <h3><strong>TERCERA: PARTICIPACIÓN Y RENTABILIDAD</strong></h3>
+            <p>A cambio de su aportación, el Inversor recibirá una participación en los beneficios futuros del proyecto, según los porcentajes de rentabilidad anual definidos en la oferta.</p>
+            <h3><strong>CUARTA: OBLIGACIONES</strong></h3>
+            <p>El Equipo del Proyecto se obliga a presentar informes de avance trimestrales y a notificar cualquier desviación significativa. El Inversor se obliga a mantener la confidencialidad de la información sensible del proyecto.</p>
+            <br><p>En prueba de conformidad, ambas partes firman el presente contrato.</p>`;
+          this.insertTemplate(template);
+        }
+      },
+      // ... aquí irían las otras plantillas si las tuvieras
+    ];
+  }
+
+  private insertTemplate(templateContent: string): void {
+    const currentContent = this.contractForm.controls.clauses.value;
+    if (currentContent && currentContent.length > 10) { // Si hay algo escrito
+      this.confirmSvc.confirm({
+        message: 'Ya hay contenido en el editor. ¿Deseas reemplazarlo con la plantilla seleccionada?',
+        header: 'Confirmar Reemplazo',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sí, reemplazar',
+        rejectLabel: 'No, cancelar',
+        accept: () => this.contractForm.controls.clauses.setValue(templateContent)
+      });
+    } else {
+      this.contractForm.controls.clauses.setValue(templateContent);
+    }
   }
 
   // ===== Lógica de Contacto al Dueño del Proyecto =====
