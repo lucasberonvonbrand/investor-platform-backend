@@ -6,7 +6,6 @@ import { PanelMenu } from 'primeng/panelmenu';
 import { Menu } from 'primeng/menu';
 import { Button } from 'primeng/button';
 import { MenuItem } from 'primeng/api';
-import { Avatar } from 'primeng/avatar';
 
 import { ChatbotComponent } from '../features/chatbot/chatbot.component';
 import { AuthService } from '../features/auth/login/auth.service';
@@ -25,7 +24,6 @@ import { InvestorService } from '../core/services/investors.service';
     PanelMenu,
     Menu,
     Button,
-    Avatar,
     ChatbotComponent,
   ],
   templateUrl: './shell.component.html',

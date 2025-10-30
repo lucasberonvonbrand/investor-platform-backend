@@ -20,15 +20,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'proyectos-panel' },
-      { path: '', pathMatch: 'full', redirectTo: 'mismarquesinas' },
+      { path: '', pathMatch: 'full', redirectTo: 'marquesinas' },
       { path: 'dashboard', canActivate: [roleGuard('ROLE_ADMIN')], loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.PanelComponent) },
       { path: 'proyectos-panel',  loadComponent: () => import('./features/proyectos/projects-panel/projects-panel.component').then(m => m.ProjectsPanelComponent) },
       { path: 'roles',            loadComponent: () => import('./features/roles/roles.component').then(m => m.RolesComponent) },
       //{ path: 'configuracion',    loadComponent: () => import('./features/config/configuracion.component').then(m => m.ConfiguracionComponent) },
       { path: 'estudiante-perfil', canActivate: [authGuard, roleGuard('ROLE_STUDENT')], loadComponent: () => import('./features/students/students-update-form/students-update-form.component').then(m => m.StudentsUpdateComponent)},
       { path: 'inversor-perfil',canActivate: [authGuard, roleGuard('ROLE_INVESTOR')],loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateComponent)},
-      { path: 'proyectos',        loadComponent: () => import('./features/proyectos/proyectos.component').then(m => m.ProyectosComponent) },
+      { path: 'proyectos',        loadComponent: () => import('./features/proyectos/crear-proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'marquesinas',   loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
       { path: 'noticias',         loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
       { path: 'estudiantes',      loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.StudentsTableComponent) },
@@ -37,7 +36,6 @@ export const routes: Routes = [
       { path: 'mi-perfil',        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'marquesinas/tag/:tag',        loadComponent: () => import('./features/proyectos/mismarquesinas-projects-panel/mismarquesinas-projects-panel.component').then(m => m.MismarquesinasProjectsPanelComponent) },
       { path: 'mis-proyectos-invertidos',        loadComponent: () => import('./features/proyectos/proyectos-invertidos/proyectos-invertidos.component').then(m => m.ProyectosInvertidosComponent) },
-      { path: 'proyectos-invertidos-maestro/:id',        loadComponent: () => import('./features/proyectos/proyectos-invertidos-maestro/proyectos-invertidos-maestro.component').then(m => m.ProyectosInvertidosMaestroComponent) },
 
       // ✅ NUEVA RUTA PARA EL ANÁLISIS DE RIESGO
       {

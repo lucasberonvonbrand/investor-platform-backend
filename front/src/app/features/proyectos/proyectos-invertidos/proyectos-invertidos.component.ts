@@ -115,7 +115,7 @@ ngOnInit(): void {
   // abrir modal detalle
   openDetail(p: IInvestedProject): void {
     if (!p?.id) return;
-    this.router.navigate(['/proyectos-invertidos-maestro', p.id]);
+    this.router.navigate(['/proyectos-maestro', p.id]);
   }
 
   goBack(): void {

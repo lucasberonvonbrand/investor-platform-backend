@@ -25,6 +25,21 @@ export interface IMyProject {
   students?: Array<{ id: number; name: string }>|null;
 }
 
+export interface IInvestment {
+  idInvestment: number;
+  status: 'PENDING_PAYMENT' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED';
+  // ... otras propiedades que pueda tener una inversión
+}
+
+export interface IEarning {
+  idEarning: number;
+  amount: number;
+  currency: string;
+  paymentDate: string;
+  status: 'PENDING' | 'PAID' | 'CONFIRMED';
+  // ... otras propiedades que pueda tener una ganancia
+}
+
 export interface IContract {
   idContract: number;
   projectId: number;
@@ -32,14 +47,16 @@ export interface IContract {
   title?: string; // El título que viene del listado
   textTitle?: string; // El título que se envía al crear
   amount: number;
-  status: 'PENDING_STUDENT_SIGNATURE' | 'SIGNED' | 'CLOSED' | 'CANCELLED' | 'REFUNDED';
+  status: 'DRAFT' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'CANCELLED' | 'REFUNDED' | 'CLOSED' | 'PENDING_STUDENT_SIGNATURE';
   currency?: 'USD' | 'ARS' | 'CNY' | 'EUR';
   profit1Year?: number;
   profit2Years?: number;
   profit3Years?: number;
   startDate?: string | null;
   endDate?: string | null;
-  clauses?: string | null;
+  description?: string | null; // Cambiado de 'clauses' a 'description' para coincidir con la API
+  investment?: IInvestment; // Añadido
+  earnings?: IEarning[]; // Añadido
 }
 
 export interface ContactOwnerDTO {
@@ -107,10 +124,6 @@ export class ProjectsMasterService {
     }
   }
 
-  signContract(contractId: number, studentId: number): Observable<IContract> { // Es un PUT
-    return this.http.put<IContract>(`/api/contracts/sign/${contractId}`, { studentId });
-  }
-
   cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
     return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
   }
@@ -121,6 +134,52 @@ export class ProjectsMasterService {
 
   contactProjectOwner(projectId: number, data: ContactOwnerDTO): Observable<void> {
     return this.http.post<void>(`/api/projects/${projectId}/contact`, data);
+  }
+
+  updateContractByInvestor(contractId: number, payload: any): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/update-by-investor/${contractId}`, payload);
+  }
+
+  updateContractByStudent(contractId: number, payload: any): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/update-by-student/${contractId}`, payload);
+  }
+
+  agreeToContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/agree-by-investor/${contractId}`, { investorId });
+  }
+
+  agreeToContractByStudent(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/agree-by-student/${contractId}`, { studentId });
+  }
+
+  signContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/sign-by-investor/${contractId}`, { investorId });
+  }
+
+  signContractByStudent(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/sign-by-student/${contractId}`, { studentId });
+  }
+
+  // ===== Métodos para Gestión de Inversiones y Ganancias =====
+
+  confirmInvestmentPaymentSent(investmentId: number, investorId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/confirm-payment-sent/${investmentId}`, { investorId });
+  }
+
+  confirmInvestmentReceipt(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.post<IInvestment>(`/api/investments/confirm-receipt/${investmentId}`, { studentId });
+  }
+
+  markInvestmentAsNotReceived(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.post<IInvestment>(`/api/investments/mark-not-received/${investmentId}`, { studentId });
+  }
+
+  confirmEarningPaymentSent(earningId: number, studentId: number): Observable<IEarning> {
+    return this.http.put<IEarning>(`/api/earnings/confirm-payment-sent/${earningId}`, { studentId });
+  }
+
+  confirmEarningReceipt(earningId: number, investorId: number): Observable<IEarning> {
+    return this.http.post<IEarning>(`/api/earnings/confirm-receipt/${earningId}`, { investorId });
   }
 
   // getChat(projectId: number): Observable<IChatMessage[]> { // MOCK

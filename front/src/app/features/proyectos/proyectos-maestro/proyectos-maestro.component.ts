@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ActivatedRoute, RouterLink } from '@angular/router'; // RouterLink ya estaba en una de las versiones
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -25,8 +25,12 @@ import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { AuthService, Session } from '../../auth/login/auth.service';
-import type { ContactOwnerDTO } from '../../../core/services/projects-master.service';
+import type { ContactOwnerDTO, IInvestment, IEarning } from '../../../core/services/projects-master.service';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
+
 
 type Student = { id: number; name: string; email?: string };
 
@@ -38,7 +42,7 @@ type Student = { id: number; name: string; email?: string };
   imports: [
     CommonModule, FormsModule, ReactiveFormsModule,
     ToolbarModule, CardModule, TagModule, TableModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink, // TooltipModule ya estaba aquí
+    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink, SafeHtmlPipe,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [
@@ -57,6 +61,9 @@ export class ProyectosMaestroComponent implements OnInit {
   private toast = inject(MessageService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmationService);
+
+  @ViewChild('contractContent') contractContentRef!: ElementRef<HTMLDivElement>;
+
 
   projectId = signal<number>(0);
   project = signal<IMyProject | null>(null);
@@ -86,8 +93,9 @@ export class ProyectosMaestroComponent implements OnInit {
   loading = signal<boolean>(false);
 
   // ===== Acordeón Crear/Editar contrato =====
-  accordionOpen = signal<boolean>(false);
+  contractModalVisible = signal<boolean>(false); // Renombrado de accordionOpen
   editing: IContract | null = null;
+  isReadonly = signal<boolean>(false); // NUEVA SEÑAL para controlar el modo de solo lectura
   viewingOnly = signal<IContract | null>(null);
 
   currentContractStatus = computed<IContract['status'] | 'PENDING_STUDENT_SIGNATURE'>(() => {
@@ -110,7 +118,7 @@ export class ProyectosMaestroComponent implements OnInit {
     profit1Year: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
     profit2Years: [15, [Validators.required, Validators.min(0), Validators.max(100)]],
     profit3Years: [20, [Validators.required, Validators.min(0), Validators.max(100)]],
-    clauses: [''], // Campo para el editor de texto
+    description: [''], // Renombrado de 'clauses' a 'description'
   });
   
   contractTemplates: MenuItem[] = [];
@@ -121,6 +129,11 @@ export class ProyectosMaestroComponent implements OnInit {
     subject: ['', Validators.required],
     message: ['', Validators.required],
   });
+
+  // ===== Modal de Gestión de Pagos =====
+  transactionModalVisible = signal(false);
+  selectedContractForTransactions = signal<IContract | null>(null);
+
 
 
   ngOnInit(): void {
@@ -163,33 +176,38 @@ export class ProyectosMaestroComponent implements OnInit {
   openCreateContract(): void {
     if (!this.isInvestor()) return;
     this.editing = null;
+    this.isReadonly.set(false); // Asegurarse de que no esté en modo solo lectura
     this.contractForm.reset({
       title: '',
       amount: 0,
       currency: 'USD',
-      clauses: '',
+      description: '',
     });
-    this.accordionOpen.set(true);
+    this.contractModalVisible.set(true); // Usar la nueva señal del modal
   }
 
   editContract(row: IContract): void {
-    if (!this.isInvestor()) return;
+    // Permitir editar si es inversor o si es dueño y el contrato está en DRAFT
+    if (!this.isInvestor() && !(this.isOwner() && row.status === 'DRAFT')) return;
+
     this.editing = row;
-    this.contractForm.reset({
-      title: row.title,
+    this.isReadonly.set(false); // El modo edición no es de solo lectura
+    this.contractForm.patchValue({ // Usar patchValue en lugar de reset
+      // Corregido: Usar textTitle que es el que contiene el dato correcto
+      title: row.textTitle,
       amount: row.amount,
       currency: row.currency ?? 'USD',
-      clauses: (row as any).description ?? '', // Cargar la descripción en el campo 'clauses' del form
+      description: row.description ?? '',
     });
-    this.accordionOpen.set(true);
+    this.contractModalVisible.set(true); // Usar la nueva señal del modal
   }
 
   cancelEdit(): void {
-    this.accordionOpen.set(false);
+    this.contractModalVisible.set(false); // Usar la nueva señal del modal
     this.editing = null;
     this.reviewingToSign = null;
     this.viewingOnly.set(null);
-    this.contractForm.enable(); // Habilitar el formulario al cancelar
+    this.isReadonly.set(false); // Salir del modo solo lectura
   }
 
   saveContract(): void {
@@ -199,64 +217,60 @@ export class ProyectosMaestroComponent implements OnInit {
       return;
     }
 
-    // Si no, es un inversor creando/editando. Validamos.
-    if (this.contractForm.invalid || !this.isInvestor()) return;
+    if (this.contractForm.invalid) return;
 
-    let dto: any; // Usamos 'any' para permitir el campo 'description' que no está en IContract
     const raw = this.contractForm.getRawValue();
+    const commonPayload = {
+      textTitle: raw.title,
+      description: raw.description,
+      amount: raw.amount,
+      currency: raw.currency as IContract['currency'],
+      profit1Year: raw.profit1Year,
+      profit2Years: raw.profit2Years,
+      profit3Years: raw.profit3Years,
+    };
 
-    if (this.editing) {
-      // Payload para ACTUALIZAR un contrato existente
-      dto = { // @ts-ignore
-        idContract: this.editing.idContract,
-        projectId: this.projectId(),
-        title: raw.title,
-        amount: raw.amount,
-        currency: raw.currency as IContract['currency'],
-        profit1Year: raw.profit1Year,
-        profit2Years: raw.profit2Years,
-        profit3Years: raw.profit3Years,
-        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
-        status: this.editing.status, // Mantenemos el status actual al editar
-        createdByInvestorId: this.currentUser?.id,
-      };
-    } else {
-      // Payload para CREAR un nuevo contrato (según el formato requerido por el backend)
-      dto = {
-        projectId: this.projectId(),
-        createdByInvestorId: this.currentUser?.id,
-        textTitle: raw.title, // El backend espera 'textTitle'
-        amount: raw.amount,
-        currency: raw.currency as IContract['currency'],
-        profit1Year: raw.profit1Year,
-        profit2Years: raw.profit2Years,
-        profit3Years: raw.profit3Years,
-        description: raw.clauses, // Mapear 'clauses' del form a 'description' del DTO
-      };
+    // --- Lógica de guardado por ROL ---
+    if (this.isInvestor()) {
+      if (this.editing) { // Inversor está editando un DRAFT
+        const payload = { ...commonPayload, investorId: this.currentUser?.id };
+        this.svc.updateContractByInvestor(this.editing.idContract, payload).subscribe(this.getObserver());
+      } else { // Inversor está creando un nuevo contrato
+        const payload = {
+          ...commonPayload,
+          projectId: this.projectId(),
+          createdByInvestorId: this.currentUser?.id,
+        };
+        this.svc.upsertContract(payload).subscribe(this.getObserver());
+      }
+    } else if (this.isOwner()) {
+      if (this.editing) { // Estudiante está editando un DRAFT
+        const payload = { ...commonPayload, studentId: this.currentUser?.id };
+        this.svc.updateContractByStudent(this.editing.idContract, payload).subscribe(this.getObserver());
+      } else {
+        this.toast.add({ severity: 'error', summary: 'Acción no permitida', detail: 'Solo los inversores pueden crear nuevos contratos.' });
+      }
     }
-    
-    this.svc.upsertContract(dto).subscribe({
+  }
+
+  /**
+   * Devuelve un objeto Observer para manejar las respuestas de las llamadas de guardado de contratos.
+   */
+  private getObserver() {
+    return {
       next: (saved: IContract) => {
-        const list = this.contracts();
-        const idx = list.findIndex(c => c.idContract === saved.idContract);
-        if (idx >= 0) {
-          list[idx] = saved;
-        } else {
-          list.unshift(saved);
-        }
-        this.contracts.set([...list]);
+        this.updateContractInList(saved);
         this.toast.add({ severity: 'success', summary: 'Contrato', detail: this.editing ? 'Actualizado' : 'Creado', life: 1600 });
         this.cancelEdit();
       },
       error: (err: any) => {
         let detail = err?.error?.message || 'No se pudo guardar el contrato.';
-        // Captura el error específico de truncamiento de datos
         if (typeof detail === 'string' && detail.includes("Data too long for column 'description'")) {
           detail = 'El contenido de las cláusulas es demasiado largo. Por favor, reduce el texto o el formato.';
         }
         this.toast.add({ severity: 'error', summary: 'Error al guardar', detail: detail, life: 6000 });
       }
-    });
+    }
   }
 
   private formatISO(d: Date): string {
@@ -302,16 +316,75 @@ export class ProyectosMaestroComponent implements OnInit {
             <p>A cambio de su aportación, el Inversor recibirá una participación en los beneficios futuros del proyecto, según los porcentajes de rentabilidad anual definidos en la oferta.</p>
             <h3><strong>CUARTA: OBLIGACIONES</strong></h3>
             <p>El Equipo del Proyecto se obliga a presentar informes de avance trimestrales y a notificar cualquier desviación significativa. El Inversor se obliga a mantener la confidencialidad de la información sensible del proyecto.</p>
-            <br><p>En prueba de conformidad, ambas partes firman el presente contrato.</p>`;
+            <br><p>En prueba de conformidad, ambas partes firman el presente contrato.</p>
+          `;
           this.insertTemplate(template);
         }
       },
-      // ... aquí irían las otras plantillas si las tuvieras
+      {
+        label: 'Acuerdo de Confidencialidad (NDA)',
+        icon: 'pi pi-lock',
+        command: () => {
+          const template = `
+            <h1><strong>ACUERDO DE CONFIDENCIALIDAD (NDA)</strong></h1>
+            <br>
+            <p>Este Acuerdo se celebra el ${currentDate} entre [Nombre del Inversor] ("Parte Receptora") y ${projectOwner}, en representación del proyecto ${projectTitle} ("Parte Reveladora").</p>
+            <br>
+            <h3><strong>1. Propósito</strong></h3>
+            <p>El propósito de este Acuerdo es permitir a la Parte Receptora evaluar una posible inversión en el proyecto, para lo cual la Parte Reveladora compartirá cierta Información Confidencial.</p>
+            <h3><strong>2. Definición de Información Confidencial</strong></h3>
+            <p>Se considera "Información Confidencial" toda información técnica, comercial, financiera o de cualquier otra naturaleza, revelada por la Parte Reveladora, que no sea de dominio público.</p>
+            <h3><strong>3. Obligaciones</strong></h3>
+            <p>La Parte Receptora se compromete a no divulgar, copiar o utilizar la Información Confidencial para ningún otro propósito que no sea la evaluación del proyecto.</p>
+            <h3><strong>4. Duración</strong></h3>
+            <p>Las obligaciones de confidencialidad bajo este Acuerdo permanecerán en vigor durante un período de cinco (5) años a partir de la fecha de firma.</p>
+          `;
+          this.insertTemplate(template);
+        }
+      },
+      {
+        label: 'Acuerdo Simple de Inversión',
+        icon: 'pi pi-file-check',
+        command: () => {
+          const template = `
+            <h2><strong>ACUERDO SIMPLE DE INVERSIÓN</strong></h2>
+            <br>
+            <p><strong>Partes:</strong> [Nombre del Inversor] ("Inversor") y ${projectOwner} ("Equipo").</p>
+            <p><strong>Proyecto:</strong> ${projectTitle}.</p>
+            <p><strong>Fecha:</strong> ${currentDate}.</p>
+            <br>
+            <p><strong>1. Inversión:</strong> El Inversor aportará la cantidad de <strong>[Monto] [Moneda]</strong>.</p>
+            <p><strong>2. Retorno:</strong> A cambio, el Inversor recibirá una participación en los beneficios según los porcentajes de rentabilidad definidos en la oferta.</p>
+            <p><strong>3. Informes:</strong> El Equipo se compromete a enviar un informe de progreso mensual al Inversor.</p>
+            <p>Ambas partes aceptan estos términos mediante la firma de este contrato.</p>
+          `;
+          this.insertTemplate(template);
+        }
+      },
+      {
+        label: 'Contrato de Préstamo Convertible',
+        icon: 'pi pi-sync',
+        command: () => {
+          const template = `
+            <h1><strong>CONTRATO DE PRÉSTAMO CONVERTIBLE</strong></h1>
+            <br>
+            <p>Este Contrato de Préstamo Convertible se celebra entre [Nombre del Inversor] ("Prestador") y el equipo del proyecto ${projectTitle} ("Prestatario").</p>
+            <br>
+            <h3><strong>1. Préstamo</strong></h3>
+            <p>El Prestador acuerda prestar al Prestatario la suma de <strong>[Monto del Préstamo] [Moneda]</strong>.</p>
+            <h3><strong>2. Conversión</strong></h3>
+            <p>El préstamo, junto con sus intereses acumulados a una tasa del [Tasa de Interés]% anual, se convertirá automáticamente en una participación accionaria en el proyecto tras la ocurrencia de un "Evento de Financiación Cualificado" (ej. una ronda de inversión superior a [Monto de Ronda]).</p>
+            <h3><strong>3. Vencimiento</strong></h3>
+            <p>Si no ocurre un Evento de Financiación Cualificado antes de [Fecha de Vencimiento], el Prestatario deberá devolver el monto principal más los intereses acumulados.</p>
+          `;
+          this.insertTemplate(template);
+        }
+      }
     ];
   }
 
   private insertTemplate(templateContent: string): void {
-    const currentContent = this.contractForm.controls.clauses.value;
+    const currentContent = this.contractForm.controls.description.value;
     if (currentContent && currentContent.length > 10) { // Si hay algo escrito
       this.confirmSvc.confirm({
         message: 'Ya hay contenido en el editor. ¿Deseas reemplazarlo con la plantilla seleccionada?',
@@ -319,10 +392,10 @@ export class ProyectosMaestroComponent implements OnInit {
         icon: 'pi pi-exclamation-triangle',
         acceptLabel: 'Sí, reemplazar',
         rejectLabel: 'No, cancelar',
-        accept: () => this.contractForm.controls.clauses.setValue(templateContent)
+        accept: () => this.contractForm.controls.description.setValue(templateContent)
       });
     } else {
-      this.contractForm.controls.clauses.setValue(templateContent);
+      this.contractForm.controls.description.setValue(templateContent);
     }
   }
 
@@ -388,34 +461,73 @@ export class ProyectosMaestroComponent implements OnInit {
     this.editing = null;
     this.reviewingToSign = null;
     this.viewingOnly.set(contract);
-    this.contractForm.reset({
-      title: contract.textTitle,
-      amount: contract.amount,
-      currency: contract.currency ?? 'USD',
-      profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
-      profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
-      profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).description ?? '',
-    });
-    this.contractForm.disable();
-    this.accordionOpen.set(true);
+    this.isReadonly.set(true); // Activar modo solo lectura
+
+    // Simplemente poblamos el formulario. No más hacks.
+    this.contractForm.patchValue(this.getContractFormValues(contract));
+
+    this.contractModalVisible.set(true);
   }
+
   /** El estudiante hace clic en "Firmar", se abre el panel para revisar */
   reviewAndSignContract(contract: IContract): void {
+    this.editing = null;
     this.reviewingToSign = contract;
     this.viewingOnly.set(null); // Limpiar el estado de solo vista
-    this.editing = null; // Nos aseguramos de no estar en modo edición
-    this.contractForm.reset({
-      title: contract.textTitle,
+    this.isReadonly.set(true); // Activar modo solo lectura
+
+    // Simplemente poblamos el formulario.
+    this.contractForm.patchValue(this.getContractFormValues(contract));
+
+    this.contractModalVisible.set(true);
+  }
+
+  /** Devuelve un objeto con los valores del contrato para el formulario */
+  private getContractFormValues(contract: IContract) {
+    return {
+      title: contract.textTitle ?? '', // Añadir fallback para el valor opcional
       amount: contract.amount,
       currency: contract.currency ?? 'USD',
       profit1Year: contract.profit1Year ? Number(contract.profit1Year) * 100 : 0,
       profit2Years: contract.profit2Years ? Number(contract.profit2Years) * 100 : 0,
       profit3Years: contract.profit3Years ? Number(contract.profit3Years) * 100 : 0,
-      clauses: (contract as any).description ?? '',
+      description: contract.description ?? ''
+    };
+  }
+
+  downloadContractAsPDF(): void {
+    const content = this.contractContentRef.nativeElement;
+    if (!content) {
+      this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se encontró el contenido para generar el PDF.' });
+      return;
+    }
+
+    html2canvas(content, { scale: 2 }).then((canvas: HTMLCanvasElement) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      const contractTitle = this.contractForm.controls.title.value || 'contrato';
+      const fileName = `Contrato-${contractTitle.replace(/ /g, '_')}.pdf`;
+
+      pdf.save(fileName);
     });
-    this.contractForm.disable(); // Hacemos el formulario de solo lectura
-    this.accordionOpen.set(true);
+  }
+
+  /**
+   * Abre el modal para gestionar los pagos (inversión y ganancias) de un contrato.
+   */
+  openTransactionModal(contract: IContract): void {
+    this.selectedContractForTransactions.set(contract);
+    this.transactionModalVisible.set(true);
   }
 
   rejectContract(contract: IContract): void {
@@ -482,7 +594,7 @@ export class ProyectosMaestroComponent implements OnInit {
           this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al usuario.' });
           return;
         }
-        this.svc.signContract((contract as any).idContract, studentId).subscribe({
+        this.svc.signContractByStudent((contract as any).idContract, studentId).subscribe({
           next: (updatedContract) => {
             this.updateContractInList(updatedContract);
             this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Contrato firmado correctamente.' });
@@ -500,6 +612,164 @@ export class ProyectosMaestroComponent implements OnInit {
     );
   }
 
+  /**
+   * Lógica para que un inversor o estudiante firme un contrato que ya ha sido aprobado.
+   */
+  signContract(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: `Estás a punto de firmar el contrato "${contract.textTitle}". Esta acción es legalmente vinculante y no se puede deshacer. ¿Estás seguro de continuar?`,
+      header: 'Confirmar Firma Final',
+      icon: 'pi pi-file-edit',
+      acceptLabel: 'Sí, Firmar Contrato',
+      rejectLabel: 'No',
+      accept: () => {
+        if (this.isInvestor()) {
+          const investorId = this.currentUser?.id;
+          if (!investorId) return;
+          this.svc.signContractByInvestor(contract.idContract, investorId).subscribe({
+            next: (updated) => this.updateContractInList(updated),
+            error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo firmar el contrato.' })
+          });
+        } else if (this.isOwner()) {
+          const studentId = this.currentUser?.id;
+          if (!studentId) return;
+          // Usamos el endpoint que ya existía para la firma del estudiante
+          this.svc.signContractByStudent(contract.idContract, studentId).subscribe({
+            next: (updated) => this.updateContractInList(updated),
+            error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo firmar el contrato.' })
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Lógica para que cualquiera de las partes "apruebe" los términos del borrador.
+   */
+  agreeToContractTerms(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres aprobar los términos de este borrador? Una vez aprobado, el contrato se bloqueará para su edición y pasará a la fase de firma.',
+      header: 'Confirmar Aprobación de Términos',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, aprobar',
+      rejectLabel: 'No',
+      accept: () => {
+        if (this.isInvestor()) {
+          const investorId = this.currentUser?.id;
+          if (!investorId) return;
+          this.svc.agreeToContractByInvestor(contract.idContract, investorId).subscribe({
+            next: (updated) => {
+              this.updateContractInList(updated);
+              this.cancelEdit(); // Cierra el modal
+            },
+            error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo aprobar el contrato.' })
+          });
+        } else if (this.isOwner()) {
+          const studentId = this.currentUser?.id;
+          if (!studentId) return;
+          this.svc.agreeToContractByStudent(contract.idContract, studentId).subscribe({
+            next: (updated) => {
+              this.updateContractInList(updated);
+              this.cancelEdit(); // Cierra el modal
+            },
+            error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo aprobar el contrato.' })
+          });
+        }
+      }
+    });
+  }
+
+  private updateInvestmentInContract(investmentId: number, updatedInvestment: IInvestment): void {
+    this.contracts.update(list => list.map(c => {
+      if (c.investment?.idInvestment === investmentId) {
+        // Si la inversión se cancela, también actualizamos el estado del contrato principal
+        const newContractStatus = updatedInvestment.status === 'CANCELLED' ? 'CANCELLED' : c.status;
+        return { ...c, investment: updatedInvestment, status: newContractStatus };
+      }
+      return c;
+    }));
+    this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El estado de la inversión ha sido actualizado.' });
+  }
+
+  private updateEarningInContract(earningId: number, updatedEarning: IEarning): void {
+    this.contracts.update(list => list.map(c => {
+      // Buscamos el índice de la ganancia dentro del array de ganancias del contrato
+      const earningIndex = c.earnings?.findIndex(e => e.idEarning === earningId);
+      if (earningIndex !== undefined && earningIndex > -1) {
+        const newEarnings = [...c.earnings!]; // Creamos una copia del array
+        newEarnings[earningIndex] = updatedEarning; // Reemplazamos la ganancia actualizada
+        return { ...c, earnings: newEarnings }; // Devolvemos el contrato con el array de ganancias actualizado
+      }
+      return c;
+    }));
+    this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El estado del pago de la ganancia ha sido actualizado.' });
+  }
+
+
+  // ===== Acciones de Inversión (Confirmación de Fondos) =====
+
+  confirmInvestmentPaymentSent(investmentId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
+      next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
+      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' })
+    });
+  }
+
+  confirmInvestmentReceipt(investmentId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.svc.confirmInvestmentReceipt(investmentId, studentId).subscribe({
+      next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
+      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' })
+    });
+  }
+
+  markInvestmentAsNotReceived(investmentId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres marcar esta inversión como NO recibida? Esto cancelará el contrato asociado.',
+      header: 'Confirmar No Recepción',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, no la recibí',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.svc.markInvestmentAsNotReceived(investmentId, studentId).subscribe({
+          next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' })
+        });
+      }
+    });
+  }
+
+  // ===== Acciones de Ganancias (Earnings) =====
+
+  confirmEarningPaymentSent(earningId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.svc.confirmEarningPaymentSent(earningId, studentId).subscribe({
+      next: (updatedEarning: IEarning) => this.updateEarningInContract(earningId, updatedEarning),
+      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío de la ganancia.' })
+    });
+  }
+
+  confirmEarningReceipt(earningId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.svc.confirmEarningReceipt(earningId, investorId).subscribe({
+      next: (updatedEarning: IEarning) => this.updateEarningInContract(earningId, updatedEarning),
+      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción de la ganancia.' })
+    });
+  }
+
   getProjectStatusLabel(status: string | null): string {
     switch (status) {
       case 'IN_PROGRESS': return 'En Progreso';
@@ -511,11 +781,13 @@ export class ProyectosMaestroComponent implements OnInit {
 
   getContractStatusLabel(status: IContract['status'] | string | null): string {
     switch (status) {
-      case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente Firma';
+      case 'DRAFT': return 'Borrador (En Negociación)';
+      case 'PARTIALLY_SIGNED': return 'Aprobado (Pend. Firma)';
+      case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente de Firma';
       case 'SIGNED': return 'Firmado';
-      case 'CLOSED': return 'Cerrado';
       case 'CANCELLED': return 'Cancelado';
       case 'REFUNDED': return 'Devuelto';
+      case 'CLOSED': return 'Cerrado';
       default: return status || '—';
     }
   }

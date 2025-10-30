@@ -10,7 +10,6 @@ export interface CreateProjectDto {
 name: string;
 description: string;
 budgetGoal: number;
-status: ProjectStatus | string;
 startDate: string; // YYYY-MM-DD
 estimatedEndDate: string; // YYYY-MM-DD
 ownerId: number;

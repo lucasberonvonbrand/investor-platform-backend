@@ -22,8 +22,8 @@ type StudentWithFullName = StudentName & { fullName: string };
 @Component({
   selector: 'app-create-project',
   standalone: true,
-  templateUrl: './proyectos.component.html',
-  styleUrls: ['./proyectos.component.scss'],
+  templateUrl: './crear-proyectos.component.html',
+  styleUrls: ['./crear-proyectos.component.scss'],
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -54,8 +54,6 @@ export class ProyectosComponent implements OnInit {
   studentsLoading = false;
   suggestionsStudents: StudentWithFullName[] = [];
 
-  statuses: ProjectStatus[] = ['PENDING_FUNDING', 'IN_PROGRESS', 'COMPLETED'];
-
   ngOnInit(): void {
     const currentUser = this.authSvc.getSession();
     const ownerForForm: StudentWithFullName | null = currentUser
@@ -71,7 +69,6 @@ export class ProyectosComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(80)]],
       description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
       budgetGoal: [null, [Validators.required, Validators.min(0)]],
-      status: ['', Validators.required],
       startDate: ['', Validators.required],          // 'YYYY-MM-DD'
       estimatedEndDate: ['', Validators.required],   // 'YYYY-MM-DD'
       owner: [{ value: ownerForForm, disabled: true }, Validators.required],
@@ -248,16 +245,26 @@ export class ProyectosComponent implements OnInit {
   onSubmit(): void {
     if (this.projectForm.invalid) return;
 
-    const v = this.projectForm.value as {
+    const v = this.projectForm.getRawValue() as { // Usar getRawValue() para incluir controles deshabilitados
       name: string;
       description: string;
       budgetGoal: number | null;
-      status: ProjectStatus | string;
       startDate: string;
       estimatedEndDate: string;
       owner: StudentWithFullName | null;
       students: StudentWithFullName[];
     };
+
+    // Asegurarse de que v.owner no sea null/undefined antes de acceder a .id
+    if (!v.owner) {
+      this.msg.add({
+        severity: 'error',
+        summary: 'Error de usuario',
+        detail: 'No se pudo determinar el líder del proyecto. Por favor, recargue la página.',
+        life: 6000,
+      });
+      return;
+    }
 
     const ownerId = (v.owner as StudentWithFullName).id;
     const studentIds = (v.students ?? []).map((s) => s.id);
@@ -266,7 +273,6 @@ export class ProyectosComponent implements OnInit {
       name: v.name,
       description: v.description,
       budgetGoal: Number(v.budgetGoal ?? 0),
-      status: v.status,
       startDate: v.startDate,
       estimatedEndDate: v.estimatedEndDate,
       ownerId,
