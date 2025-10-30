@@ -1,6 +1,5 @@
 package com.example.gestor_inversores.mapper;
 
-import com.example.gestor_inversores.dto.ContractActionDTO;
 import com.example.gestor_inversores.dto.RequestContractUpdateByInvestorDTO;
 import com.example.gestor_inversores.dto.RequestContractUpdateByStudentDTO;
 import com.example.gestor_inversores.dto.ResponseContractDTO;
@@ -8,16 +7,17 @@ import com.example.gestor_inversores.dto.ResponseInvestmentDTO;
 import com.example.gestor_inversores.model.Contract;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class ContractMapper {
 
     private final ContractActionMapper actionMapper;
+    private final InvestmentMapper investmentMapper;
 
-    public ContractMapper(ContractActionMapper actionMapper) {
+    public ContractMapper(ContractActionMapper actionMapper, InvestmentMapper investmentMapper) {
         this.actionMapper = actionMapper;
+        this.investmentMapper = investmentMapper;
     }
 
     public ResponseContractDTO toResponseDTO(Contract contract) {
@@ -25,11 +25,7 @@ public class ContractMapper {
                 .idContract(contract.getIdContract())
                 .projectId(contract.getProject() != null ? contract.getProject().getIdProject() : null)
                 .createdByInvestorId(contract.getCreatedByInvestor() != null ? contract.getCreatedByInvestor().getId() : null)
-                .investment(contract.getInvestment() != null ?
-                        ResponseInvestmentDTO.builder()
-                                .idInvestment(contract.getInvestment().getIdInvestment())
-                                .status(contract.getInvestment().getStatus())
-                                .build() : null)
+                .investment(contract.getInvestment() != null ? investmentMapper.toResponse(contract.getInvestment()) : null)
                 .textTitle(contract.getTextTitle())
                 .description(contract.getDescription())
                 .amount(contract.getAmount())
@@ -44,16 +40,8 @@ public class ContractMapper {
                 .profit2Years(contract.getProfit2Years())
                 .profit3Years(contract.getProfit3Years())
                 .actions(contract.getActions() != null
-                        ? contract.getActions().stream()
-                        .map(a -> ContractActionDTO.builder()
-                                .actionId(a.getId())
-                                .contractId(a.getContract().getIdContract())
-                                .studentId(a.getStudent().getId())
-                                .status(a.getStatus())
-                                .actionDate(a.getActionDate())
-                                .build())
-                        .toList()
-                        : List.of())
+                        ? contract.getActions().stream().map(actionMapper::toDTO).collect(Collectors.toList())
+                        : null)
                 .build();
     }
 
