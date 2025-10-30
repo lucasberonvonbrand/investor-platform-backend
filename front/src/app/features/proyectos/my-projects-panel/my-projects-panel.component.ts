@@ -95,12 +95,13 @@ export class MyProjectsPanelComponent implements OnInit {
           this.projects = [];
           this.applyFilters();
           this.computeKpis();
-          this.loading.set(false); // Detener el spinner
         } else {
           console.error(err);
           this.toast.add({ severity: 'error', summary: 'Mis Proyectos', detail: 'No se pudieron cargar' });
-          this.loading.set(false); // Detener el spinner también en caso de otros errores
         }
+      },
+      complete: () => {
+        this.loading.set(false); // Asegurarse de detener el spinner siempre
       }
     });
   }
@@ -184,6 +185,10 @@ export class MyProjectsPanelComponent implements OnInit {
       case 'COMPLETED': return 'Completado';
       default: return status || '—';
     }
+  }
+
+  getCategoryLabel(category: string | null | undefined): string {
+    return !category || category === '—' ? 'Sin categoría' : category;
   }
 
   // tags colores

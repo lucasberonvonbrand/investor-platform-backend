@@ -67,7 +67,7 @@
       </div>
       <div class="opacity-70 text-sm mt-1 line-clamp-3">{{ row.project.summary || '—' }}</div>
       <div class="mt-2 flex gap-2 flex-wrap">
-        <p-tag [value]="row.project.category || '—'" [ngStyle]="tagStyle(row.project.category || '—', 0)"></p-tag>
+        <p-tag [value]="row.project.category " [ngStyle]="tagStyle(row.project.category , 0)"></p-tag>
         <p-tag [value]="getInvestmentStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
         <p-tag *ngIf="row.project.university" [value]="row.project.university" [ngStyle]="tagStyle(row.project.university, 2)"></p-tag>
       </div>
@@ -98,8 +98,8 @@
       <tr>
         <td class="text-right">{{ row.idInvestment }}</td>
         <td>{{ row.project.title }}</td>
-        <td><p-tag [value]="row.project.category || '—'" [ngStyle]="tagStyle(row.project.category || '—', 0)"></p-tag></td>
-        <td><p-tag [value]="getInvestmentStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag></td>
+        <td><p-tag [value]="row.project.category " [ngStyle]="tagStyle(row.project.category , 0)"></p-tag></td>
+        <td><p-tag [value]="getInvestmentStatusLabel(row.status)" [ngStyle]="tagStyle(row.status , 1)"></p-tag></td>
         <td class="text-center">
           <button pButton type="button" pTooltip="Ver" icon="pi pi-eye" [text]="true" [rounded]="true" [size]="'small'"
                   (click)="openDetail(row)"></button>

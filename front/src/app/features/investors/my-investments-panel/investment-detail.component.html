@@ -11,14 +11,16 @@
 </div>
 
 <ng-container *ngIf="investment() as inv">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
     <!-- Columna de Inversión -->
     <div class="lg:col-span-1">
       <p-card header="Detalle de mi Inversión" styleClass="h-full">
         <div class="space-y-4 text-sm">
           <div>
             <div class="font-semibold text-gray-500 dark:text-gray-400">Monto Invertido</div>
-            <div class="text-2xl font-bold text-primary-500">{{ inv.amount | currency:inv.currency:'symbol':'1.0-2' }}</div>
+            <div class="text-2xl font-bold text-primary-500">
+              {{ inv.amount | number:'1.0-2' }} <span class="text-xl">{{ inv.currency }}</span>
+            </div>
           </div>
           <div>
             <div class="font-semibold text-gray-500 dark:text-gray-400">Estado de la Inversión</div>
@@ -38,11 +40,45 @@
 
     <!-- Columna de Proyecto -->
     <div class="lg:col-span-2">
-      <p-card header="Información del Proyecto" styleClass="h-full">
+      <p-card header="Información del Proyecto Invertido" styleClass="h-full">
         <h3 class="text-xl font-bold">{{ inv.project.title }}</h3>
         <p class="mt-2 text-gray-600 dark:text-gray-300">{{ inv.project.summary }}</p>
         <button pButton label="Ver Detalles Completos del Proyecto" icon="pi pi-arrow-right" class="p-button-text mt-4" (click)="goToProject()"></button>
       </p-card>
     </div>
+  </div>
+
+  <!-- Nueva Sección: Proyección de Ganancias -->
+  <div class="mt-4">
+    <p-card>
+      <div class="text-center mb-4">
+        <h3 class="text-xl font-semibold">Proyección de Ganancias</h3>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <!-- Columna del Gráfico -->
+        <p-chart #chartCanvas type="line" [data]="chartData()" [options]="chartOptions()" class="w-full h-64"></p-chart>
+        <!-- Columna de Texto -->
+        <div class="space-y-4">
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+            <span class="font-semibold">A 1 Año ({{ (inv.profit1Year ?? 0) * 100 | number:'1.0-2' }}%)</span>
+            <span class="text-lg text-green-500 font-bold">
+              +{{ calculateProfit(inv.amount, inv.profit1Year) | number:'1.0-2' }} {{ inv.currency }}
+            </span>
+          </div>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+            <span class="font-semibold">A 2 Años ({{ (inv.profit2Years ?? 0) * 100 | number:'1.0-2' }}%)</span>
+            <span class="text-lg text-green-500 font-bold">
+              +{{ calculateProfit(inv.amount, inv.profit2Years) | number:'1.0-2' }} {{ inv.currency }}
+            </span>
+          </div>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+            <span class="font-semibold">A 3 Años ({{ (inv.profit3Years ?? 0) * 100 | number:'1.0-2' }}%)</span>
+            <span class="text-lg text-green-500 font-bold">
+              +{{ calculateProfit(inv.amount, inv.profit3Years) | number:'1.0-2' }} {{ inv.currency }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </p-card>
   </div>
 </ng-container>
