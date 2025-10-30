@@ -4,6 +4,7 @@ import com.example.gestor_inversores.dto.ContractActionDTO;
 import com.example.gestor_inversores.dto.RequestContractUpdateByInvestorDTO;
 import com.example.gestor_inversores.dto.RequestContractUpdateByStudentDTO;
 import com.example.gestor_inversores.dto.ResponseContractDTO;
+import com.example.gestor_inversores.dto.InvestmentDTO;
 import com.example.gestor_inversores.model.Contract;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +25,11 @@ public class ContractMapper {
                 .idContract(contract.getIdContract())
                 .projectId(contract.getProject() != null ? contract.getProject().getIdProject() : null)
                 .createdByInvestorId(contract.getCreatedByInvestor() != null ? contract.getCreatedByInvestor().getId() : null)
-                .investmentId(contract.getInvestment() != null ? contract.getInvestment().getIdInvestment() : null)
+                .investment(contract.getInvestment() != null ?
+                        InvestmentDTO.builder()
+                                .idInvestment(contract.getInvestment().getIdInvestment())
+                                .status(contract.getInvestment().getStatus())
+                                .build() : null)
                 .textTitle(contract.getTextTitle())
                 .description(contract.getDescription())
                 .amount(contract.getAmount())
