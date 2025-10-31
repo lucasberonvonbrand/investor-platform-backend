@@ -35,6 +35,7 @@ public class EarningService implements IEarningService {
     private final IInvestorRepository investorRepository;
     private final MailService mailService;
 
+    @Override
     public ResponseEarningDTO createFromContract(Contract contract, Student generatedByStudent) {
         if (contract == null) throw new IllegalArgumentException("Contract cannot be null");
         Project project = contract.getProject();
