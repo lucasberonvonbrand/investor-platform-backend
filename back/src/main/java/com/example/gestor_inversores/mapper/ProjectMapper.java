@@ -61,8 +61,6 @@ public class ProjectMapper {
                 .build();
     }
 
-
-
     public static Project requestProjectCurrentGoalUpdateToProject(RequestProjectCurrentGoalUpdateDTO dto, Project project) {
         project.setCurrentGoal(dto.getCurrentGoal());
         return project;
