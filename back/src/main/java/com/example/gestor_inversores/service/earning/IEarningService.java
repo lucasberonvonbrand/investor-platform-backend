@@ -25,4 +25,8 @@ public interface IEarningService {
     List<ResponseEarningDTO> getAll();
 
     EarningsSummaryDTO getEarningsSummary();
+
+    // Nuevos métodos solicitados
+    List<ResponseEarningDTO> getByProjectId(Long projectId);
+    List<ResponseEarningDTO> getByContractId(Long contractId);
 }
