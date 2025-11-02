@@ -27,8 +27,14 @@ export interface IMyProject {
 
 export interface IInvestment {
   idInvestment: number;
-  status: 'PENDING_PAYMENT' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED';
-  // ... otras propiedades que pueda tener una inversión
+  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_RETURN' | 'RETURNED';
+  amount: number;
+  currency: string;
+  createdAt: string;
+  confirmedAt: string | null;
+  generatedById: number;
+  projectId: number;
+  confirmedByStudentId: number | null;
 }
 
 export interface IEarning {
@@ -167,11 +173,11 @@ export class ProjectsMasterService {
   }
 
   confirmInvestmentReceipt(investmentId: number, studentId: number): Observable<IInvestment> {
-    return this.http.post<IInvestment>(`/api/investments/confirm-receipt/${investmentId}`, { studentId });
+    return this.http.put<IInvestment>(`/api/investments/confirm-receipt/${investmentId}`, { studentId });
   }
 
   markInvestmentAsNotReceived(investmentId: number, studentId: number): Observable<IInvestment> {
-    return this.http.post<IInvestment>(`/api/investments/mark-not-received/${investmentId}`, { studentId });
+    return this.http.put<IInvestment>(`/api/investments/mark-not-received/${investmentId}`, { studentId });
   }
 
   confirmEarningPaymentSent(earningId: number, studentId: number): Observable<IEarning> {

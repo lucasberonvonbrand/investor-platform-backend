@@ -12,22 +12,7 @@ import { AuthErrorModalComponent } from "../shared/auth-error-modal.component";
   selector: "app-login",
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthErrorModalComponent],
   templateUrl: "./login.component.html",
-  styles: [`
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-    @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-    .bg-animated-gradient {
-      background: linear-gradient(-45deg,#ee7752,#e73c7e,#23a6d5,#23d5ab);
-      background-size: 400% 400%;
-      animation: gradientBG 15s ease infinite;
-    }
-    .floating { animation: float 6s ease-in-out infinite; }
-    .pulse { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
-    .image-upload-container { transition: all .3s ease; }
-    .image-upload-container:hover { transform: scale(1.05); }
-    .image-preview { transition: all .3s ease; filter: drop-shadow(0 10px 15px rgba(0,0,0,.3)); }
-    .image-preview:hover { filter: drop-shadow(0 20px 25px rgba(0,0,0,.4)); }
-  `],
+  styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnDestroy {
   private fb = inject(FormBuilder);
