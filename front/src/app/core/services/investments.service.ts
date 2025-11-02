@@ -20,7 +20,7 @@ export interface IMyProject {
 
 export interface IInvestment {
   idInvestment: number;
-  status: string;
+  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_RETURN' | 'RETURNED';
   amount: number;
   currency: string;
   createdAt: string;

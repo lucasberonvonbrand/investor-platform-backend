@@ -132,6 +132,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
   // ===== Modal de Gestión de Pagos =====
   transactionModalVisible = signal(false);
+  isProcessingTransaction = signal(false); // Nuevo estado de carga para las transacciones
   selectedContractForTransactions = signal<IContract | null>(null);
 
 
@@ -167,7 +168,18 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadContracts(): void {
     this.svc.getContracts(this.projectId()).subscribe({
       next: (list: IContract[]) => {
-        this.contracts.set(list || []);
+        let contractsToShow = list || [];
+
+        // FILTRO DE SEGURIDAD: Si el usuario es un inversor (y no el dueño),
+        // solo puede ver sus propios contratos.
+        if (this.isInvestor() && !this.isOwner()) {
+          const currentInvestorId = this.currentUser?.id;
+          if (currentInvestorId) {
+            contractsToShow = contractsToShow.filter(c => c.createdByInvestorId === currentInvestorId);
+          }
+        }
+
+        this.contracts.set(contractsToShow);
       }
     });
   }
@@ -526,6 +538,7 @@ export class ProyectosMaestroComponent implements OnInit {
    * Abre el modal para gestionar los pagos (inversión y ganancias) de un contrato.
    */
   openTransactionModal(contract: IContract): void {
+    console.log('Abriendo modal para el contrato:', contract); // <-- AÑADIR ESTA LÍNEA PARA DEPURAR
     this.selectedContractForTransactions.set(contract);
     this.transactionModalVisible.set(true);
   }
@@ -688,21 +701,6 @@ export class ProyectosMaestroComponent implements OnInit {
       }
       return c;
     }));
-    this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El estado de la inversión ha sido actualizado.' });
-  }
-
-  private updateEarningInContract(earningId: number, updatedEarning: IEarning): void {
-    this.contracts.update(list => list.map(c => {
-      // Buscamos el índice de la ganancia dentro del array de ganancias del contrato
-      const earningIndex = c.earnings?.findIndex(e => e.idEarning === earningId);
-      if (earningIndex !== undefined && earningIndex > -1) {
-        const newEarnings = [...c.earnings!]; // Creamos una copia del array
-        newEarnings[earningIndex] = updatedEarning; // Reemplazamos la ganancia actualizada
-        return { ...c, earnings: newEarnings }; // Devolvemos el contrato con el array de ganancias actualizado
-      }
-      return c;
-    }));
-    this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El estado del pago de la ganancia ha sido actualizado.' });
   }
 
 
@@ -711,10 +709,29 @@ export class ProyectosMaestroComponent implements OnInit {
   confirmInvestmentPaymentSent(investmentId: number): void {
     const investorId = this.currentUser?.id;
     if (!investorId) return;
-
-    this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
-      next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
-      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' })
+  
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres notificar el envío de los fondos? Esta acción no se puede deshacer.',
+      header: 'Confirmar Envío de Inversión',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, he enviado los fondos',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
+          next: (updatedInvestment: IInvestment) => {
+            this.toast.add({
+              severity: 'success',
+              summary: 'Notificación Enviada',
+              detail: 'Se ha notificado al estudiante sobre el envío de los fondos.'
+            });
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+            this.isProcessingTransaction.set(false);
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' }),
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
     });
   }
 
@@ -722,9 +739,19 @@ export class ProyectosMaestroComponent implements OnInit {
     const studentId = this.currentUser?.id;
     if (!studentId) return;
 
+    this.isProcessingTransaction.set(true);
     this.svc.confirmInvestmentReceipt(investmentId, studentId).subscribe({
-      next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
-      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' })
+      next: (updatedInvestment: IInvestment) => {
+        this.toast.add({
+          severity: 'success',
+          summary: 'Recepción Confirmada',
+          detail: 'Se ha confirmado la recepción del dinero y se ha notificado al inversor.'
+        });
+        this.updateInvestmentInContract(investmentId, updatedInvestment);
+        this.isProcessingTransaction.set(false);
+      },
+      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' }),
+      complete: () => this.isProcessingTransaction.set(false)
     });
   }
 
@@ -740,12 +767,36 @@ export class ProyectosMaestroComponent implements OnInit {
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
+        this.isProcessingTransaction.set(true);
         this.svc.markInvestmentAsNotReceived(investmentId, studentId).subscribe({
-          next: (updatedInvestment: IInvestment) => this.updateInvestmentInContract(investmentId, updatedInvestment),
-          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' })
+          next: (updatedInvestment: IInvestment) => {
+            this.toast.add({
+              severity: 'warn',
+              summary: 'Operación Registrada',
+              detail: 'Se ha notificado al inversor sobre la no recepción de los fondos.'
+            });
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+            this.isProcessingTransaction.set(false);
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' }),
+          complete: () => this.isProcessingTransaction.set(false)
         });
       }
     });
+  }
+
+  private updateEarningInContract(earningId: number, updatedEarning: IEarning): void {
+    this.contracts.update(list => list.map(c => {
+      // Buscamos el índice de la ganancia dentro del array de ganancias del contrato
+      const earningIndex = c.earnings?.findIndex(e => e.idEarning === earningId);
+      if (earningIndex !== undefined && earningIndex > -1) {
+        const newEarnings = [...c.earnings!]; // Creamos una copia del array
+        newEarnings[earningIndex] = updatedEarning; // Reemplazamos la ganancia actualizada
+        return { ...c, earnings: newEarnings }; // Devolvemos el contrato con el array de ganancias actualizado
+      }
+      return c;
+    }));
+    this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El estado del pago de la ganancia ha sido actualizado.' });
   }
 
   // ===== Acciones de Ganancias (Earnings) =====
@@ -776,6 +827,33 @@ export class ProyectosMaestroComponent implements OnInit {
       case 'PENDING_FUNDING': return 'Pendiente de Financiación';
       case 'COMPLETED': return 'Completado';
       default: return status || '—';
+    }
+  }
+
+  getInvestmentStatusLabel(status: IInvestment['status'] | null): string {
+    const isInvestor = this.isInvestor();
+
+    switch (status) {
+      case 'IN_PROGRESS':
+        return isInvestor ? 'Pendiente de Envío' : 'Pendiente de Recepción';
+
+      case 'PENDING_CONFIRMATION':
+        return isInvestor ? 'Envío Notificado (Esperando Confirmación)' : 'Confirmación Pendiente';
+
+      case 'RECEIVED':
+        return isInvestor ? 'Inversión Recibida por el Estudiante' : 'Fondos Recibidos';
+
+      case 'NOT_RECEIVED':
+        return isInvestor ? 'Rechazado por el Estudiante' : 'Marcado como No Recibido';
+
+      case 'CANCELLED':
+        return 'Inversión Cancelada';
+
+      case 'COMPLETED':
+        return 'Inversión Completada';
+
+      default:
+        return 'Desconocido';
     }
   }
 
