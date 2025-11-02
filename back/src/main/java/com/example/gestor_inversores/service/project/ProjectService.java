@@ -190,6 +190,15 @@ public class ProjectService implements IProjectService {
     }
 
     @Override
+    public List<ResponseProjectDTO> getAllProjectsAdmin() {
+        List<Project> projects = projectRepository.findAll();
+
+        return projects.stream()
+                .map(ProjectMapper::projectToResponseProjectDTO)
+                .toList();
+    }
+
+    @Override
     public List<ResponseProjectStudentDTO> getStudentsByProject(Long projectId) {
         Project project = projectRepository.findByIdProjectAndDeletedFalse(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));

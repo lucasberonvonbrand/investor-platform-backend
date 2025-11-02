@@ -36,6 +36,8 @@ export const routes: Routes = [
       { path: 'mi-perfil',        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       { path: 'marquesinas/tag/:tag',        loadComponent: () => import('./features/proyectos/mismarquesinas-projects-panel/mismarquesinas-projects-panel.component').then(m => m.MismarquesinasProjectsPanelComponent) },
       { path: 'mis-proyectos-invertidos',        loadComponent: () => import('./features/proyectos/proyectos-invertidos/proyectos-invertidos.component').then(m => m.ProyectosInvertidosComponent) },
+      { path: 'proyectos-gestion',        loadComponent: () => import('./features/proyectos/proyectos-table-admin/proyectos-table-admin.component').then(m => m.ProyectosTableAdminComponent) },
+      { path: 'proyectos-gestion-form/:id',        loadComponent: () => import('./features/gestion-proyectos-form/gestion-proyectos-form.component').then(m => m.GestionProyectosFormComponent) },
 
       // ✅ NUEVA RUTA PARA EL ANÁLISIS DE RIESGO
       {

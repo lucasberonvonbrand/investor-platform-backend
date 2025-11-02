@@ -23,17 +23,6 @@ public class AdminMapper {
     }
 
     public void updateContractFromDto(RequestAdminContractUpdateDTO dto, Contract contract) {
-        if (dto.getTextTitle() != null) contract.setTextTitle(dto.getTextTitle());
-        if (dto.getDescription() != null) contract.setDescription(dto.getDescription());
-        if (dto.getAmount() != null) contract.setAmount(dto.getAmount());
-        if (dto.getCurrency() != null) contract.setCurrency(dto.getCurrency());
         if (dto.getStatus() != null) contract.setStatus(dto.getStatus());
-        if (dto.getProfit1Year() != null) contract.setProfit1Year(dto.getProfit1Year());
-        if (dto.getProfit2Years() != null) contract.setProfit2Years(dto.getProfit2Years());
-        if (dto.getProfit3Years() != null) contract.setProfit3Years(dto.getProfit3Years());
-        if (dto.getInvestorSigned() != null) contract.setInvestorSigned(dto.getInvestorSigned());
-        if (dto.getInvestorSignedDate() != null) contract.setInvestorSignedDate(dto.getInvestorSignedDate());
-        if (dto.getStudentSigned() != null) contract.setStudentSigned(dto.getStudentSigned());
-        if (dto.getStudentSignedDate() != null) contract.setStudentSignedDate(dto.getStudentSignedDate());
     }
 }

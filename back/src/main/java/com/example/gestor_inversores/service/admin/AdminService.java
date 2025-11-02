@@ -51,6 +51,10 @@ public class AdminService implements IAdminService {
             ));
         }
 
+        if (dto.getEstimatedEndDate().isBefore(dto.getStartDate())) {
+            throw new InvalidProjectException("La fecha de finalización estimada no puede ser anterior a la fecha de inicio");
+        }
+
         adminMapper.updateProjectFromDto(dto, project);
         Project updatedProject = projectRepository.save(project);
         return ProjectMapper.projectToResponseProjectDTO(updatedProject);
@@ -63,32 +67,6 @@ public class AdminService implements IAdminService {
                 .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado con ID: " + contractId));
  
         ContractStatus oldStatus = contract.getStatus();
- 
-        // VALIDACIÓN: No permitir cambiar el monto o la moneda si el contrato ya fue firmado.
-        if ((oldStatus == ContractStatus.SIGNED || oldStatus == ContractStatus.CLOSED) &&
-            (dto.getAmount() != null || dto.getCurrency() != null)) {
-            throw new BusinessException(
-                "El monto y la moneda de un contrato no pueden ser modificados una vez que ha sido firmado."
-            );
-        }
-
-        // --- Lógica de Negocio para "Des-firmar" un Contrato ---
-        boolean isUnsigning = (dto.getInvestorSigned() != null && !dto.getInvestorSigned() && contract.isInvestorSigned()) ||
-                              (dto.getStudentSigned() != null && !dto.getStudentSigned() && contract.isStudentSigned());
-
-        if ((oldStatus == ContractStatus.SIGNED || oldStatus == ContractStatus.CLOSED) && isUnsigning) {
-            // Si se "des-firma", el estado debe revertirse a parcialmente firmado.
-            // Forzamos este cambio de estado, ignorando lo que venga en el DTO para 'status'.
-            dto.setStatus(ContractStatus.PARTIALLY_SIGNED);
-
-            // Anulamos la fecha de firma correspondiente
-            if (dto.getInvestorSigned() != null && !dto.getInvestorSigned()) {
-                dto.setInvestorSignedDate(null);
-            }
-            if (dto.getStudentSigned() != null && !dto.getStudentSigned()) {
-                dto.setStudentSignedDate(null);
-            }
-        }
 
         ContractStatus newStatus = dto.getStatus(); // Leemos el estado DESPUÉS de la posible modificación.
 
