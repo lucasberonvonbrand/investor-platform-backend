@@ -54,6 +54,7 @@ public class ProjectMapper {
                 .ownerId(ownerId)
                 .ownerName(ownerName)
                 .tagName(tagName)
+                .deleted(project.getDeleted())
                 .students(project.getStudents().stream()
                         .filter(s -> project.getOwner() == null || !s.getId().equals(project.getOwner().getId()))
                         .map(ProjectStudentMapper::studentToResponseProjectStudentDTO)
