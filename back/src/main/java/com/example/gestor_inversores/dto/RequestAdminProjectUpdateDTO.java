@@ -1,0 +1,23 @@
+package com.example.gestor_inversores.dto;
+
+import com.example.gestor_inversores.model.enums.ProjectStatus;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RequestAdminProjectUpdateDTO {
+    private String name;
+    private String description;
+    private BigDecimal budgetGoal;
+    private ProjectStatus status;
+    private LocalDate startDate;
+    private LocalDate estimatedEndDate;
+    private LocalDate endDate;
+    private Boolean deleted;
+}

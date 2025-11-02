@@ -6,6 +6,7 @@ import com.example.gestor_inversores.exception.*;
 import com.example.gestor_inversores.mapper.EarningMapper;
 import com.example.gestor_inversores.model.*;
 import com.example.gestor_inversores.model.enums.EarningStatus;
+import com.example.gestor_inversores.repository.IContractRepository;
 import com.example.gestor_inversores.repository.IEarningRepository;
 import com.example.gestor_inversores.repository.IInvestorRepository;
 import com.example.gestor_inversores.repository.IProjectRepository;
@@ -29,12 +30,14 @@ import java.util.stream.Collectors;
 public class EarningService implements IEarningService {
 
     private final IEarningRepository earningRepository;
+    private final IContractRepository contractRepository; // Inyectado para validación
     private final EarningMapper earningMapper;
     private final IProjectRepository projectRepository;
     private final IStudentRepository studentRepository;
     private final IInvestorRepository investorRepository;
     private final MailService mailService;
 
+    @Override
     public ResponseEarningDTO createFromContract(Contract contract, Student generatedByStudent) {
         if (contract == null) throw new IllegalArgumentException("Contract cannot be null");
         Project project = contract.getProject();
@@ -318,5 +321,29 @@ public class EarningService implements IEarningService {
                         Collectors.reducing(BigDecimal.ZERO, Earning::getAmount, BigDecimal::add)));
 
         return new EarningsSummaryDTO(totalEarnings, totalBaseAmount, totalProfitAmount, totalCount, totalEarningsByCurrency);
+    }
+
+    @Override
+    public List<ResponseEarningDTO> getByProjectId(Long projectId) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ProjectNotFoundException("Proyecto no encontrado con ID: " + projectId);
+        }
+        List<Earning> earnings = earningRepository.findByProject_IdProject(projectId);
+        return earnings.stream()
+                .map(earningMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ResponseEarningDTO> getByContractId(Long contractId) {
+        // 1. Validar que el contrato exista
+        if (!contractRepository.existsById(contractId)) {
+            throw new ContractNotFoundException("Contrato no encontrado con ID: " + contractId);
+        }
+        // 2. Si existe, buscar las ganancias asociadas
+        List<Earning> earnings = earningRepository.findByContract_IdContract(contractId);
+        return earnings.stream()
+                .map(earningMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }
