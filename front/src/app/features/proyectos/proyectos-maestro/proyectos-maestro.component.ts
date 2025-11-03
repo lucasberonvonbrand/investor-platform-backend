@@ -135,6 +135,11 @@ export class ProyectosMaestroComponent implements OnInit {
   isProcessingTransaction = signal(false); // Nuevo estado de carga para las transacciones
   selectedContractForTransactions = signal<IContract | null>(null);
 
+  // ===== Modal de Gestión de Ganancias (Earnings) =====
+  earningModalVisible = signal(false);
+  isProcessingEarning = signal(false);
+  selectedContractForEarnings = signal<IContract | null>(null);
+
 
 
   ngOnInit(): void {
@@ -168,18 +173,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadContracts(): void {
     this.svc.getContracts(this.projectId()).subscribe({
       next: (list: IContract[]) => {
-        let contractsToShow = list || [];
-
-        // FILTRO DE SEGURIDAD: Si el usuario es un inversor (y no el dueño),
-        // solo puede ver sus propios contratos.
-        if (this.isInvestor() && !this.isOwner()) {
-          const currentInvestorId = this.currentUser?.id;
-          if (currentInvestorId) {
-            contractsToShow = contractsToShow.filter(c => c.createdByInvestorId === currentInvestorId);
-          }
-        }
-
-        this.contracts.set(contractsToShow);
+        this.contracts.set(list || []);
       }
     });
   }
@@ -692,6 +686,29 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  /**
+   * El estudiante (dueño) cierra el contrato para generar la ganancia.
+   */
+  closeContract(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres cerrar el contrato "${contract.textTitle}"? Esta acción marcará el proyecto como finalizado para este inversor y generará el cálculo de la ganancia a devolver.`,
+      header: 'Confirmar Cierre de Contrato',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, cerrar contrato',
+      rejectLabel: 'No',
+      accept: () => {
+        const studentId = this.currentUser?.id;
+        if (!studentId) return;
+
+        // Aquí iría la llamada al nuevo endpoint del backend
+        this.svc.closeContract(contract.idContract, studentId).subscribe({
+          next: (updated: IContract) => this.updateContractInList(updated),
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo cerrar el contrato.' })
+        });
+      }
+    });
+  }
+
   private updateInvestmentInContract(investmentId: number, updatedInvestment: IInvestment): void {
     this.contracts.update(list => list.map(c => {
       if (c.investment?.idInvestment === investmentId) {
@@ -702,6 +719,27 @@ export class ProyectosMaestroComponent implements OnInit {
       return c;
     }));
   }
+
+  /**
+   * Abre el modal para gestionar el pago de las ganancias de un contrato.
+   */
+  openEarningModal(contract: IContract): void {
+    // 1. Establece un estado de carga y muestra el modal vacío
+    this.isProcessingEarning.set(true);
+    this.selectedContractForEarnings.set(contract); // Selecciona el contrato base
+    this.earningModalVisible.set(true); // Abre el modal
+
+    // 2. Llama al servicio para obtener las ganancias actualizadas
+    this.svc.getEarningsByContractId(contract.idContract).subscribe({
+      next: (earnings) => {
+        // 3. Actualiza el contrato seleccionado con las ganancias recibidas
+        this.selectedContractForEarnings.update(c => c ? { ...c, earnings } : null);
+      },
+      error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles de la ganancia.' }),
+      complete: () => this.isProcessingEarning.set(false) // 4. Finaliza el estado de carga
+    });
+  }
+
 
 
   // ===== Acciones de Inversión (Confirmación de Fondos) =====
@@ -805,19 +843,72 @@ export class ProyectosMaestroComponent implements OnInit {
     const studentId = this.currentUser?.id;
     if (!studentId) return;
 
-    this.svc.confirmEarningPaymentSent(earningId, studentId).subscribe({
-      next: (updatedEarning: IEarning) => this.updateEarningInContract(earningId, updatedEarning),
-      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío de la ganancia.' })
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres notificar el envío de la ganancia al inversor? Esta acción no se puede deshacer.',
+      header: 'Confirmar Envío de Ganancia',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, he enviado la ganancia',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingEarning.set(true);
+        this.svc.confirmEarningPaymentSent(earningId, studentId).subscribe({
+          next: (updatedEarning: IEarning) => {
+            this.updateEarningInContract(earningId, updatedEarning);
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Se ha notificado el envío de la ganancia.' });
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío de la ganancia.' }),
+          complete: () => this.isProcessingEarning.set(false)
+        });
+      }
     });
   }
 
   confirmEarningReceipt(earningId: number): void {
     const investorId = this.currentUser?.id;
     if (!investorId) return;
+    
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres confirmar la recepción de la ganancia? Esta acción es final y notificará al estudiante.',
+      header: 'Confirmar Recepción de Ganancia',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, he recibido la ganancia',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingEarning.set(true);
+        this.svc.confirmEarningReceipt(earningId, investorId).subscribe({
+          next: (updatedEarning: IEarning) => {
+            this.updateEarningInContract(earningId, updatedEarning);
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Se ha confirmado la recepción de la ganancia.' });
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción de la ganancia.' }),
+          complete: () => this.isProcessingEarning.set(false)
+        });
+      }
+    });
+  }
 
-    this.svc.confirmEarningReceipt(earningId, investorId).subscribe({
-      next: (updatedEarning: IEarning) => this.updateEarningInContract(earningId, updatedEarning),
-      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción de la ganancia.' })
+  markEarningAsNotReceived(earningId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres marcar esta ganancia como NO recibida? Esto notificará al estudiante.',
+      header: 'Confirmar No Recepción',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, no la recibí',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.isProcessingEarning.set(true);
+        this.svc.markEarningAsNotReceived(earningId, investorId).subscribe({
+          next: (updatedEarning: IEarning) => {
+            this.updateEarningInContract(earningId, updatedEarning);
+            this.toast.add({ severity: 'warn', summary: 'Registrado', detail: 'Se ha marcado la ganancia como no recibida.' });
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo realizar la acción.' }),
+          complete: () => this.isProcessingEarning.set(false)
+        });
+      }
     });
   }
 
@@ -852,6 +943,22 @@ export class ProyectosMaestroComponent implements OnInit {
       case 'COMPLETED':
         return 'Inversión Completada';
 
+      default:
+        return 'Desconocido';
+    }
+  }
+
+  getEarningStatusLabel(status: IEarning['status'] | null): string {
+    const isInvestor = this.isInvestor();
+    switch (status) {
+      case 'IN_PROGRESS':
+        return isInvestor ? 'Pendiente de Envío por el Estudiante' : 'Pendiente de Envío al Inversor';
+      case 'PENDING_CONFIRMATION':
+        return isInvestor ? 'Confirmación de Recepción Pendiente' : 'Envío Notificado';
+      case 'RECEIVED':
+        return 'Ganancia Recibida';
+      case 'NOT_RECEIVED':
+        return 'Marcado como No Recibido';
       default:
         return 'Desconocido';
     }

@@ -18,6 +18,7 @@ export interface IMyProject {
   tags?: string[];
 }
 
+import { IEarning } from './projects-master.service'; // Importar la interfaz de Earning
 export interface IInvestment {
   idInvestment: number;
   status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_RETURN' | 'RETURNED';
@@ -33,6 +34,7 @@ export interface IInvestment {
 
 export interface IInvestedProject extends IInvestment {
   project: IMyProject;
+  earnings?: IEarning[]; // Añadir la propiedad para las ganancias
 }
 
 export interface IContractLite {
@@ -79,7 +81,7 @@ export class InvestmentsService {
         }
         // 3. Crear un array de observables, cada uno buscando los detalles de un proyecto
         const projectObservables = investments.map(inv =>
-          this.projectsMasterSvc.getProjectById(inv.projectId).pipe(
+          this.projectsMasterSvc.getProjectById(inv.projectId, true).pipe(
             // 4. Combinar los datos de la inversión con los del proyecto
             map(project => ({ ...inv, project }))
           )
@@ -97,7 +99,7 @@ export class InvestmentsService {
       switchMap((investment: IInvestment) => {
         if (!investment) return of(null);
 
-        const project$ = this.projectsMasterSvc.getProjectById(investment.projectId);
+        const project$ = this.projectsMasterSvc.getProjectById(investment.projectId, true); // <-- AÑADIDO: Pedir proyectos borrados
 
         // Si la inversión ya trae los profits, genial.
         if (investment.profit1Year != null) {
@@ -107,20 +109,26 @@ export class InvestmentsService {
         // Si no, los buscamos en los contratos del proyecto como fallback.
         const contracts$ = this.projectsMasterSvc.getContracts(investment.projectId);
 
-        return combineLatest([project$, contracts$]).pipe(
-          map(([project, contracts]) => {
+        return contracts$.pipe(
+          switchMap(contracts => {
             // Buscamos el primer contrato firmado que generó una inversión.
-            // Es una suposición más robusta que buscar por monto/moneda.
-            const relatedContract = contracts.find(c => c.status === 'SIGNED');
-            return {
-              ...investment,
-              project,
-              profit1Year: relatedContract?.profit1Year,
-              profit2Years: relatedContract?.profit2Years,
-              profit3Years: relatedContract?.profit3Years,
-            };
+            // CAMBIO: Buscamos CUALQUIER contrato, no solo 'SIGNED'.
+            // Si una inversión existe, debe tener un contrato asociado, sin importar el estado.
+            const relatedContract = contracts.length > 0 ? contracts[0] : null;
+            
+            if (!relatedContract) { // Fallback por si no hay contratos (poco probable)
+              return project$.pipe(map(project => ({ ...investment, project, earnings: [] }))); }
+
+            const earnings$ = this.projectsMasterSvc.getEarningsByContractId(relatedContract.idContract);
+
+            return combineLatest([project$, earnings$]).pipe(
+              map(([project, earnings]) => ({
+                ...investment, project, earnings,
+                profit1Year: relatedContract.profit1Year, profit2Years: relatedContract.profit2Years, profit3Years: relatedContract.profit3Years,
+              }))
+            );
           })
-        )
+        );
       })
     );
   }

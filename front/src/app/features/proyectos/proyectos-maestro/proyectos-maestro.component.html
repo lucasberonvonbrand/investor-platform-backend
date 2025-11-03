@@ -175,11 +175,21 @@
             </button>
           </ng-container>
 
-          <!-- Botón para expandir el panel de transacciones (solo para contratos firmados) -->
-          <button *ngIf="row.status === 'SIGNED'" pButton type="button"
-                  label="Gestionar Pagos" icon="pi pi-dollar"
-                  class="p-button-secondary p-button-outlined p-button-sm ml-2"
-                  (click)="openTransactionModal(row)"></button>
+          <!-- Acciones para Contratos Firmados -->
+          <ng-container *ngIf="row.status === 'SIGNED'">
+            <!-- Botón para gestionar la inversión inicial -->
+            <button pButton type="button" label="Gestionar Inversión" icon="pi pi-dollar"
+                    class="p-button-secondary p-button-outlined p-button-sm ml-2"
+                    (click)="openTransactionModal(row)"></button>
+            <!-- Botón para que el estudiante cierre el contrato y genere la ganancia -->
+            <button *ngIf="isOwner()" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
+                    class="p-button-success p-button-outlined p-button-sm ml-2"
+                    (click)="closeContract(row)"></button>
+          </ng-container>
+          <!-- Botón para gestionar las ganancias (cuando el contrato está cerrado) -->
+          <button *ngIf="row.status === 'CLOSED'" pButton type="button" label="Gestionar Ganancias" icon="pi pi-chart-line"
+                  class="p-button-help p-button-outlined p-button-sm ml-2"
+                  (click)="openEarningModal(row)"></button>
         </td>
       </tr>
     </ng-template>
@@ -396,6 +406,79 @@
       <div *ngIf="!contract.investment" class="text-center opacity-60 p-4">
         No hay información de inversión disponible para este contrato.
       </div>
+    </div>
+  </ng-container>
+</p-dialog>
+
+<!-- ===== DIÁLOGO PARA GESTIÓN DE GANANCIAS (EARNINGS) ===== -->
+<p-dialog header="Gestión de Pago de Ganancias" [visible]="earningModalVisible()"
+          (visibleChange)="earningModalVisible.set($event)" [modal]="true"
+          [style]="{ width: '90vw', 'max-width': '1200px' }" [draggable]="false"
+          (onHide)="selectedContractForEarnings.set(null)">
+  <ng-container *ngIf="selectedContractForEarnings() as contract">
+    <!-- Encabezado con información clave -->
+    <div class="mb-4 p-3 border rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <i class="pi pi-chart-line text-2xl text-purple-500"></i>
+        <div>
+          <div class="font-semibold">{{ contract.textTitle }}</div>
+          <div class="text-sm opacity-70">Contrato #{{ contract.idContract }}</div>
+        </div>
+      </div>
+      <div class="text-right" *ngIf="contract.earnings && contract.earnings.length > 0">
+        <div class="text-sm opacity-70">Monto Total a Devolver</div>
+        <div class="font-bold text-xl">{{ contract.earnings[0].amount | currency:contract.earnings[0].currency:'symbol':'1.0-0' }}</div>
+      </div>
+    </div>
+
+    <!-- Contenido principal del modal -->
+    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+      <h3 class="font-semibold text-lg mb-3">Gestión de la Devolución de Ganancia</h3>
+
+      <!-- Panel de estado y acciones para la primera ganancia -->
+      <ng-container *ngIf="!isProcessingEarning(); else loadingEarnings">
+        <div *ngIf="contract.earnings && contract.earnings.length > 0; else noEarnings">
+          <div *ngFor="let earning of contract.earnings" class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg"
+              [ngClass]="{
+                'bg-blue-100 dark:bg-blue-900/30': earning.status === 'IN_PROGRESS',
+                'bg-yellow-100 dark:bg-yellow-900/30': earning.status === 'PENDING_CONFIRMATION',
+                'bg-green-100 dark:bg-green-900/30': earning.status === 'RECEIVED',
+                'bg-red-100 dark:bg-red-900/30': earning.status === 'NOT_RECEIVED'
+              }">
+            <!-- Columna Izquierda: Información del Estado -->
+            <div class="flex items-center gap-3">
+              <i class="pi pi-info-circle text-xl"></i>
+              <div>
+                <!-- AÑADIMOS EL P-TAG CON ESTILO DINÁMICO -->
+                <p-tag [value]="getEarningStatusLabel(earning.status)" 
+                       [ngStyle]="tagStyle(earning.status)"></p-tag>
+                <div class="text-sm opacity-80" *ngIf="earning.status === 'IN_PROGRESS'">El estudiante debe notificar el envío de la ganancia.</div>
+                <div class="text-sm opacity-80" *ngIf="earning.status === 'PENDING_CONFIRMATION'">Esperando que el inversor confirme la recepción de la ganancia.</div>
+                <div class="text-sm opacity-80" *ngIf="earning.status === 'RECEIVED'">¡Ganancia completada con éxito!</div>
+              </div>
+            </div>
+            <!-- Columna Derecha: Botones de Acción -->
+            <div>
+              <!-- Acción para el Estudiante -->
+              <button *ngIf="isOwner() && earning.status === 'IN_PROGRESS'" pButton label="Notificar Envío de Ganancia" icon="pi pi-send" (click)="confirmEarningPaymentSent(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+              <!-- Acciones para el Inversor -->
+              <div *ngIf="isInvestor() && earning.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
+                <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmEarningReceipt(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                <button pButton label="No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markEarningAsNotReceived(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ng-template #noEarnings>
+          <div class="text-center opacity-60 p-4">No hay información de ganancias disponible para este contrato.</div>
+        </ng-template>
+      </ng-container>
+      <ng-template #loadingEarnings>
+        <div class="flex items-center justify-center p-4 gap-2 opacity-60">
+          <i class="pi pi-spin pi-spinner"></i>
+          <span>Cargando detalles de la ganancia...</span>
+        </div>
+      </ng-template>
     </div>
   </ng-container>
 </p-dialog>
