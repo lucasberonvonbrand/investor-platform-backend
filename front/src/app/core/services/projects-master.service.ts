@@ -41,8 +41,8 @@ export interface IEarning {
   idEarning: number;
   amount: number;
   currency: string;
-  paymentDate: string;
-  status: 'PENDING' | 'PAID' | 'CONFIRMED';
+  createdAt: string;
+  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'NOT_RECEIVED';
   // ... otras propiedades que pueda tener una ganancia
 }
 
@@ -110,8 +110,11 @@ export class ProjectsMasterService {
   private http = inject(HttpClient);
   
   // ======== API REAL ========
-  getProjectById(id: number): Observable<IMyProject> {
-    return this.http.get<any>(`/api/projects/${id}`).pipe(map(adaptProject));
+  getProjectById(id: number, includeDeleted = false): Observable<IMyProject> {
+    const url = includeDeleted
+      ? `/api/projects/${id}?includeDeleted=true`
+      : `/api/projects/${id}`;
+    return this.http.get<any>(url).pipe(map(adaptProject));
   }
   getContracts(projectId: number): Observable<IContract[]> {
     return this.http.get<IContract[]>(`/api/contracts/by-project/${projectId}`);
@@ -166,7 +169,24 @@ export class ProjectsMasterService {
     return this.http.put<IContract>(`/api/contracts/sign-by-student/${contractId}`, { studentId });
   }
 
+  /**
+   * Cierra un contrato para finalizarlo y generar la ganancia.
+   * @param contractId ID del contrato a cerrar.
+   * @param studentId ID del estudiante que realiza la acción.
+   */
+  closeContract(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/close/${contractId}`, { studentId });
+  }
+
   // ===== Métodos para Gestión de Inversiones y Ganancias =====
+
+  /**
+   * Obtiene las ganancias asociadas a un contrato específico.
+   * @param contractId ID del contrato.
+   */
+  getEarningsByContractId(contractId: number): Observable<IEarning[]> {
+    return this.http.get<IEarning[]>(`/api/earnings/by-contract/${contractId}`);
+  }
 
   confirmInvestmentPaymentSent(investmentId: number, investorId: number): Observable<IInvestment> {
     return this.http.put<IInvestment>(`/api/investments/confirm-payment-sent/${investmentId}`, { investorId });
@@ -185,7 +205,11 @@ export class ProjectsMasterService {
   }
 
   confirmEarningReceipt(earningId: number, investorId: number): Observable<IEarning> {
-    return this.http.post<IEarning>(`/api/earnings/confirm-receipt/${earningId}`, { investorId });
+    return this.http.put<IEarning>(`/api/earnings/confirm-receipt/${earningId}`, { investorId });
+  }
+
+  markEarningAsNotReceived(earningId: number, investorId: number): Observable<IEarning> {
+    return this.http.put<IEarning>(`/api/earnings/mark-not-received/${earningId}`, { investorId });
   }
 
   // getChat(projectId: number): Observable<IChatMessage[]> { // MOCK

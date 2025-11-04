@@ -17,7 +17,6 @@ import { MessageService } from 'primeng/api';
 
 import { ProjectsService, IProject } from '../../../core/services/projects.service';
 import { AuthService } from '../../auth/login/auth.service';
-
 @Component({
   standalone: true,
   selector: 'app-projects-panel',
