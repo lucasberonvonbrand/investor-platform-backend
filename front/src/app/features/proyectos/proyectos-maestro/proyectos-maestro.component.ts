@@ -747,7 +747,7 @@ export class ProyectosMaestroComponent implements OnInit {
   confirmInvestmentPaymentSent(investmentId: number): void {
     const investorId = this.currentUser?.id;
     if (!investorId) return;
-  
+
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres notificar el envío de los fondos? Esta acción no se puede deshacer.',
       header: 'Confirmar Envío de Inversión',
@@ -758,15 +758,18 @@ export class ProyectosMaestroComponent implements OnInit {
         this.isProcessingTransaction.set(true);
         this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
           next: (updatedInvestment: IInvestment) => {
+            this.isProcessingTransaction.set(false);
             this.toast.add({
               severity: 'success',
               summary: 'Notificación Enviada',
               detail: 'Se ha notificado al estudiante sobre el envío de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
-            this.isProcessingTransaction.set(false);
           },
-          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' }),
+          error: (err: any) => {
+            this.isProcessingTransaction.set(false);
+            this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' });
+          },
           complete: () => this.isProcessingTransaction.set(false)
         });
       }
@@ -777,19 +780,29 @@ export class ProyectosMaestroComponent implements OnInit {
     const studentId = this.currentUser?.id;
     if (!studentId) return;
 
-    this.isProcessingTransaction.set(true);
-    this.svc.confirmInvestmentReceipt(investmentId, studentId).subscribe({
-      next: (updatedInvestment: IInvestment) => {
-        this.toast.add({
-          severity: 'success',
-          summary: 'Recepción Confirmada',
-          detail: 'Se ha confirmado la recepción del dinero y se ha notificado al inversor.'
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres confirmar la recepción de los fondos? Esta acción es irreversible.',
+      header: 'Confirmar Recepción de Fondos',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, he recibido los fondos',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.confirmInvestmentReceipt(investmentId, studentId).subscribe({
+          next: (updatedInvestment: IInvestment) => {
+            this.toast.add({
+              severity: 'success',
+              summary: 'Recepción Confirmada',
+              detail: 'Se ha confirmado la recepción del dinero y se ha notificado al inversor.'
+            });
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+          },
+          error: (err: any) => {
+            this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' });
+          },
+          complete: () => this.isProcessingTransaction.set(false)
         });
-        this.updateInvestmentInContract(investmentId, updatedInvestment);
-        this.isProcessingTransaction.set(false);
-      },
-      error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' }),
-      complete: () => this.isProcessingTransaction.set(false)
+      }
     });
   }
 
@@ -814,10 +827,11 @@ export class ProyectosMaestroComponent implements OnInit {
               detail: 'Se ha notificado al inversor sobre la no recepción de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
-            this.isProcessingTransaction.set(false);
           },
-          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' }),
-          complete: () => this.isProcessingTransaction.set(false)
+          error: (err: any) => {
+            this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' });
+          },
+          complete: () => this.isProcessingTransaction.set(false),
         });
       }
     });
@@ -844,7 +858,7 @@ export class ProyectosMaestroComponent implements OnInit {
     if (!studentId) return;
 
     this.confirmSvc.confirm({
-      message: '¿Estás seguro de que quieres notificar el envío de la ganancia al inversor? Esta acción no se puede deshacer.',
+      message: '¿Estás seguro de que quieres notificar el envío de la ganancia al inversor? Esta acción es irreversible.',
       header: 'Confirmar Envío de Ganancia',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, he enviado la ganancia',
@@ -868,7 +882,7 @@ export class ProyectosMaestroComponent implements OnInit {
     if (!investorId) return;
     
     this.confirmSvc.confirm({
-      message: '¿Estás seguro de que quieres confirmar la recepción de la ganancia? Esta acción es final y notificará al estudiante.',
+      message: '¿Estás seguro de que quieres confirmar la recepción de la ganancia? Esta acción es irreversible.',
       header: 'Confirmar Recepción de Ganancia',
       icon: 'pi pi-check-circle',
       acceptLabel: 'Sí, he recibido la ganancia',
