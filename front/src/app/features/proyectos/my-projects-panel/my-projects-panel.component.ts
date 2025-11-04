@@ -81,7 +81,11 @@ export class MyProjectsPanelComponent implements OnInit {
     this.loading.set(true);
     this.svc.getMine().subscribe({
       next: (list) => {
-        this.projects = (list || []).map(p => ({ ...p, category: p.category ?? '—', status: p.status ?? 'IN_PROGRESS' }));
+        this.projects = (list || []).map(p => ({
+          ...p,
+          category: p.category ?? '—', // Si no viene categoría, se pone '—'
+          status: p.status ?? 'IN_PROGRESS'
+        }));
         this.applyFilters();
         this.computeKpis();
         this.buildRecommended();
