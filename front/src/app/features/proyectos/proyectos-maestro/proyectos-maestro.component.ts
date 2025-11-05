@@ -97,6 +97,7 @@ export class ProyectosMaestroComponent implements OnInit {
   editing: IContract | null = null;
   isReadonly = signal<boolean>(false); // NUEVA SEÑAL para controlar el modo de solo lectura
   viewingOnly = signal<IContract | null>(null);
+  showEditor = signal<boolean>(false); // <-- NUEVA SEÑAL
 
   currentContractStatus = computed<IContract['status'] | 'PENDING_STUDENT_SIGNATURE'>(() => {
     const contractInView = this.viewingOnly() || this.reviewingToSign || this.editing;
@@ -173,7 +174,15 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadContracts(): void {
     this.svc.getContracts(this.projectId()).subscribe({
       next: (list: IContract[]) => {
-        this.contracts.set(list || []);
+        let contractsToShow = list || [];
+        // --- FILTRO DE SEGURIDAD ---
+        // Si el usuario es un inversor, solo debe ver sus propios contratos.
+        // El dueño del proyecto puede ver todos.
+        if (this.isInvestor() && !this.isOwner()) {
+          const currentUserId = this.currentUser?.id;
+          contractsToShow = contractsToShow.filter(c => c.createdByInvestorId === currentUserId);
+        }
+        this.contracts.set(contractsToShow);
       }
     });
   }
@@ -198,18 +207,21 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.editing = row;
     this.isReadonly.set(false); // El modo edición no es de solo lectura
-    this.contractForm.patchValue({ // Usar patchValue en lugar de reset
-      // Corregido: Usar textTitle que es el que contiene el dato correcto
-      title: row.textTitle,
-      amount: row.amount,
-      currency: row.currency ?? 'USD',
-      description: row.description ?? '',
-    });
+    this.showEditor.set(false); // Asegurarse de que el editor esté oculto al principio
+
+    // 1. Poblar el formulario con los datos
+    this.contractForm.patchValue(this.getContractFormValues(row));
+
+    // 2. Mostrar el modal
     this.contractModalVisible.set(true); // Usar la nueva señal del modal
+
+    // 3. Usar setTimeout para mostrar el editor en el siguiente ciclo de detección de cambios
+    setTimeout(() => this.showEditor.set(true), 0);
   }
 
   cancelEdit(): void {
     this.contractModalVisible.set(false); // Usar la nueva señal del modal
+    this.showEditor.set(false); // Ocultar el editor al cerrar/cancelar
     this.editing = null;
     this.reviewingToSign = null;
     this.viewingOnly.set(null);

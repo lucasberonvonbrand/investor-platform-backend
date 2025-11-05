@@ -182,7 +182,7 @@
                     class="p-button-secondary p-button-outlined p-button-sm ml-2"
                     (click)="openTransactionModal(row)"></button>
             <!-- Botón para que el estudiante cierre el contrato y genere la ganancia -->
-            <button *ngIf="isOwner()" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
+            <button *ngIf="isOwner() && row.investment?.status === 'RECEIVED'" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
                     class="p-button-success p-button-outlined p-button-sm ml-2"
                     (click)="closeContract(row)"></button>
           </ng-container>
@@ -315,7 +315,7 @@
         <p-menu #menu [model]="contractTemplates" [popup]="true"></p-menu>
       </div>
       <!-- MODO EDICIÓN: Mostrar el editor -->
-      <p-editor *ngIf="!isReadonly()" formControlName="description" [style]="{ height: '250px' }">
+      <p-editor *ngIf="!isReadonly() && showEditor()" formControlName="description" [style]="{ height: '250px' }">
           <ng-template pTemplate="header">
               <span class="ql-formats">
                   <button type="button" class="ql-bold" aria-label="Bold"></button>
