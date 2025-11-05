@@ -37,6 +37,8 @@ public class EarningService implements IEarningService {
     private final IInvestorRepository investorRepository;
     private final MailService mailService;
 
+    private static final int MAX_RETRIES = 3;
+
     @Override
     public ResponseEarningDTO createFromContract(Contract contract, Student generatedByStudent) {
         if (contract == null) throw new IllegalArgumentException("Contract cannot be null");
@@ -127,22 +129,27 @@ public class EarningService implements IEarningService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
-        // Validar que el estudiante que envía el pago sea el dueño del proyecto que generó la ganancia
         if (!earning.getGeneratedBy().getId().equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para confirmar el envío de esta ganancia. Solo el estudiante dueño del proyecto puede hacerlo.");
         }
 
-        // Validar estado actual de la ganancia
-        if (earning.getStatus() != EarningStatus.IN_PROGRESS) {
-            throw new UpdateException("Esta ganancia no puede ser marcada como enviada en su estado actual. Se espera el estado 'IN_PROGRESS'. Estado actual: " + earning.getStatus());
+        if (earning.getStatus() != EarningStatus.IN_PROGRESS && earning.getStatus() != EarningStatus.NOT_RECEIVED) {
+            throw new UpdateException("La ganancia solo se puede marcar como enviada si su estado es 'IN_PROGRESS' o 'NOT_RECEIVED'. Estado actual: " + earning.getStatus());
+        }
+
+        if (earning.getRetryCount() >= MAX_RETRIES) {
+            throw new BusinessException("Se ha alcanzado el número máximo de reintentos para el envío de esta ganancia. Por favor, contacta a soporte.");
+        }
+
+        if (earning.getStatus() == EarningStatus.NOT_RECEIVED) {
+            earning.setRetryCount(earning.getRetryCount() + 1);
         }
 
         earning.setStatus(EarningStatus.PENDING_CONFIRMATION);
-        earning.setConfirmedAt(LocalDate.now()); // Usamos confirmedAt para registrar la fecha de esta acción
+        earning.setConfirmedAt(LocalDate.now());
 
         Earning savedEarning = earningRepository.save(earning);
 
-        // Notificar al inversor (dueño de la ganancia)
         Investor investor = savedEarning.getContract().getCreatedByInvestor();
         String toInvestor = investor.getEmail();
         String subject = String.format("¡Pago de ganancia enviado para tu proyecto '%s'!", savedEarning.getProject().getName());
@@ -175,15 +182,13 @@ public class EarningService implements IEarningService {
             throw new UnauthorizedOperationException("No tienes permiso para gestionar esta ganancia.");
         }
 
-        if (earning.getStatus() != EarningStatus.PENDING_CONFIRMATION) {
-            throw new UpdateException("Esta ganancia no puede ser confirmada en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + earning.getStatus());
+        if (earning.getStatus() != EarningStatus.PENDING_CONFIRMATION && earning.getStatus() != EarningStatus.NOT_RECEIVED) {
+            throw new UpdateException("La ganancia solo se puede confirmar si su estado es 'PENDING_CONFIRMATION' o 'NOT_RECEIVED'. Estado actual: " + earning.getStatus());
         }
 
         earning.setStatus(EarningStatus.RECEIVED);
         earning.setConfirmedBy(investor);
         earning.setConfirmedAt(LocalDate.now());
-
-        // El bloque de código que restaba del presupuesto ha sido eliminado.
 
         Earning savedEarning = earningRepository.save(earning);
 
@@ -317,11 +322,9 @@ public class EarningService implements IEarningService {
 
     @Override
     public List<ResponseEarningDTO> getByContractId(Long contractId) {
-        // 1. Validar que el contrato exista
         if (!contractRepository.existsById(contractId)) {
             throw new ContractNotFoundException("Contrato no encontrado con ID: " + contractId);
         }
-        // 2. Si existe, buscar las ganancias asociadas
         List<Earning> earnings = earningRepository.findByContract_IdContract(contractId);
         return earnings.stream()
                 .map(earningMapper::toResponse)
