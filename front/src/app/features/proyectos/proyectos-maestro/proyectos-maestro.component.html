@@ -314,6 +314,12 @@
         <button *ngIf="!isReadonly()" pButton type="button" icon="pi pi-book" label="Plantillas" (click)="menu.toggle($event)" class="p-button-text p-button-sm"></button>
         <p-menu #menu [model]="contractTemplates" [popup]="true"></p-menu>
       </div>
+      <!-- Ciclo de Vida del Contrato -->
+      <div class="md:col-span-2 mt-4" *ngIf="viewingOnly() || reviewingToSign || editing">
+        <h4 class="font-semibold text-lg mb-2">Ciclo de Vida del Contrato</h4>
+        <p-steps [model]="contractLifecycleSteps()" [readonly]="true" [activeIndex]="contractLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
+      </div>
+
       <!-- MODO EDICIÓN: Mostrar el editor -->
       <p-editor *ngIf="!isReadonly() && showEditor()" formControlName="description" [style]="{ height: '250px' }">
           <ng-template pTemplate="header">
@@ -369,6 +375,16 @@
       </div>
     </div>
 
+    <!-- Ciclo de Vida de la Inversión -->
+    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mt-3">
+      <h3 class="font-semibold text-lg mb-3">Ciclo de Vida de la Inversión</h3>
+      <div *ngIf="contract.investment; else noInvestmentInfo">
+        <p-steps [model]="investmentLifecycleSteps()" [readonly]="true" [activeIndex]="investmentLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
+      </div>
+      <ng-template #noInvestmentInfo>
+        <div class="text-center opacity-60 p-4">No hay información de inversión disponible para este contrato.</div>
+      </ng-template>
+    </div>
     <!-- Contenido principal del modal -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
       <h3 class="font-semibold text-lg mb-3">Gestión de la Inversión</h3>
@@ -434,37 +450,61 @@
     <!-- Contenido principal del modal -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
       <h3 class="font-semibold text-lg mb-3">Gestión de la Devolución de Ganancia</h3>
+      <div class="mb-4 text-sm opacity-80">
+        Aquí puedes ver el estado de cada pago de ganancia asociado a este contrato.
+      </div>
+
 
       <!-- Panel de estado y acciones para la primera ganancia -->
       <ng-container *ngIf="!isProcessingEarning(); else loadingEarnings">
         <div *ngIf="contract.earnings && contract.earnings.length > 0; else noEarnings">
-          <div *ngFor="let earning of contract.earnings" class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg"
-              [ngClass]="{
-                'bg-blue-100 dark:bg-blue-900/30': earning.status === 'IN_PROGRESS',
+          <!-- Bucle para cada ganancia -->
+          <div *ngFor="let earning of contract.earnings; let i = index" class="mb-4">
+            <!-- Ciclo de Vida de la Ganancia para cada earning -->
+            <div class="w-full">
+              <h4 class="font-semibold text-md mb-2">Ganancia #{{ i + 1 }}</h4>
+              <p-steps [model]="earningLifecycleSteps()" [readonly]="true" [activeIndex]="earningLifecycleActiveIndex(earning)" styleClass="contract-steps"></p-steps>
+            </div>
+            <!-- Contenedor para las acciones y el estado -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg mt-2" [ngClass]="{
                 'bg-yellow-100 dark:bg-yellow-900/30': earning.status === 'PENDING_CONFIRMATION',
                 'bg-green-100 dark:bg-green-900/30': earning.status === 'RECEIVED',
                 'bg-red-100 dark:bg-red-900/30': earning.status === 'NOT_RECEIVED'
               }">
-            <!-- Columna Izquierda: Información del Estado -->
-            <div class="flex items-center gap-3">
-              <i class="pi pi-info-circle text-xl"></i>
-              <div>
-                <!-- AÑADIMOS EL P-TAG CON ESTILO DINÁMICO -->
-                <p-tag [value]="getEarningStatusLabel(earning.status)" 
-                       [ngStyle]="tagStyle(earning.status)"></p-tag>
-                <div class="text-sm opacity-80" *ngIf="earning.status === 'IN_PROGRESS'">El estudiante debe notificar el envío de la ganancia.</div>
-                <div class="text-sm opacity-80" *ngIf="earning.status === 'PENDING_CONFIRMATION'">Esperando que el inversor confirme la recepción de la ganancia.</div>
-                <div class="text-sm opacity-80" *ngIf="earning.status === 'RECEIVED'">¡Ganancia completada con éxito!</div>
+              <!-- Columna Izquierda: Información del Estado -->
+              <div class="flex items-center gap-3">
+                <i class="pi pi-info-circle text-xl"></i>
+                <div class="flex flex-col gap-1">
+                  <!-- Etiqueta de estado con estilo mejorado -->
+                  <p-tag [value]="getEarningStatusLabel(earning.status)"
+                         [severity]="earning.status === 'NOT_RECEIVED' ? 'danger' : (earning.status === 'RECEIVED' ? 'success' : 'info')"
+                         [rounded]="true"
+                         [icon]="earning.status === 'NOT_RECEIVED' ? 'pi pi-exclamation-triangle' : (earning.status === 'RECEIVED' ? 'pi pi-check-circle' : '')">
+                  </p-tag>
+                  <div class="text-sm opacity-80" *ngIf="earning.status === 'IN_PROGRESS'">El estudiante debe notificar el envío de la ganancia.</div>
+                  <div class="text-sm opacity-80" *ngIf="earning.status === 'PENDING_CONFIRMATION'">Esperando que el inversor confirme la recepción de la ganancia.</div>
+                  <div class="text-sm opacity-80" *ngIf="earning.status === 'NOT_RECEIVED'">
+                    El inversor marcó este pago como no recibido. Por favor, verifica y reintenta el envío.
+                    <span class="font-bold text-yellow-700 dark:text-yellow-300"> (Intentos restantes: {{ earning.retryAttempts ?? 3 }})</span>
+                  </div>
+                  <div class="text-sm opacity-80" *ngIf="earning.status === 'RECEIVED'">¡Ganancia completada con éxito!</div>
+                </div>
               </div>
-            </div>
-            <!-- Columna Derecha: Botones de Acción -->
-            <div>
-              <!-- Acción para el Estudiante -->
-              <button *ngIf="isOwner() && earning.status === 'IN_PROGRESS'" pButton label="Notificar Envío de Ganancia" icon="pi pi-send" (click)="confirmEarningPaymentSent(earning.idEarning)" [loading]="isProcessingEarning()"></button>
-              <!-- Acciones para el Inversor -->
-              <div *ngIf="isInvestor() && earning.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
-                <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmEarningReceipt(earning.idEarning)" [loading]="isProcessingEarning()"></button>
-                <button pButton label="No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markEarningAsNotReceived(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+              <!-- Columna Derecha: Botones de Acción -->
+              <!-- Solo mostrar acciones si el estado NO es 'RECEIVED' -->
+              <div *ngIf="earning.status !== 'RECEIVED'">
+                <!-- Acción para el Estudiante -->
+                <button *ngIf="isOwner() && earning.status === 'IN_PROGRESS'" pButton label="Notificar Envío de Ganancia" icon="pi pi-send" (click)="confirmEarningPaymentSent(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                <!-- Acción para el Estudiante para Reintentar -->
+                <button *ngIf="isOwner() && earning.status === 'NOT_RECEIVED'" pButton label="Reintentar Envío" icon="pi pi-replay" severity="warning" 
+                        (click)="retryEarningPayment(earning.idEarning)" [loading]="isProcessingEarning()" [disabled]="(earning.retryAttempts ?? 3) <= 0"
+                        [pTooltip]="(earning.retryAttempts ?? 3) > 0 ? 'Reinicia el proceso de pago para volver a notificar el envío' : 'No quedan intentos de reenvío. Contacta con el inversor o soporte.'"
+                        tooltipPosition="top"></button>
+                <!-- Acciones para el Inversor -->
+                <div *ngIf="isInvestor() && earning.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
+                  <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmEarningReceipt(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                  <button pButton label="No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markEarningAsNotReceived(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                </div>
               </div>
             </div>
           </div>
