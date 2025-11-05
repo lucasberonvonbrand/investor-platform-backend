@@ -65,7 +65,7 @@ endDate: p.endDate ?? null,
 fundingGoal: p.budgetGoal,
 fundingRaised: p.currentGoal,
 lastUpdated: p.startDate || null,
-category: p.tagName || null,
+category: p.tagName ?? '—', // Mapear desde tagName
 university: null,
 owner: p.ownerName || null,
 tags: null,

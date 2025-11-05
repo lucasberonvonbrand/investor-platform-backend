@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button'; // (lo podés quitar si ya no usás el modal)
 import { DialogModule } from 'primeng/dialog';            // (lo podés quitar si ya no usás el modal)
+import { FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -19,11 +20,13 @@ import { EditorModule } from 'primeng/editor';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MenuModule } from 'primeng/menu';
 import { ToastModule } from 'primeng/toast';
+import { StepsModule } from 'primeng/steps'; // Importar StepsModule
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
+import { ProjectDocumentsService, IProjectDocument } from '../../../core/services/project-documents.service';
 import { AuthService, Session } from '../../auth/login/auth.service';
 import type { ContactOwnerDTO, IInvestment, IEarning } from '../../../core/services/projects-master.service';
 import jsPDF from 'jspdf';
@@ -40,8 +43,8 @@ type Student = { id: number; name: string; email?: string };
   templateUrl: './proyectos-maestro.component.html',
   styleUrls: ['./proyectos-maestro.component.scss'],
   imports: [
-    CommonModule, FormsModule, ReactiveFormsModule,
-    ToolbarModule, CardModule, TagModule, TableModule,
+    CommonModule, FormsModule, ReactiveFormsModule, StepsModule, // Añadir StepsModule aquí
+    ToolbarModule, CardModule, TagModule, TableModule, FileUploadModule,
     ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink, SafeHtmlPipe,
     DatePickerModule, AccordionModule, ToastModule
   ],
@@ -59,6 +62,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private fb = inject(FormBuilder);
   private svc = inject(ProjectsMasterService);
   private toast = inject(MessageService);
+  private docSvc = inject(ProjectDocumentsService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmationService);
 
@@ -92,11 +96,15 @@ export class ProyectosMaestroComponent implements OnInit {
   contracts = signal<IContract[]>([]);
   loading = signal<boolean>(false);
 
+  // ===== Documentos del Proyecto =====
+  documents = signal<IProjectDocument[]>([]);
+
   // ===== Acordeón Crear/Editar contrato =====
   contractModalVisible = signal<boolean>(false); // Renombrado de accordionOpen
   editing: IContract | null = null;
   isReadonly = signal<boolean>(false); // NUEVA SEÑAL para controlar el modo de solo lectura
   viewingOnly = signal<IContract | null>(null);
+  showEditor = signal<boolean>(false); // <-- NUEVA SEÑAL
 
   currentContractStatus = computed<IContract['status'] | 'PENDING_STUDENT_SIGNATURE'>(() => {
     const contractInView = this.viewingOnly() || this.reviewingToSign || this.editing;
@@ -141,6 +149,57 @@ export class ProyectosMaestroComponent implements OnInit {
   selectedContractForEarnings = signal<IContract | null>(null);
 
 
+  // ===== Ciclo de Vida del Contrato (para el diálogo de Contrato) =====
+  contractLifecycleSteps = computed<MenuItem[]>(() => {
+    return [
+      { label: 'Borrador', id: 'DRAFT' },
+      { label: 'Aprobado', id: 'PARTIALLY_SIGNED' }, // Aprobado por una parte
+      { label: 'Firmado', id: 'SIGNED' },
+      { label: 'Cerrado', id: 'CLOSED' },
+    ];
+  });
+
+  contractLifecycleActiveIndex = computed<number>(() => {
+    const contract = this.viewingOnly() || this.reviewingToSign || this.editing;
+    if (!contract) return -1;
+
+    const currentStatus = contract.status;
+    switch (currentStatus) {
+      case 'DRAFT': return 0;
+      case 'PARTIALLY_SIGNED': return 1;
+      case 'SIGNED': return 2;
+      case 'CLOSED': return 3;
+      default: return -1;
+    }
+  });
+
+  // ===== Ciclo de Vida de la Inversión (para el diálogo de Transacciones) =====
+  investmentLifecycleSteps = computed<MenuItem[]>(() => {
+    return [
+      { label: 'Pendiente Envío', id: 'IN_PROGRESS' }, // Inversor debe enviar
+      { label: 'Envío Notificado', id: 'PENDING_CONFIRMATION' }, // Inversor notificó, estudiante debe confirmar
+      { label: 'Recibido', id: 'RECEIVED' }, // Estudiante confirmó
+    ];
+  });
+
+  investmentLifecycleActiveIndex = computed<number>(() => {
+    const contract = this.selectedContractForTransactions();
+    const investment = contract?.investment;
+    if (!investment) return -1;
+
+    const currentStatus = investment.status;
+    switch (currentStatus) {
+      case 'IN_PROGRESS': return 0;
+      case 'PENDING_CONFIRMATION': return 1;
+      case 'RECEIVED':
+      case 'COMPLETED': return 2; // Treat COMPLETED as RECEIVED for this flow
+      default: return -1;
+    }
+  });
+
+  // ===== Ciclo de Vida de la Ganancia (para el diálogo de Ganancias) =====
+  // Los pasos son los mismos para cada ganancia individual
+  earningLifecycleSteps = this.investmentLifecycleSteps; // Reutilizamos los mismos pasos lógicos
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -151,6 +210,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.projectId.set(id);
     this.loadProject();
     this.loadContracts();
+    this.loadDocuments();
     this.setupContractTemplates();
   }
 
@@ -173,7 +233,64 @@ export class ProyectosMaestroComponent implements OnInit {
   private loadContracts(): void {
     this.svc.getContracts(this.projectId()).subscribe({
       next: (list: IContract[]) => {
-        this.contracts.set(list || []);
+        let contractsToShow = list || [];
+        // --- FILTRO DE SEGURIDAD ---
+        // Si el usuario es un inversor, solo debe ver sus propios contratos.
+        // El dueño del proyecto puede ver todos.
+        if (this.isInvestor() && !this.isOwner()) {
+          const currentUserId = this.currentUser?.id;
+          contractsToShow = contractsToShow.filter(c => c.createdByInvestorId === currentUserId);
+        }
+        this.contracts.set(contractsToShow);
+      }
+    });
+  }
+
+  private loadDocuments(): void {
+    this.docSvc.getDocumentsByProject(this.projectId()).subscribe({
+      next: (docs) => this.documents.set(docs || []),
+      error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
+    });
+  }
+
+  // --- Métodos para Documentos ---
+
+  getUploadUrl(): string {
+    return this.docSvc.getUploadUrl();
+  }
+
+  onUpload(event: { files: File[] }): void {
+    this.toast.add({ severity: 'success', summary: 'Éxito', detail: `${event.files.length} documento(s) subido(s).` });
+    this.loadDocuments(); // Recargar la lista de documentos
+  }
+
+  onUploadError(event: any): void {
+    const detail = event.error?.message || 'Ocurrió un error al subir el archivo.';
+    this.toast.add({ severity: 'error', summary: 'Error de Subida', detail });
+  }
+
+  downloadDocument(doc: IProjectDocument): void {
+    window.open(this.docSvc.getDownloadUrl(doc.id), '_blank');
+  }
+
+  deleteDocument(doc: IProjectDocument): void {
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres eliminar el documento "${doc.fileName}"? Esta acción no se puede deshacer.`,
+      header: 'Confirmar Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.docSvc.deleteDocument(doc.id).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'info', summary: 'Eliminado', detail: 'El documento ha sido eliminado.' });
+            this.documents.update(docs => docs.filter(d => d.id !== doc.id));
+          },
+          error: (err) => {
+            this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo eliminar el documento.' });
+          }
+        });
       }
     });
   }
@@ -182,14 +299,24 @@ export class ProyectosMaestroComponent implements OnInit {
   openCreateContract(): void {
     if (!this.isInvestor()) return;
     this.editing = null;
+    this.showEditor.set(false); // Asegurarse de que el editor esté oculto al principio
     this.isReadonly.set(false); // Asegurarse de que no esté en modo solo lectura
     this.contractForm.reset({
       title: '',
-      amount: 0,
+      amount: 1000, // Un valor inicial de ejemplo
       currency: 'USD',
       description: '',
+      // FIX: Inicializar los valores de rentabilidad para que el formulario sea válido
+      profit1Year: 10,
+      profit2Years: 15,
+      profit3Years: 20,
     });
-    this.contractModalVisible.set(true); // Usar la nueva señal del modal
+    this.contractModalVisible.set(true); // Mostrar el modal
+
+    // Usar setTimeout para mostrar el editor en el siguiente ciclo de detección de cambios
+    setTimeout(() => {
+      this.showEditor.set(true);
+    }, 0);
   }
 
   editContract(row: IContract): void {
@@ -198,18 +325,27 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.editing = row;
     this.isReadonly.set(false); // El modo edición no es de solo lectura
-    this.contractForm.patchValue({ // Usar patchValue en lugar de reset
-      // Corregido: Usar textTitle que es el que contiene el dato correcto
-      title: row.textTitle,
-      amount: row.amount,
-      currency: row.currency ?? 'USD',
-      description: row.description ?? '',
-    });
+    this.showEditor.set(false); // Asegurarse de que el editor esté oculto al principio
+
+    const formValues = this.getContractFormValues(row); // Obtener los valores una vez
+
+    // 1. Poblar el formulario con los datos (la descripción se establecerá explícitamente después)
+    this.contractForm.patchValue(formValues);
+
+    // 2. Mostrar el modal
     this.contractModalVisible.set(true); // Usar la nueva señal del modal
+
+    // 3. Usar setTimeout para mostrar el editor y luego establecer su valor explícitamente
+    setTimeout(() => {
+      this.showEditor.set(true);
+      // Establecer el valor de la descripción explícitamente DESPUÉS de que el editor se haya renderizado
+      this.contractForm.controls.description.setValue(formValues.description);
+    }, 0);
   }
 
   cancelEdit(): void {
     this.contractModalVisible.set(false); // Usar la nueva señal del modal
+    this.showEditor.set(false); // Ocultar el editor al cerrar/cancelar
     this.editing = null;
     this.reviewingToSign = null;
     this.viewingOnly.set(null);
@@ -265,7 +401,13 @@ export class ProyectosMaestroComponent implements OnInit {
   private getObserver() {
     return {
       next: (saved: IContract) => {
-        this.updateContractInList(saved);
+        if (this.editing) {
+          // Si estábamos editando, actualizamos el contrato en la lista.
+          this.updateContractInList(saved);
+        } else {
+          // Si estábamos creando, añadimos el nuevo contrato al principio de la lista.
+          this.contracts.update(list => [saved, ...list]);
+        }
         this.toast.add({ severity: 'success', summary: 'Contrato', detail: this.editing ? 'Actualizado' : 'Creado', life: 1600 });
         this.cancelEdit();
       },
@@ -758,13 +900,13 @@ export class ProyectosMaestroComponent implements OnInit {
         this.isProcessingTransaction.set(true);
         this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
           next: (updatedInvestment: IInvestment) => {
-            this.isProcessingTransaction.set(false);
             this.toast.add({
               severity: 'success',
               summary: 'Notificación Enviada',
               detail: 'Se ha notificado al estudiante sobre el envío de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
+            this.transactionModalVisible.set(false); // Cerrar el modal al éxito
           },
           error: (err: any) => {
             this.isProcessingTransaction.set(false);
@@ -869,6 +1011,7 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedEarning: IEarning) => {
             this.updateEarningInContract(earningId, updatedEarning);
             this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Se ha notificado el envío de la ganancia.' });
+            this.earningModalVisible.set(false); // Cerrar el modal
           },
           error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío de la ganancia.' }),
           complete: () => this.isProcessingEarning.set(false)
@@ -893,6 +1036,7 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedEarning: IEarning) => {
             this.updateEarningInContract(earningId, updatedEarning);
             this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Se ha confirmado la recepción de la ganancia.' });
+            this.earningModalVisible.set(false); // Cerrar el modal
           },
           error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción de la ganancia.' }),
           complete: () => this.isProcessingEarning.set(false)
@@ -918,6 +1062,7 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedEarning: IEarning) => {
             this.updateEarningInContract(earningId, updatedEarning);
             this.toast.add({ severity: 'warn', summary: 'Registrado', detail: 'Se ha marcado la ganancia como no recibida.' });
+            this.earningModalVisible.set(false); // Cerrar el modal
           },
           error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo realizar la acción.' }),
           complete: () => this.isProcessingEarning.set(false)
@@ -926,6 +1071,43 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  retryEarningPayment(earningId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.confirmSvc.confirm({
+      message: 'Esto reiniciará el proceso de pago para esta ganancia, permitiéndote notificar el envío nuevamente. ¿Estás seguro?',
+      header: 'Confirmar Reintento de Envío',
+      icon: 'pi pi-replay',
+      acceptLabel: 'Sí, reintentar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingEarning.set(true);
+        // FIX: Reutilizamos el endpoint de "confirmar envío", ya que la lógica es la misma: pasar a PENDING_CONFIRMATION.
+        this.svc.confirmEarningPaymentSent(earningId, studentId).subscribe({ // Llamada al método de servicio correcto
+          next: (updatedEarning: IEarning) => {
+            this.updateEarningInContract(earningId, updatedEarning);
+            this.toast.add({ severity: 'info', summary: 'Proceso Reiniciado', detail: 'Puedes notificar el envío de la ganancia nuevamente.' });
+            this.earningModalVisible.set(false); // Cerrar el modal
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo reiniciar el proceso.' }),
+          complete: () => this.isProcessingEarning.set(false)
+        });
+      }
+    });
+  }
+
+  earningLifecycleActiveIndex(earning: IEarning): number {
+    if (!earning) return -1;
+
+    const currentStatus = earning.status;
+    switch (currentStatus) {
+      case 'IN_PROGRESS': return 0;
+      case 'PENDING_CONFIRMATION': return 1;
+      case 'RECEIVED': return 2;
+      default: return -1;
+    }
+  }
   getProjectStatusLabel(status: string | null): string {
     switch (status) {
       case 'IN_PROGRESS': return 'En Progreso';
