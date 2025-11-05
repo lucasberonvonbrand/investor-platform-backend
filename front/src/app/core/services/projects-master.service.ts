@@ -43,6 +43,7 @@ export interface IEarning {
   currency: string;
   createdAt: string;
   status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'NOT_RECEIVED';
+  retriesLeft?: number; // Intentos restantes para el reenvío
   // ... otras propiedades que pueda tener una ganancia
 }
 

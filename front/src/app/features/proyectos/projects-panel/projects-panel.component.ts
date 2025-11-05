@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
 import { CardModule } from 'primeng/card';
@@ -56,7 +56,13 @@ export class ProjectsPanelComponent implements OnInit {
   kpis = { total: 0, activos: 0, recientes: 0, conFinanciacion: 0 };
 
   ngOnInit(): void {
-    this.reload();
+    // Escuchar los eventos de navegación para recargar la lista
+    this.router.events.subscribe((event) => {
+      // Recargar cuando la navegación a esta ruta finaliza
+      if (event instanceof NavigationEnd && event.urlAfterRedirects.includes('/proyectos')) {
+        this.reload();
+      }
+    });
   }
 
   reload(): void {

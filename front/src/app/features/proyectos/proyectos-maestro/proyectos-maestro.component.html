@@ -75,10 +75,45 @@
       </p-card>
 
       <p-card>
-        <div class="font-semibold mb-2">Documentación del Proyecto</div>
-        <div class="text-center opacity-60 p-4 border-2 border-dashed rounded-lg">
-          <i class="pi pi-inbox text-2xl mb-2"></i>
-          <div>Próximamente: aquí se mostrarán los documentos adjuntos.</div>
+        <div class="font-semibold mb-2 flex justify-between items-center">
+          <span>Documentación del Proyecto</span>
+          <span class="text-sm font-normal opacity-60">{{ documents().length }} documento(s)</span>
+        </div>
+        <!-- Zona de subida de archivos (solo para el dueño) -->
+        <p-fileUpload *ngIf="isOwner()"
+                      name="file"
+                      [url]="getUploadUrl()"
+                      [multiple]="true"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png"
+                      [maxFileSize]="10000000"
+                      (onUpload)="onUpload($event)"
+                      (onError)="onUploadError($event)"
+                      [auto]="true"
+                      chooseLabel="Subir Documentos"
+                      [showCancelButton]="false"
+                      [showUploadButton]="false">
+          <ng-template pTemplate="content">
+            <!-- Se puede dejar vacío para que la subida sea automática -->
+          </ng-template>
+        </p-fileUpload>
+
+        <!-- Lista de documentos -->
+        <div class="mt-3 border-t" [class.pt-3]="isOwner()">
+          <ul *ngIf="documents().length > 0; else noDocuments" class="list-none p-0 m-0">
+            <li *ngFor="let doc of documents()" class="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <i class="pi pi-file"></i>
+                <span class="truncate" [pTooltip]="doc.fileName">{{ doc.fileName }}</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button pButton icon="pi pi-download" [text]="true" [rounded]="true" (click)="downloadDocument(doc)" pTooltip="Descargar"></button>
+                <button *ngIf="isOwner()" pButton icon="pi pi-trash" [text]="true" [rounded]="true" severity="danger" (click)="deleteDocument(doc)" pTooltip="Eliminar"></button>
+              </div>
+            </li>
+          </ul>
+          <ng-template #noDocuments>
+            <div class="text-center opacity-60 p-4">No hay documentos adjuntos a este proyecto.</div>
+          </ng-template>
         </div>
       </p-card>
     </div>
@@ -485,7 +520,7 @@
                   <div class="text-sm opacity-80" *ngIf="earning.status === 'PENDING_CONFIRMATION'">Esperando que el inversor confirme la recepción de la ganancia.</div>
                   <div class="text-sm opacity-80" *ngIf="earning.status === 'NOT_RECEIVED'">
                     El inversor marcó este pago como no recibido. Por favor, verifica y reintenta el envío.
-                    <span class="font-bold text-yellow-700 dark:text-yellow-300"> (Intentos restantes: {{ earning.retryAttempts ?? 3 }})</span>
+                    <span class="font-bold text-yellow-700 dark:text-yellow-300"> (Intentos restantes: {{ earning.retriesLeft ?? 3 }})</span>
                   </div>
                   <div class="text-sm opacity-80" *ngIf="earning.status === 'RECEIVED'">¡Ganancia completada con éxito!</div>
                 </div>
@@ -497,8 +532,8 @@
                 <button *ngIf="isOwner() && earning.status === 'IN_PROGRESS'" pButton label="Notificar Envío de Ganancia" icon="pi pi-send" (click)="confirmEarningPaymentSent(earning.idEarning)" [loading]="isProcessingEarning()"></button>
                 <!-- Acción para el Estudiante para Reintentar -->
                 <button *ngIf="isOwner() && earning.status === 'NOT_RECEIVED'" pButton label="Reintentar Envío" icon="pi pi-replay" severity="warning" 
-                        (click)="retryEarningPayment(earning.idEarning)" [loading]="isProcessingEarning()" [disabled]="(earning.retryAttempts ?? 3) <= 0"
-                        [pTooltip]="(earning.retryAttempts ?? 3) > 0 ? 'Reinicia el proceso de pago para volver a notificar el envío' : 'No quedan intentos de reenvío. Contacta con el inversor o soporte.'"
+                        (click)="retryEarningPayment(earning.idEarning)" [loading]="isProcessingEarning()" [disabled]="(earning.retriesLeft ?? 3) <= 0"
+                        [pTooltip]="(earning.retriesLeft ?? 3) > 0 ? 'Reinicia el proceso de pago para volver a notificar el envío' : 'No quedan intentos de reenvío. Contacta con el inversor o soporte.'"
                         tooltipPosition="top"></button>
                 <!-- Acciones para el Inversor -->
                 <div *ngIf="isInvestor() && earning.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
