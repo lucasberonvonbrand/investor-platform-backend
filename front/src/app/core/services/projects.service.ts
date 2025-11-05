@@ -42,6 +42,7 @@ status: string;
 startDate: string;
 estimatedEndDate: string;
 endDate: string | null;
+tagName?: string; // Añadido para la categoría
 }
 
 
@@ -54,7 +55,7 @@ status: p.status,
 fundingGoal: p.budgetGoal,
 fundingRaised: p.currentGoal,
 lastUpdated: p.startDate || null,
-category: '—',
+category: p.tagName ?? '—', // Mapear desde tagName
 university: null,
 owner: null,
 tags: null,

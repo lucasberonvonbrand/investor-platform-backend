@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { filter } from 'rxjs';
 
 import { CardModule } from 'primeng/card';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -57,23 +58,31 @@ export class ProjectsPanelComponent implements OnInit {
 
   ngOnInit(): void {
     // Escuchar los eventos de navegación para recargar la lista
-    this.router.events.subscribe((event) => {
-      // Recargar cuando la navegación a esta ruta finaliza
-      if (event instanceof NavigationEnd && event.urlAfterRedirects.includes('/proyectos')) {
-        this.reload();
+    this.router.events.pipe(
+      // Filtrar solo por eventos de finalización de navegación
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe((event: NavigationEnd) => {
+      const url = event.urlAfterRedirects;
+      // Recargar si estamos en la página principal de proyectos o en una marquesina
+      if (url.includes('/proyectos') || url.includes('/marquesinas/tag/')) {
+        this.reload(url);
       }
     });
   }
 
-  reload(): void {
+  reload(currentUrl?: string): void {
     this.loading = true;
-    this.svc.getAll().subscribe({
+    const url = currentUrl || this.router.url;
+    const tagMatch = url.match(/\/marquesinas\/tag\/([^/]+)/);
+    const tag = tagMatch ? tagMatch[1] : null;
+
+    // Determinar qué observable usar
+    const projects$ = tag ? this.svc.getAllByTag(tag) : this.svc.getAll();
+
+    projects$.subscribe({
       next: (list) => {
-        this.projects = (list || []).map(p => ({
-          ...p,
-          category: p.category ?? '—',
-          status: p.status ?? 'IN_PROGRESS'
-        }));
+        // El mapeo ya se hace en el servicio, no es necesario aquí.
+        this.projects = list || [];
         this.applyFilters();
         this.computeKpis();
       },
@@ -123,13 +132,15 @@ export class ProjectsPanelComponent implements OnInit {
 
   getProjectStatusLabel(status: string | null | undefined): string {
     switch (status) {
-      case 'IN_PROGRESS': return 'En Progreso';
       case 'PENDING_FUNDING': return 'Pendiente de Financiación';
+      case 'IN_PROGRESS': return 'En Progreso';
       case 'COMPLETED': return 'Completado';
       case 'CANCELLED': return 'Cancelado';
       case 'IDEA': return 'Idea';
       case 'MVP': return 'MVP';
       case 'FUNDING': return 'En Financiación';
+      case 'NOT_FUNDED': return 'No Financiado';
+      case 'DELETED': return 'Eliminado';
       default: return status || 'No definido';
     }
   }

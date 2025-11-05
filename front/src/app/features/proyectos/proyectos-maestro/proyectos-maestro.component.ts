@@ -938,7 +938,6 @@ export class ProyectosMaestroComponent implements OnInit {
               detail: 'Se ha confirmado la recepción del dinero y se ha notificado al inversor.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
-            this.transactionModalVisible.set(false); // Cerrar el modal al éxito
           },
           error: (err: any) => {
             this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' });
@@ -970,7 +969,6 @@ export class ProyectosMaestroComponent implements OnInit {
               detail: 'Se ha notificado al inversor sobre la no recepción de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
-            this.transactionModalVisible.set(false); // Cerrar el modal al éxito
           },
           error: (err: any) => {
             this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo marcar como no recibida.' });
