@@ -9,12 +9,13 @@ import { Router } from '@angular/router'
 import { StudentService } from '../../../core/services/students.service';
 import { AuthService } from '../../auth/login/auth.service'; // 👈 para leer el token/rol
 import { Student, Province,University, DegreeStatus} from '../../../models/student.model';
+import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 
 /**
  * Validador personalizado para asegurar que la fecha sea anterior a la fecha actual.
@@ -39,9 +40,10 @@ export function pastDateValidator(control: AbstractControl): ValidationErrors | 
     CardModule, 
     ButtonModule, 
     InputTextModule,
-    TooltipModule
+    TooltipModule,
+    ConfirmDialogModule
   ],
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 
 export class StudentsUpdateComponent implements OnInit {
@@ -64,8 +66,9 @@ export class StudentsUpdateComponent implements OnInit {
     private http: HttpClient,
     private auth: AuthService, // 👈 inyectamos AuthService
     private router: Router,
-    private toast: MessageService
-  ) {
+    private toast: MessageService,
+    private confirmationService: ConfirmationService // Inyectar ConfirmationService
+  ) { 
     this.universities = Object.values(University).map(uni => ({ label: uni.replace(/_/g, ' '), value: uni }));
     this.provinces = Object.values(Province).map(prov => ({ label: this.formatProvinceForDisplay(prov), value: prov }));
   }
@@ -123,8 +126,8 @@ ngOnInit(): void {
         [this.emailValidator()] // Validador asíncrono
       ],
 
-      firstName: [student.firstName ?? '', [Validators.required, Validators.maxLength(100)]],
-      lastName: [student.lastName ?? '', [Validators.required, Validators.maxLength(100)]],
+      firstName: [student.firstName ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
+      lastName: [student.lastName ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       dni: [{ value: student.dni ?? '', disabled: true }, [Validators.required, Validators.maxLength(20)]],
       phone: [student.phone ?? '', [Validators.required, Validators.maxLength(50)]],
       dateOfBirth: [student.dateOfBirth ?? '', [Validators.required, pastDateValidator]],
@@ -172,6 +175,39 @@ ngOnInit(): void {
 
   cancelar() {
     this.router.navigateByUrl('/proyectos-panel');
+  }
+
+  confirmDeleteAccount() {
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y tus datos no podrán ser recuperados.',
+      header: 'Confirmación de Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isLoading = true;
+        const apiUrl = `/api/students/desactivate/${this.student.id}`;
+        this.http.patch(apiUrl, {}).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'success', summary: 'Cuenta Eliminada', detail: 'Tu cuenta ha sido eliminada. Serás redirigido.' });
+            setTimeout(() => {
+              this.auth.logout();
+              this.router.navigateByUrl('/auth/login');
+            }, 2500);
+          },
+          error: (err) => {
+            this.isLoading = false;
+            let detail = 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.';
+            if (err.status === 409) { // 409 Conflict
+              detail = 'No es posible eliminar tu cuenta porque tienes proyectos o contratos activos. Para proceder, por favor, contacta a soporte para obtener asistencia.';
+            } else if (err.error?.message) {
+              detail = err.error.message;
+            }
+            this.toast.add({ severity: 'error', summary: 'Error al Eliminar', detail: detail, life: 7000 });
+          }
+        });
+      }
+    });
   }
 
   // Helper para formatear las provincias en los desplegables

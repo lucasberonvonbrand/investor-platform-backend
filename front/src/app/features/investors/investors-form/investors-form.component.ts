@@ -53,7 +53,7 @@ export class InvestorFormComponent implements OnInit {
         [Validators.required, Validators.minLength(11), Validators.maxLength(11)],
         [this.cuitValidator()]
       ],
-      contactPerson: ['', [Validators.required, Validators.maxLength(100)]],
+      contactPerson: ['', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       phone: ['', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
       webSite: ['', [Validators.maxLength(100)]],
       linkedinUrl: ['', Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)],

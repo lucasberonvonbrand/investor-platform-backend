@@ -31,7 +31,7 @@ export function pastDateValidator(control: AbstractControl): ValidationErrors | 
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule, ],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule], // Keep this line as is
   templateUrl: './students-form.component.html',
   styleUrls: ['./students-form.component.scss']
 })
@@ -79,8 +79,8 @@ export class StudentFormComponent implements OnInit {
         [Validators.required, Validators.email, Validators.maxLength(100)],
         [this.emailValidator()]
       ],
-      firstName: ['', [Validators.required, Validators.maxLength(100)]],
-      lastName: ['', [Validators.required, Validators.maxLength(100)]],
+      firstName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
+      lastName: ['', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       dni: ['',
         [Validators.required, Validators.maxLength(20)],
         [this.dniValidator()]
@@ -96,7 +96,7 @@ export class StudentFormComponent implements OnInit {
       province: ['', Validators.required],
       postalCode: ['', Validators.required],
       linkedinUrl: ['', Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)],
-      description: ['', Validators.maxLength(500)]
+      description: ['', Validators.maxLength(500)] // Campo de descripción
     });
   }
 

@@ -100,6 +100,16 @@
             <small *ngIf="isInvalidField('linkedinUrl')" class="p-error">{{ getFieldError('linkedinUrl') }}</small>
           </div>
 
+          <div class="field md:col-span-2">
+            <label for="description" class="font-medium flex items-center gap-2">
+              <span>Descripción</span>
+              <i class="pi pi-info-circle cursor-pointer" pTooltip="Una breve descripción sobre ti, tus habilidades e intereses (opcional)."></i>
+            </label>
+            <textarea id="description" pInputText formControlName="description" rows="3" class="w-full"
+              placeholder="Una breve descripción sobre ti, tus habilidades e intereses..."></textarea>
+            <small *ngIf="isInvalidField('description')" class="p-error">{{ getFieldError('description') }}</small>
+          </div>
+
           <!-- Sección Académica -->
           <div class="md:col-span-2 mt-4">
             <h3 class="text-lg font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">Datos Académicos</h3>

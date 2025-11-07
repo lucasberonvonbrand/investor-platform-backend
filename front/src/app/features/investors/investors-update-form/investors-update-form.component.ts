@@ -15,6 +15,8 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-investors-update-form',
@@ -22,10 +24,10 @@ import { TooltipModule } from 'primeng/tooltip';
   styleUrls: ['./investors-update-form.component.scss'],
   standalone: true,
   imports: [
-    ReactiveFormsModule, CommonModule, ToastModule,
-    CardModule, ButtonModule, InputTextModule, TooltipModule, InputTextModule
+    ReactiveFormsModule, CommonModule, ToastModule, 
+    CardModule, ButtonModule, InputTextModule, TooltipModule, ConfirmDialogModule
   ],
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class InvestorsUpdateFormComponent implements OnInit {
   investorsUpdateForm!: FormGroup;
@@ -45,7 +47,8 @@ export class InvestorsUpdateFormComponent implements OnInit {
     private http: HttpClient,
     private auth: AuthService,
     private router: Router,
-    private toast: MessageService
+    private toast: MessageService,
+    private confirmationService: ConfirmationService
   ) {
     this.provinces = Object.values(Province).map(prov => ({ label: this.formatProvinceForDisplay(prov), value: prov }));
   }
@@ -83,10 +86,11 @@ export class InvestorsUpdateFormComponent implements OnInit {
         [this.emailValidator()]
       ],
       cuit: [{ value: investor.cuit ?? '', disabled: true }, [Validators.required, Validators.minLength(11), Validators.maxLength(11)]],
-      contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(100)]],
+      contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       phone: [investor.phone ?? '', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
       webSite: [investor.webSite ?? '', [Validators.maxLength(100)]],
       linkedinUrl: [investor.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)]],
+      description: [investor.description ?? '', Validators.maxLength(500)],
       address: this.fb.group({
         street: [investor.address?.street ?? '', Validators.required],
         number: [investor.address?.number ?? '', Validators.required],
@@ -123,6 +127,39 @@ export class InvestorsUpdateFormComponent implements OnInit {
 
   cancelar() {
     this.router.navigateByUrl('/dashboard');
+  }
+
+  confirmDeleteAccount() {
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es irreversible y tus datos no podrán ser recuperados.',
+      header: 'Confirmación de Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isLoading = true;
+        const apiUrl = `/api/investors/desactivate/${this.investor.id}`;
+        this.http.patch(apiUrl, {}).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'success', summary: 'Cuenta Eliminada', detail: 'Tu cuenta ha sido eliminada. Serás redirigido.' });
+            setTimeout(() => {
+              this.auth.logout();
+              this.router.navigateByUrl('/auth/login');
+            }, 2500);
+          },
+          error: (err) => {
+            this.isLoading = false;
+            let detail = 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.';
+            if (err.status === 409) { // 409 Conflict
+              detail = 'No es posible eliminar tu cuenta porque tienes inversiones o contratos activos. Para proceder, por favor, contacta a soporte para obtener asistencia.';
+            } else if (err.error?.message) {
+              detail = err.error.message;
+            }
+            this.toast.add({ severity: 'error', summary: 'Error al Eliminar', detail: detail, life: 7000 });
+          }
+        });
+      }
+    });
   }
 
   private formatProvinceForDisplay(enumValue: string): string {
