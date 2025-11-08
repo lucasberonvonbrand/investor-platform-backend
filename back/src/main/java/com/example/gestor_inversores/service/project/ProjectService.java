@@ -126,6 +126,15 @@ public class ProjectService implements IProjectService {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
+        // Si la descripción cambia, se vuelve a evaluar la etiqueta con la IA
+        if (!projectDTO.getDescription().equals(searchedProject.getDescription())) {
+            String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(projectDTO.getDescription())).toUpperCase();
+            String cleanedTag = selectedTag.trim();
+            System.out.println("Etiqueta re-evaluada por cambio en descripción: " + cleanedTag);
+            ProjectTag tag = projectTagService.getTagByName(cleanedTag);
+            searchedProject.setProjectTag(tag);
+        }
+
         Project updatedProject = ProjectMapper.requestProjectUpdateToProject(projectDTO, searchedProject);
         updatedProject.setModifiedAt(LocalDateTime.now());
 

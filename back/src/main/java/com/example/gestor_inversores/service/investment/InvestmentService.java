@@ -34,6 +34,7 @@ public class InvestmentService implements IInvestmentService {
     private final CurrencyConversionService currencyConversionService;
     private final IMailService mailService;
     private final ContractService contractService;
+    private static final int MAX_RETRIES = 3;
 
     @Autowired
     public InvestmentService(
@@ -248,8 +249,16 @@ public class InvestmentService implements IInvestmentService {
             throw new UnauthorizedOperationException("No tienes permiso para confirmar el envío de esta inversión.");
         }
 
-        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS) {
-            throw new UpdateException("Esta inversión no puede ser marcada como enviada en su estado actual. Se espera el estado 'IN_PROGRESS'. Estado actual: " + inv.getStatus());
+        if (inv.getRetryCount() >= MAX_RETRIES) {
+            throw new BusinessException("Se ha alcanzado el número máximo de reintentos para el envío de esta inversión. Por favor, contacta a soporte.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.IN_PROGRESS && inv.getStatus() != InvestmentStatus.NOT_RECEIVED) {
+            throw new UpdateException("La inversión solo se puede marcar como enviada si su estado es 'IN_PROGRESS' o 'NOT_RECEIVED'. Estado actual: " + inv.getStatus());
+        }
+
+        if (inv.getStatus() == InvestmentStatus.NOT_RECEIVED) {
+            inv.setRetryCount(inv.getRetryCount() + 1);
         }
 
         inv.setStatus(InvestmentStatus.PENDING_CONFIRMATION);
@@ -293,26 +302,42 @@ public class InvestmentService implements IInvestmentService {
             throw new UpdateException("Solo se puede marcar como no recibida una inversión que está pendiente de confirmación.");
         }
 
+        if (inv.getRetryCount() >= MAX_RETRIES) {
+            inv.setStatus(InvestmentStatus.CANCELLED);
+            autoCancelContractIfNeeded(inv);
+            // Notificar al inversor sobre la cancelación
+            String toInvestor = inv.getGeneratedBy().getEmail();
+            String subject = "Inversión cancelada por exceso de reintentos";
+            String body = String.format(
+                "Hola %s,\n\nTu inversión para el proyecto '%s' ha sido cancelada automáticamente debido a que el estudiante ha reportado no recibir los fondos en múltiples ocasiones.\n\n" +
+                "El contrato asociado ha sido cancelado. Por favor, contacta a soporte para más detalles.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                inv.getGeneratedBy().getUsername(),
+                inv.getProject().getName()
+            );
+            mailService.sendEmail(toInvestor, subject, body);
+            return mapper.toResponse(investmentRepo.save(inv));
+        }
+
         inv.setStatus(InvestmentStatus.NOT_RECEIVED);
         inv.setConfirmedBy(student);
         inv.setConfirmedAt(LocalDate.now());
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        autoCancelContractIfNeeded(savedInvestment);
-
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("Alerta sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
         String body = String.format(
             "Hola %s,\n\nEl estudiante %s %s ha reportado que NO ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
-            "El contrato asociado ha sido cancelado automáticamente. Por favor, ponte en contacto con el estudiante para aclarar la situación o contacta a soporte si crees que es un error.\n\n" +
+            "Por favor, revisa el envío y vuelve a marcarlo como enviado en la plataforma. Tienes %d intento(s) más antes de que el contrato se cancele automáticamente.\n\n" +
             "Saludos,\nEl equipo de ProyPlus",
             savedInvestment.getGeneratedBy().getUsername(),
             student.getFirstName(),
             student.getLastName(),
             savedInvestment.getAmount(),
             savedInvestment.getCurrency(),
-            savedInvestment.getProject().getName()
+            savedInvestment.getProject().getName(),
+            MAX_RETRIES - savedInvestment.getRetryCount()
         );
         mailService.sendEmail(toInvestor, subject, body);
 

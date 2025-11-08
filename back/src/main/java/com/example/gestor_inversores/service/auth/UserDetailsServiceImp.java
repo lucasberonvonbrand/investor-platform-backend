@@ -34,7 +34,7 @@ public class UserDetailsServiceImp implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         User userSec = userRepo.findUserEntityByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("El usuario " + username + "no fue encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException("El usuario " + username + " no fue encontrado"));
 
         List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
 

@@ -24,11 +24,12 @@ import { StepsModule } from 'primeng/steps'; // Importar StepsModule
 import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { ProjectDocumentsService, IProjectDocument } from '../../../core/services/project-documents.service';
 import { AuthService, Session } from '../../auth/login/auth.service';
-import type { ContactOwnerDTO, IInvestment, IEarning } from '../../../core/services/projects-master.service';
+import type { ContactOwnerDTO, IInvestment, IEarning, IStudentDetail } from '../../../core/services/projects-master.service';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
@@ -42,10 +43,10 @@ type Student = { id: number; name: string; email?: string };
   selector: 'app-proyectos-maestro',
   templateUrl: './proyectos-maestro.component.html',
   styleUrls: ['./proyectos-maestro.component.scss'],
-  imports: [
+  imports: [ // ... otros imports
     CommonModule, FormsModule, ReactiveFormsModule, StepsModule, // Añadir StepsModule aquí
-    ToolbarModule, CardModule, TagModule, TableModule, FileUploadModule,
-    ButtonModule, DialogModule, InputTextModule, InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, RouterLink, SafeHtmlPipe,
+    ToolbarModule, CardModule, TagModule, TableModule, FileUploadModule, ButtonModule, DialogModule, InputTextModule,
+    InputNumberModule, EditorModule, ConfirmDialogModule, SliderModule, TooltipModule, ProgressBarModule, MenuModule, MultiSelectModule,
     DatePickerModule, AccordionModule, ToastModule
   ],
   animations: [
@@ -147,6 +148,25 @@ export class ProyectosMaestroComponent implements OnInit {
   earningModalVisible = signal(false);
   isProcessingEarning = signal(false);
   selectedContractForEarnings = signal<IContract | null>(null);
+
+  // ===== Modal de Detalles del Estudiante =====
+  studentDetailModalVisible = signal(false);
+  selectedStudent = signal<IStudentDetail | null>(null);
+  loadingStudentDetails = signal(false);
+
+  // ===== Modal de Edición de Proyecto =====
+  editProjectModalVisible = signal(false);
+  isSavingProject = signal(false);
+  allStudents = signal<{ id: number; name: string }[]>([]); // Para el selector de estudiantes
+  editProjectForm = this.fb.group({
+    title: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(100)]],
+    summary: ['', [Validators.required, Validators.minLength(20), Validators.maxLength(500)]],
+    startDate: [null as Date | null, Validators.required],
+    estimatedEndDate: [null as Date | null, Validators.required],
+    budgetGoal: [0, [Validators.required, Validators.min(1)]],
+    // Usamos un array de IDs para los estudiantes
+    studentIds: [[] as number[]],
+  });
 
 
   // ===== Ciclo de Vida del Contrato (para el diálogo de Contrato) =====
@@ -294,6 +314,102 @@ export class ProyectosMaestroComponent implements OnInit {
       }
     });
   }
+
+  showStudentDetails(studentId: number): void {
+    // Permitir ver detalles si es inversor O si es el dueño del proyecto
+    if (!this.isInvestor() && !this.isOwner()) return;
+
+    this.loadingStudentDetails.set(true);
+    this.selectedStudent.set(null);
+    this.studentDetailModalVisible.set(true);
+
+    this.svc.getStudentById(studentId).subscribe({
+      next: (student) => {
+        this.selectedStudent.set(student);
+      },
+      error: (err) => {
+        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles del estudiante.' });
+        this.studentDetailModalVisible.set(false);
+      },
+      complete: () => this.loadingStudentDetails.set(false)
+    });
+  }
+
+  // ===== Lógica de Edición de Proyecto =====
+  openEditProjectModal(): void {
+    const p = this.project();
+    if (!p || !this.isOwner()) {
+      return;
+    }
+
+    // Añadimos las validaciones de negocio antes de abrir el modal
+    if (p.status !== 'PENDING_FUNDING' || (p.fundingRaised ?? 0) > 0) {
+      this.toast.add({ severity: 'warn', summary: 'Acción no permitida', detail: 'El proyecto ya no puede ser editado.' });
+      return;
+    }
+
+    // Cargar la lista de todos los estudiantes para el selector
+    this.svc.getAllStudents().subscribe(students => {
+      // Excluimos al dueño del proyecto de la lista de seleccionables
+      this.allStudents.set(students.filter(s => s.id !== p.ownerId));
+    });
+
+    // Obtenemos los IDs de los estudiantes actuales del proyecto
+    const currentStudentIds = p.students?.map(s => s.id) ?? [];
+
+    this.editProjectForm.reset({
+      title: p.title,
+      summary: p.summary,
+      startDate: p.startDate ? new Date(p.startDate) : null,
+      estimatedEndDate: p.estimatedEndDate ? new Date(p.estimatedEndDate) : null,
+      budgetGoal: p.fundingGoal ?? 0,
+      // Establecemos los estudiantes actuales en el selector
+      studentIds: currentStudentIds,
+    });
+    this.editProjectModalVisible.set(true);
+  }
+
+  saveProjectChanges(): void {
+    if (this.editProjectForm.invalid) {
+      this.editProjectForm.markAllAsTouched();
+      this.toast.add({ severity: 'warn', summary: 'Formulario Inválido', detail: 'Por favor, revisa los campos marcados en rojo.' });
+      return;
+    }
+
+    const currentProject = this.project();
+    if (!currentProject) return;
+
+    this.isSavingProject.set(true);
+
+    const formValue = this.editProjectForm.getRawValue();
+    const payload = {
+      name: formValue.title, // El backend espera 'name'
+      description: formValue.summary, // El backend espera 'description'
+      startDate: formValue.startDate ? this.formatISO(formValue.startDate) : null,
+      estimatedEndDate: formValue.estimatedEndDate ? this.formatISO(formValue.estimatedEndDate) : null,
+      budgetGoal: formValue.budgetGoal,
+      studentIds: formValue.studentIds,
+      // Añadimos los campos requeridos por el DTO que no se editan en el formulario
+      status: currentProject.status,
+      // startDate: currentProject.startDate, // Ahora se edita en el form
+      currentGoal: currentProject.fundingRaised,
+    };
+
+    this.svc.updateProject(this.projectId(), payload).subscribe({
+      next: (updatedProject) => {
+        this.project.set(updatedProject); // Actualiza la señal con el proyecto modificado
+        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El proyecto ha sido actualizado.' });
+        this.editProjectModalVisible.set(false);
+        this.isSavingProject.set(false); // Reiniciar el estado de carga al éxito
+      },
+      error: (err) => {
+        const detail = err.error?.message || 'No se pudo actualizar el proyecto.';
+        this.toast.add({ severity: 'error', summary: 'Error', detail });
+        this.isSavingProject.set(false);
+      }
+    });
+  }
+
 
   // ===== Crear / Editar contrato (Acordeón) =====
   openCreateContract(): void {
@@ -852,14 +968,30 @@ export class ProyectosMaestroComponent implements OnInit {
   }
 
   private updateInvestmentInContract(investmentId: number, updatedInvestment: IInvestment): void {
+    // Si la inversión fue recibida, actualizamos el fondeo del proyecto
+    if (updatedInvestment.status === 'RECEIVED') {
+      this.svc.getProjectById(this.projectId()).subscribe(p => {
+        this.project.set(p);
+        this.toast.add({ severity: 'info', summary: 'Financiación Actualizada', detail: 'El progreso de financiación del proyecto ha sido actualizado.', life: 3000 });
+      });
+    }
+
+    // Actualiza la lista principal de contratos
     this.contracts.update(list => list.map(c => {
       if (c.investment?.idInvestment === investmentId) {
-        // Si la inversión se cancela, también actualizamos el estado del contrato principal
         const newContractStatus = updatedInvestment.status === 'CANCELLED' ? 'CANCELLED' : c.status;
         return { ...c, investment: updatedInvestment, status: newContractStatus };
       }
       return c;
     }));
+
+    // Actualiza también el contrato seleccionado en el modal de transacciones, si está abierto
+    this.selectedContractForTransactions.update(c => {
+      if (c && c.investment?.idInvestment === investmentId) {
+        return { ...c, investment: updatedInvestment };
+      }
+      return c;
+    });
   }
 
   /**
@@ -979,6 +1111,33 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  retryInvestmentPayment(investmentId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.confirmSvc.confirm({
+      message: 'Esto te permitirá notificar nuevamente el envío de los fondos. ¿Estás seguro?',
+      header: 'Confirmar Reintento de Envío',
+      icon: 'pi pi-replay',
+      acceptLabel: 'Sí, reintentar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        // Reutilizamos el endpoint de "confirmar envío", ya que la lógica del backend maneja el reintento.
+        this.svc.confirmInvestmentPaymentSent(investmentId, investorId).subscribe({
+          next: (updatedInvestment: IInvestment) => {
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+            this.toast.add({ severity: 'info', summary: 'Proceso Reiniciado', detail: 'Puedes notificar el envío de la inversión nuevamente.' });
+          },
+          error: (err: any) => {
+            this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo reiniciar el proceso.' });
+          },
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
+    });
+  }
+
   private updateEarningInContract(earningId: number, updatedEarning: IEarning): void {
     this.contracts.update(list => list.map(c => {
       // Buscamos el índice de la ganancia dentro del array de ganancias del contrato
@@ -1071,32 +1230,6 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
-  retryEarningPayment(earningId: number): void {
-    const studentId = this.currentUser?.id;
-    if (!studentId) return;
-
-    this.confirmSvc.confirm({
-      message: 'Esto reiniciará el proceso de pago para esta ganancia, permitiéndote notificar el envío nuevamente. ¿Estás seguro?',
-      header: 'Confirmar Reintento de Envío',
-      icon: 'pi pi-replay',
-      acceptLabel: 'Sí, reintentar',
-      rejectLabel: 'No, cancelar',
-      accept: () => {
-        this.isProcessingEarning.set(true);
-        // FIX: Reutilizamos el endpoint de "confirmar envío", ya que la lógica es la misma: pasar a PENDING_CONFIRMATION.
-        this.svc.confirmEarningPaymentSent(earningId, studentId).subscribe({ // Llamada al método de servicio correcto
-          next: (updatedEarning: IEarning) => {
-            this.updateEarningInContract(earningId, updatedEarning);
-            this.toast.add({ severity: 'info', summary: 'Proceso Reiniciado', detail: 'Puedes notificar el envío de la ganancia nuevamente.' });
-            this.earningModalVisible.set(false); // Cerrar el modal
-          },
-          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo reiniciar el proceso.' }),
-          complete: () => this.isProcessingEarning.set(false)
-        });
-      }
-    });
-  }
-
   earningLifecycleActiveIndex(earning: IEarning): number {
     if (!earning) return -1;
 
@@ -1119,8 +1252,10 @@ export class ProyectosMaestroComponent implements OnInit {
     }
   }
 
-  getInvestmentStatusLabel(status: IInvestment['status'] | null): string {
+  getInvestmentStatusLabel(investment: IInvestment | null | undefined): string {
     const isInvestor = this.isInvestor();
+    if (!investment) return 'Desconocido';
+    const status = investment.status;
 
     switch (status) {
       case 'IN_PROGRESS':
@@ -1133,7 +1268,10 @@ export class ProyectosMaestroComponent implements OnInit {
         return isInvestor ? 'Inversión Recibida por el Estudiante' : 'Fondos Recibidos';
 
       case 'NOT_RECEIVED':
-        return isInvestor ? 'Rechazado por el Estudiante' : 'Marcado como No Recibido';
+        if (isInvestor) {
+          return `No Recibido (Intentos restantes: ${investment.remainingRetries ?? 0})`;
+        }
+        return 'Marcado como No Recibido';
 
       case 'CANCELLED':
         return 'Inversión Cancelada';
@@ -1141,9 +1279,32 @@ export class ProyectosMaestroComponent implements OnInit {
       case 'COMPLETED':
         return 'Inversión Completada';
 
+      case 'PENDING_RETURN':
+        return 'Devolución Pendiente';
+
+      case 'RETURNED':
+        return 'Fondos Devueltos';
+
       default:
         return 'Desconocido';
     }
+  }
+
+  getDegreeStatusLabel(status: string | null): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'En Curso';
+      case 'ADVANCED': return 'Avanzado';
+      case 'GRADUATED': return 'Graduado';
+      case 'COMPLETED': return 'Completado';
+      case 'PAUSED': return 'En Pausa';
+      default: return status || 'No especificado';
+    }
+  }
+
+  getUniversityLabel(university: string | null): string {
+    if (!university) return 'No especificada';
+    // Reemplaza guiones bajos por espacios y convierte todo a mayúsculas.
+    return university.replace(/_/g, ' ').toUpperCase();
   }
 
   getEarningStatusLabel(status: IEarning['status'] | null): string {

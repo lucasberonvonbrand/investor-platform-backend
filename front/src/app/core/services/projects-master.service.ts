@@ -35,6 +35,8 @@ export interface IInvestment {
   generatedById: number;
   projectId: number;
   confirmedByStudentId: number | null;
+  retryCount?: number; // Añadido para manejar los reintentos
+  remainingRetries?: number; // Nuevo campo para mostrar los reintentos restantes
 }
 
 export interface IEarning {
@@ -71,6 +73,22 @@ export interface ContactOwnerDTO {
   fromName: string;
   subject: string;
   message: string;
+}
+
+export interface IStudentDetail {
+  id: number;
+  username: string;
+  email: string;
+  photoUrl?: string;
+  firstName: string;
+  lastName: string;
+  dni: string;
+  phone: string;
+  university: string;
+  career: string;
+  degreeStatus: string;
+  linkedinUrl?: string;
+  description?: string;
 }
 
 export interface IChatMessage {
@@ -123,6 +141,19 @@ export class ProjectsMasterService {
   getContractsByInvestorAndProject(investorId: number, projectId: number): Observable<IContract[]> {
     return this.http.get<IContract[]>(`/api/contracts/investor/${investorId}/project/${projectId}`);
   }
+  getStudentById(studentId: number): Observable<IStudentDetail> {
+    return this.http.get<IStudentDetail>(`/api/students/${studentId}`);
+  }
+  getAllStudents(): Observable<{ id: number; name: string }[]> {
+    // Corregido: Apuntamos al endpoint que devuelve la lista de nombres de estudiantes.
+    return this.http.get<{ id: number; firstName: string; lastName: string }[]>(`/api/students/names`).pipe(
+      map(students => students.map(s => ({
+        id: s.id,
+        // Combinamos firstName y lastName en un solo campo 'name' para el selector
+        name: `${s.firstName} ${s.lastName}`.trim()
+      })))
+    );
+  }
   upsertContract(dto: Partial<IContract> & { projectId: number; createdByInvestorId?: number }): Observable<IContract> {
     if (dto.idContract) {
       // Para actualizar, el backend podría esperar un payload diferente.
@@ -132,6 +163,10 @@ export class ProjectsMasterService {
       // Para crear, usamos el payload específico que necesita el backend.
       return this.http.post<IContract>(`/api/contracts`, dto);
     }
+  }
+  
+  updateProject(id: number, payload: Partial<IMyProject>): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/${id}`, payload).pipe(map(adaptProject));
   }
 
   cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
@@ -264,11 +299,5 @@ export class ProjectsMasterService {
     };
     this._chat$.next([...this._chat$.value, created]);
     return of(created).pipe(delay(120));
-  }
-
-  updateProject(id: number, patch: Partial<IMyProject>): Observable<IMyProject> {
-    const idx = this._projects.findIndex(p => p.id === id);
-    if (idx >= 0) this._projects[idx] = { ...this._projects[idx], ...patch };
-    return of(this._projects[idx]).pipe(delay(150));
   }
 }
