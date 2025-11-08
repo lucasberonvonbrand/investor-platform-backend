@@ -420,7 +420,7 @@ public class ContractService implements IContractService {
 
     @Override
     public ResponseContractDTO refundContract(Long contractId, RequestContractActionByStudentDTO dto) {
-        return handleStudentAction(contractId, dto, ContractStatus.REFUNDED);
+        return handleStudentAction(contractId, dto, ContractStatus.PENDING_REFUND);
     }
 
     private ResponseContractDTO handleStudentAction(Long contractId, RequestContractActionByStudentDTO dto, ContractStatus actionStatus) {
@@ -446,7 +446,7 @@ public class ContractService implements IContractService {
                     throw new ContractCannotBeModifiedException("El contrato no puede cancelarse en su estado actual.");
                 }
             }
-            case REFUNDED -> {
+            case PENDING_REFUND -> {
                 if (contract.getStatus() != ContractStatus.SIGNED &&
                         contract.getStatus() != ContractStatus.CLOSED) {
                     throw new ContractCannotBeModifiedException("Solo contratos firmados o cerrados pueden devolverse al inversor.");
@@ -478,8 +478,9 @@ public class ContractService implements IContractService {
                     inv.setStatus(InvestmentStatus.CANCELLED);
                     investmentRepo.save(inv);
                 }
-                case REFUNDED -> {
-                    investmentService.returnInvestment(inv.getIdInvestment());
+                case PENDING_REFUND -> {
+                    inv.setStatus(InvestmentStatus.PENDING_REFUND);
+                    investmentRepo.save(inv);
                 }
                 case CLOSED -> {
                     contractRepository.save(contract);
@@ -509,22 +510,20 @@ public class ContractService implements IContractService {
                 student.getLastName()
             );
             mailService.sendEmail(toInvestor, subject, body);
-        } else if (actionStatus == ContractStatus.REFUNDED) {
-            String toInvestor = contract.getCreatedByInvestor().getEmail();
-            String subject = String.format("Inicio de Devolución para el proyecto '%s'", contract.getProject().getName());
+        } else if (actionStatus == ContractStatus.PENDING_REFUND) {
+            String toStudent = student.getEmail();
+            String subject = String.format("Has iniciado la devolución para el proyecto '%s'", contract.getProject().getName());
             String body = String.format(
-                "Hola %s,\n\nTe informamos que el estudiante %s %s ha iniciado el proceso de devolución de tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
-                "El estado de tu inversión ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
-                "Acción Requerida: Una vez que hayas verificado la recepción de los fondos en tu cuenta, por favor, ingresa a la plataforma y confirma la recepción de la devolución para cerrar el ciclo por completo.\n\n" +
+                "Hola %s,\n\nHas iniciado el proceso de devolución de la inversión de %.2f %s para el proyecto '%s'.\n\n" +
+                "El estado del contrato ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
+                "Acción Requerida: El siguiente paso es realizar la transferencia de los fondos al inversor. Una vez que lo hayas hecho, por favor, ingresa a la plataforma y confirma que has enviado la devolución para notificar al inversor.\n\n" +
                 "Saludos,\nEl equipo de ProyPlus",
-                contract.getCreatedByInvestor().getUsername(),
                 student.getFirstName(),
-                student.getLastName(),
                 contract.getAmount(),
                 contract.getCurrency(),
                 contract.getProject().getName()
             );
-            mailService.sendEmail(toInvestor, subject, body);
+            mailService.sendEmail(toStudent, subject, body);
         }
 
         return contractMapper.toResponseDTO(contract);

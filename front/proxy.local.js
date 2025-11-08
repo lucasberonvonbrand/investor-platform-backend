@@ -1,5 +1,5 @@
-const target = "http://72.60.11.35:8080";
-//const target = "http://localhost:8080";
+//const target = "http://72.60.11.35:8080";
+const target = "http://localhost:8080";
 
 module.exports = {
   // ✅ SOLO login (y register si aplica) se reescriben a /auth/*
