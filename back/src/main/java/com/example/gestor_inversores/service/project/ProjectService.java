@@ -180,6 +180,17 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
+        // VALIDACIÓN: No permitir la eliminación si el proyecto ya tiene contratos asociados.
+        List<Contract> contracts = contractRepository.findByProject_IdProject(id);
+        if (!contracts.isEmpty()) {
+            throw new BusinessException("El proyecto no puede ser eliminado porque ya tiene contratos asociados.");
+        }
+
+        // VALIDACIÓN: No permitir la eliminación si el proyecto ya ha recibido fondos.
+        if (searchedProject.getCurrentGoal().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BusinessException("El proyecto no puede ser eliminado porque ya ha recibido inversiones.");
+        }
+
         searchedProject.setDeleted(true);
         searchedProject.setDeletedAt(LocalDateTime.now());
         projectRepository.save(searchedProject);

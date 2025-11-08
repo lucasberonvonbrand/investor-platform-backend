@@ -5,12 +5,24 @@
 
   <div class="p-toolbar-group-right flex items-center gap-2">
     <!-- El botón de contactar solo es visible para el inversor -->
-    <button *ngIf="isOwner()" pButton icon="pi pi-pencil" label="Editar Proyecto" (click)="openEditProjectModal()"
-            class="p-button-outlined" tooltipPosition="left"
-            [disabled]="project()?.status !== 'PENDING_FUNDING' || (project()?.fundingRaised ?? 0) > 0"
-            [pTooltip]="(project()?.status !== 'PENDING_FUNDING' || (project()?.fundingRaised ?? 0) > 0)
-                        ? 'El proyecto no se puede editar porque ya no está pendiente de financiación o ya ha recibido fondos.'
-                        : 'Editar los detalles del proyecto'"></button>
+    <ng-container *ngIf="isOwner()">
+      <button pButton icon="pi pi-pencil" label="Editar Proyecto" (click)="openEditProjectModal()"
+              *ngIf="project()?.status === 'PENDING_FUNDING'"
+              class="p-button-outlined" tooltipPosition="left" [disabled]="(project()?.fundingRaised ?? 0) > 0"
+              [pTooltip]="((project()?.fundingRaised ?? 0) > 0) ? 'El proyecto no se puede editar porque ya ha recibido fondos.'
+                          : 'Editar los detalles del proyecto'"></button>
+      <button pButton icon="pi pi-trash" label="Eliminar Proyecto" (click)="deleteProject()" class="p-button-danger p-button-outlined"
+              *ngIf="project()?.status === 'PENDING_FUNDING'"
+              [disabled]="(project()?.fundingRaised ?? 0) > 0 || contracts().length > 0"
+              pTooltip="Solo se pueden eliminar proyectos que no hayan recibido financiación y no tengan contratos asociados."
+              tooltipPosition="left"></button>
+    </ng-container>
+    <!-- Acciones para proyectos EN PROGRESO -->
+    <ng-container *ngIf="isOwner() && project()?.status === 'IN_PROGRESS'">
+      <button pButton icon="pi pi-check-circle" label="Marcar como Completado" (click)="completeProject()" class="p-button-success p-button-outlined"></button>
+      <button pButton icon="pi pi-times-circle" label="Cancelar Proyecto" (click)="cancelProject()" class="p-button-danger p-button-outlined"></button>
+    </ng-container>
+
     <button *ngIf="isInvestor()" pButton icon="pi pi-user" label="Contactar" (click)="openContactDialog()" [disabled]="!project()"></button>
   </div>
 </p-toolbar>
@@ -95,7 +107,7 @@
           <span class="text-sm font-normal opacity-60">{{ documents().length }} documento(s)</span>
         </div>
         <!-- Zona de subida de archivos (solo para el dueño) -->
-        <p-fileUpload *ngIf="isOwner()"
+        <p-fileUpload *ngIf="isOwner() && project()?.status !== 'CANCELLED'"
                       name="file"
                       [url]="getUploadUrl()"
                       [multiple]="true"
@@ -153,10 +165,20 @@
     </div>
   </div>
   <ng-template #projectFunded>
-    <div class="inline-flex items-center gap-2 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg">
-      <i class="pi pi-check-circle"></i>
-      <span class="font-semibold">Este proyecto ya ha sido financiado y no acepta nuevos contratos.</span>
-    </div>
+    <!-- Mensaje para proyectos que SÍ fueron financiados -->
+    <ng-container *ngIf="project()?.status === 'IN_PROGRESS' || project()?.status === 'COMPLETED'">
+      <div class="inline-flex items-center gap-2 p-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg">
+        <i class="pi pi-check-circle"></i>
+        <span class="font-semibold">Este proyecto ya ha sido financiado y no acepta nuevos contratos.</span>
+      </div>
+    </ng-container>
+    <!-- Mensaje para proyectos que NO fueron financiados o fueron cancelados -->
+    <ng-container *ngIf="project()?.status === 'CANCELLED' || project()?.status === 'NOT_FUNDED'">
+      <div class="inline-flex items-center gap-2 p-3 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg">
+        <i class="pi pi-times-circle"></i>
+        <span class="font-semibold">Este proyecto ha sido cancelado y no acepta nuevos contratos.</span>
+      </div>
+    </ng-container>
   </ng-template>
 </div>
 
@@ -184,8 +206,8 @@
         <!-- Datos de la fila del contrato -->
          <td class="text-right">{{ row.idContract }}</td>
         <td>{{ row.textTitle }}</td>
-        <td>{{ row.amount | currency:row.currency:'symbol':'1.0-0' }}</td>
-        <td><p-tag [value]="getContractStatusLabel(row.status)" [ngStyle]="tagStyle(row.status)"></p-tag></td>
+        <td>{{ row.amount | currency:(row.currency ?? 'USD'):'symbol':'1.0-0' }}</td>
+        <td><p-tag [value]="getContractStatusLabel(row)" [ngStyle]="tagStyle(row.status)"></p-tag></td>
         <td>{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
         <td class="text-center">
           <!-- ==================================================================== -->
@@ -205,7 +227,7 @@
                     (click)="cancelContractByInvestor(row)">
             </button>
             <button pButton [text]="true" [rounded]="true" [size]="'small'"
-                    *ngIf="row.status === 'PARTIALLY_SIGNED'"
+                    *ngIf="row.status === 'PARTIALLY_SIGNED' && !row.investorSigned"
                     icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"
                     (click)="signContract(row)">
             </button>
@@ -223,16 +245,22 @@
                     icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"
                     (click)="reviewAndSignContract(row)">
             </button>
+            <!-- Botón para iniciar la devolución si el proyecto está cancelado y el contrato firmado -->
+            <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                    *ngIf="isOwner() && row.status === 'SIGNED' && project()?.status === 'CANCELLED'"
+                    icon="pi pi-undo" pTooltip="Iniciar Devolución" severity="warning"
+                    (click)="initiateRefundProcess(row)">
+            </button>
           </ng-container>
 
           <!-- Acciones para Contratos Firmados -->
-          <ng-container *ngIf="row.status === 'SIGNED'">
-            <!-- Botón para gestionar la inversión inicial -->
+          <!-- Acciones para Contratos que requieren gestión de inversión/devolución -->
+          <ng-container *ngIf="row.status === 'SIGNED' || row.status === 'PENDING_REFUND'">
             <button pButton type="button" label="Gestionar Inversión" icon="pi pi-dollar"
                     class="p-button-secondary p-button-outlined p-button-sm ml-2"
                     (click)="openTransactionModal(row)"></button>
-            <!-- Botón para que el estudiante cierre el contrato y genere la ganancia -->
-            <button *ngIf="isOwner() && row.investment?.status === 'RECEIVED'" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
+
+            <button *ngIf="isOwner() && row.investment?.status === 'RECEIVED' && project()?.status !== 'CANCELLED'" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
                     class="p-button-success p-button-outlined p-button-sm ml-2"
                     (click)="closeContract(row)"></button>
           </ng-container>
@@ -426,14 +454,20 @@
     </div>
 
     <!-- Ciclo de Vida de la Inversión -->
-    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mt-3">
-      <h3 class="font-semibold text-lg mb-3">Ciclo de Vida de la Inversión</h3>
-      <div *ngIf="contract.investment; else noInvestmentInfo">
+    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mt-3" *ngIf="contract.investment">
+      <!-- Flujo de Inversión Normal (No es devolución) -->
+      <ng-container *ngIf="contract.status !== 'PENDING_REFUND' && contract.status !== 'REFUNDED'">
+        <h3 class="font-semibold text-lg mb-3">Ciclo de Vida de la Inversión</h3>
         <p-steps [model]="investmentLifecycleSteps()" [readonly]="true" [activeIndex]="investmentLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
+      </ng-container>
+
+      <!-- Flujo de Devolución (cuando el proceso ya ha comenzado) -->
+      <ng-container *ngIf="contract.status === 'PENDING_REFUND' || contract.status === 'REFUNDED'">
+        <h3 class="font-semibold text-lg mb-3">Ciclo de Vida de la Devolución</h3>
+        <p-steps [model]="refundLifecycleSteps()" [readonly]="true" [activeIndex]="refundLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
+      </ng-container>
+      <div *ngIf="contract.investment; else noInvestmentInfo">
       </div>
-      <ng-template #noInvestmentInfo>
-        <div class="text-center opacity-60 p-4">No hay información de inversión disponible para este contrato.</div>
-      </ng-template>
     </div>
     <!-- Contenido principal del modal -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
@@ -443,20 +477,29 @@
       <div *ngIf="contract.investment as investment" class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg"
              [ngClass]="{
                'bg-blue-100 dark:bg-blue-900/30': investment.status === 'IN_PROGRESS',
-               'bg-yellow-100 dark:bg-yellow-900/30': investment.status === 'PENDING_CONFIRMATION',
-               'bg-green-100 dark:bg-green-900/30': investment.status === 'RECEIVED' || investment.status === 'COMPLETED',
-               'bg-red-100 dark:bg-red-900/30': investment.status === 'NOT_RECEIVED' || investment.status === 'CANCELLED'
-             }">
+               'bg-yellow-100 dark:bg-yellow-900/30': investment.status === 'PENDING_CONFIRMATION' || investment.status === 'PENDING_RETURN',
+               'bg-green-100 dark:bg-green-900/30': investment.status === 'RECEIVED' || investment.status === 'COMPLETED' || investment.status === 'RETURNED',
+               'bg-red-100 dark:bg-red-900/30': investment.status === 'NOT_RECEIVED' || investment.status === 'CANCELLED' || investment.status === 'REFUND_FAILED'
+             }"
+             [pTooltip]="getInvestmentStatusTooltip(investment)"
+             [class.border-orange-500]="investment.status === 'PENDING_RETURN'">
           <!-- Columna Izquierda: Información del Estado -->
           <div class="flex items-center gap-3">
             <i class="pi pi-info-circle text-xl"></i>
             <div>
-              <div class="font-bold text-lg">{{ getInvestmentStatusLabel(investment) }}</div>
+              <div class="font-bold text-lg">{{ getInvestmentStatusLabel(investment) }}</div>              
               <div class="text-sm opacity-80" *ngIf="investment.status === 'IN_PROGRESS'">El inversor debe notificar el envío de los fondos.</div>
-              <div class="text-sm opacity-80" *ngIf="investment.status === 'PENDING_CONFIRMATION'">Esperando que el dueño del proyecto confirme la recepción de los fondos.</div>
-              <div class="text-sm opacity-80" *ngIf="investment.status === 'RECEIVED' || investment.status === 'COMPLETED'">¡Inversión completada con éxito!</div>
+              <div class="text-sm opacity-80" *ngIf="investment.status === 'PENDING_CONFIRMATION' && project()?.status !== 'CANCELLED'">Esperando que el dueño del proyecto confirme la recepción de los fondos.</div>
+              <div class="text-sm opacity-80" *ngIf="(investment.status === 'RECEIVED' || investment.status === 'COMPLETED') && contract.status !== 'PENDING_REFUND' && contract.status !== 'REFUNDED'">¡Inversión completada con éxito!</div>
               <div class="text-sm opacity-80" *ngIf="investment.status === 'NOT_RECEIVED'">El estudiante marcó la inversión como no recibida.</div>
-              <div class="text-sm opacity-80 font-semibold text-red-600 dark:text-red-400" *ngIf="investment.status === 'NOT_RECEIVED' && (investment.remainingRetries ?? 0) <= 0">Se agotaron los intentos. La inversión y el contrato han sido cancelados.</div>
+              <div class="text-sm opacity-80 font-semibold text-red-600 dark:text-red-400" *ngIf="investment.status === 'NOT_RECEIVED' && (investment.retryCount ?? 0) >= 3">Se agotaron los intentos. La inversión y el contrato han sido cancelados.</div>
+              <div class="text-sm opacity-80" *ngIf="investment.status === 'PENDING_REFUND' || investment.status === 'REFUND_NOT_RECEIVED'">
+                El estudiante debe enviar los fondos y notificar la devolución.
+                <span *ngIf="investment.status === 'REFUND_NOT_RECEIVED'" class="font-bold text-yellow-700 dark:text-yellow-300"> (Intentos restantes: {{ 3 - (investment.retryCount ?? 0) }})</span>
+              </div>
+              <div class="text-sm opacity-80" *ngIf="investment.status === 'PENDING_RETURN'">Esperando que el inversor confirme la recepción de la devolución.</div>
+              <div class="text-sm opacity-80" *ngIf="investment.status === 'RETURNED'">¡Devolución completada con éxito!</div>
+              <div class="text-sm opacity-80 font-semibold text-red-600 dark:text-red-400" *ngIf="investment.status === 'REFUND_FAILED'">Se agotaron los intentos de devolución. Contacta a soporte.</div>
               <div class="text-sm opacity-80" *ngIf="investment.status === 'CANCELLED'">La transacción fue cancelada.</div>
             </div>
           </div>
@@ -469,15 +512,25 @@
             <button *ngIf="isInvestor() && investment.status === 'NOT_RECEIVED'" pButton label="Reintentar Envío" icon="pi pi-replay" severity="warning" (click)="retryInvestmentPayment(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
 
             <!-- Acciones para el Dueño del Proyecto -->
-            <div *ngIf="isOwner() && investment.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
+            <div *ngIf="isOwner() && investment.status === 'PENDING_CONFIRMATION' && contract.status !== 'PENDING_REFUND' && contract.status !== 'REFUNDED'" class="flex gap-2">
               <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmInvestmentReceipt(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
               <button pButton label="Marcar como No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markInvestmentAsNotReceived(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
+            </div>
+            <!-- === FLUJO DE DEVOLUCIÓN === -->
+            <!-- Estudiante: Notificar envío de la devolución -->
+            <button *ngIf="isOwner() && (investment.status === 'PENDING_REFUND' || investment.status === 'REFUND_NOT_RECEIVED')" pButton label="Notificar Envío de Devolución" icon="pi pi-send" severity="warning" (click)="confirmRefundSent(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction() || (investment.retryCount ?? 0) >= 3"></button>
+
+            <!-- Inversor: Confirmar o rechazar la recepción de la devolución -->
+            <div *ngIf="isInvestor() && investment.status === 'PENDING_RETURN'" class="flex gap-2">
+              <button pButton label="Confirmar Recepción de Devolución" icon="pi pi-check-circle" severity="success" (click)="confirmInvestmentReturnReceipt(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
+              <button pButton label="No He Recibido la Devolución" icon="pi pi-times-circle" severity="danger" (click)="markRefundAsNotReceived(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
             </div>
 
           </div>
         </div>
-      <div *ngIf="!contract.investment" class="text-center opacity-60 p-4">
-        No hay información de inversión disponible para este contrato.
+      <div *ngIf="!contract.investment" class="text-center p-4">
+        <!-- Botón para iniciar el proceso de devolución si el proyecto está cancelado y el contrato firmado -->
+        <div *ngIf="!(isOwner() && project()?.status === 'CANCELLED' && contract.status === 'SIGNED')" class="opacity-60">No hay información de inversión disponible para este contrato.</div>
       </div>
     </div>
   </ng-container>

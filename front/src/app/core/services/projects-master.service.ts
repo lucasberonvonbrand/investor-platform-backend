@@ -27,7 +27,7 @@ export interface IMyProject {
 
 export interface IInvestment {
   idInvestment: number;
-  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_RETURN' | 'RETURNED';
+  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_REFUND' | 'PENDING_RETURN' | 'RETURNED' | 'REFUND_FAILED' | 'REFUND_NOT_RECEIVED';
   amount: number;
   currency: string;
   createdAt: string;
@@ -56,7 +56,7 @@ export interface IContract {
   title?: string; // El título que viene del listado
   textTitle?: string; // El título que se envía al crear
   amount: number;
-  status: 'DRAFT' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'CANCELLED' | 'REFUNDED' | 'CLOSED' | 'PENDING_STUDENT_SIGNATURE';
+  status: 'DRAFT' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'CANCELLED' | 'PENDING_REFUND' | 'REFUNDED' | 'CLOSED' | 'PENDING_STUDENT_SIGNATURE' | 'REFUND_FAILED';
   currency?: 'USD' | 'ARS' | 'CNY' | 'EUR';
   profit1Year?: number;
   profit2Years?: number;
@@ -65,6 +65,8 @@ export interface IContract {
   endDate?: string | null;
   description?: string | null; // Cambiado de 'clauses' a 'description' para coincidir con la API
   investment?: IInvestment; // Añadido
+  investorSigned?: boolean; // NUEVO: para saber si el inversor firmó
+  studentSigned?: boolean;  // NUEVO: para saber si el estudiante firmó
   earnings?: IEarning[]; // Añadido
 }
 
@@ -169,12 +171,28 @@ export class ProjectsMasterService {
     return this.http.put<any>(`/api/projects/${id}`, payload).pipe(map(adaptProject));
   }
 
+  deleteProject(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/projects/${id}`);
+  }
+
+  completeProject(projectId: number, ownerId: number): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/complete/${projectId}?ownerId=${ownerId}`, {}).pipe(map(adaptProject));
+  }
+
+  cancelProject(projectId: number, ownerId: number): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/cancel/${projectId}?ownerId=${ownerId}`, {}).pipe(map(adaptProject));
+  }
+
   cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
     return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
   }
 
   cancelContractByStudent(contractId: number, studentId: number): Observable<IContract> {
     return this.http.put<IContract>(`/api/contracts/cancel-by-student/${contractId}`, { studentId });
+  }
+
+  refundContract(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/refund/${contractId}`, { studentId });
   }
 
   contactProjectOwner(projectId: number, data: ContactOwnerDTO): Observable<void> {
@@ -234,6 +252,23 @@ export class ProjectsMasterService {
 
   markInvestmentAsNotReceived(investmentId: number, studentId: number): Observable<IInvestment> {
     return this.http.put<IInvestment>(`/api/investments/mark-not-received/${investmentId}`, { studentId });
+  }
+
+  notifyInvestmentReturnSent(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/notify-return-sent/${investmentId}`, { studentId });
+  }
+
+  confirmInvestmentReturnReceipt(investmentId: number, investorId: number): Observable<IInvestment> {
+    // Corregido para apuntar al endpoint correcto del backend
+    return this.http.put<IInvestment>(`/api/investments/confirm-refund/${investmentId}`, { investorId });
+  }
+
+  confirmRefundSentByStudent(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/confirm-refund-sent/${investmentId}`, { studentId });
+  }
+
+  markRefundAsNotReceived(investmentId: number, investorId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/mark-refund-not-received/${investmentId}`, { investorId });
   }
 
   confirmEarningPaymentSent(earningId: number, studentId: number): Observable<IEarning> {

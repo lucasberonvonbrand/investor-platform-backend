@@ -426,6 +426,13 @@ public class InvestmentService implements IInvestmentService {
         inv.setStatus(InvestmentStatus.RETURNED);
         inv.setConfirmedAt(LocalDate.now());
 
+        // Actualizar el contrato asociado
+        Contract contract = inv.getContract();
+        if (contract != null) {
+            contract.setStatus(ContractStatus.REFUNDED);
+            contractService.saveContract(contract);
+        }
+
         Project project = inv.getProject();
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
@@ -457,6 +464,123 @@ public class InvestmentService implements IInvestmentService {
         mailService.sendEmail(toStudent, subject, body);
 
         return mapper.toResponse(savedInvestment);
+    }
+
+    @Override
+    public ResponseInvestmentDTO confirmRefundSentByStudent(Long investmentId, RequestContractActionByStudentDTO dto) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Student student = studentRepo.findById(dto.getStudentId())
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+
+        if (!inv.getProject().getOwner().getId().equals(student.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para gestionar esta inversión. Solo el dueño del proyecto puede hacerlo.");
+        }
+
+        if (inv.getStatus() == InvestmentStatus.REFUND_FAILED) {
+            throw new BusinessException("Se ha alcanzado el número máximo de reintentos para la devolución de esta inversión. Por favor, contacta a soporte.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.PENDING_REFUND && inv.getStatus() != InvestmentStatus.REFUND_NOT_RECEIVED) {
+            throw new ContractCannotBeModifiedException("Esta acción solo es válida si la devolución está pendiente o ha sido marcada como no recibida.");
+        }
+
+        if (inv.getStatus() == InvestmentStatus.REFUND_NOT_RECEIVED) {
+            inv.setRetryCount(inv.getRetryCount() + 1);
+        }
+
+        inv.setStatus(InvestmentStatus.PENDING_RETURN);
+        investmentRepo.save(inv);
+
+        String toInvestor = inv.getGeneratedBy().getEmail();
+        String subject = String.format("Devolución enviada para el proyecto '%s'", inv.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nTe informamos que el estudiante %s %s ha confirmado el envío de la devolución de tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+            "El estado de tu inversión ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
+            "Acción Requerida: Una vez que hayas verificado la recepción de los fondos en tu cuenta, por favor, ingresa a la plataforma y confirma la recepción de la devolución para cerrar el ciclo por completo.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            inv.getGeneratedBy().getUsername(),
+            student.getFirstName(),
+            student.getLastName(),
+            inv.getAmount(),
+            inv.getCurrency(),
+            inv.getProject().getName()
+        );
+        mailService.sendEmail(toInvestor, subject, body);
+
+        return mapper.toResponse(inv);
+    }
+
+    @Override
+    public ResponseInvestmentDTO markRefundAsNotReceived(Long investmentId, RequestInvestmentActionByInvestorDTO dto) {
+        Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
+                .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
+
+        Investor investor = investorRepo.findById(dto.getInvestorId())
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+
+        if (!inv.getGeneratedBy().getId().equals(investor.getId())) {
+            throw new UnauthorizedOperationException("No tienes permiso para realizar esta acción.");
+        }
+
+        if (inv.getStatus() != InvestmentStatus.PENDING_RETURN) {
+            throw new UpdateException("Solo puedes marcar como no recibida una devolución que está pendiente de tu confirmación.");
+        }
+
+        if (inv.getRetryCount() >= MAX_RETRIES) {
+            inv.setStatus(InvestmentStatus.REFUND_FAILED);
+            Contract contract = inv.getContract();
+            if (contract != null) {
+                contract.setStatus(ContractStatus.REFUND_FAILED);
+                contractService.saveContract(contract);
+            }
+            // Notificar a ambas partes sobre el fallo definitivo
+            String toInvestor = inv.getGeneratedBy().getEmail();
+            String subjectInvestor = "Fallo en la devolución de tu inversión";
+            String bodyInvestor = String.format(
+                "Hola %s,\n\nEl proceso de devolución para tu inversión en el proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
+                "Por favor, contacta a soporte para resolver esta situación.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                inv.getGeneratedBy().getUsername(),
+                inv.getProject().getName()
+            );
+            mailService.sendEmail(toInvestor, subjectInvestor, bodyInvestor);
+
+            String toStudent = inv.getProject().getOwner().getEmail();
+            String subjectStudent = "Fallo en la devolución de una inversión";
+            String bodyStudent = String.format(
+                "Hola %s,\n\nEl proceso de devolución de la inversión de %s para tu proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
+                "Por favor, contacta a soporte para resolver esta situación.\n\n" +
+                "Saludos,\nEl equipo de ProyPlus",
+                inv.getProject().getOwner().getFirstName(),
+                inv.getGeneratedBy().getUsername(),
+                inv.getProject().getName()
+            );
+            mailService.sendEmail(toStudent, subjectStudent, bodyStudent);
+
+            return mapper.toResponse(investmentRepo.save(inv));
+        }
+
+        inv.setStatus(InvestmentStatus.REFUND_NOT_RECEIVED);
+        investmentRepo.save(inv);
+
+        String toStudent = inv.getProject().getOwner().getEmail();
+        String subject = String.format("Alerta: Devolución no recibida para el proyecto '%s'", inv.getProject().getName());
+        String body = String.format(
+            "Hola %s,\n\nEl inversor %s ha reportado que NO ha recibido la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
+            "Por favor, revisa la transferencia y vuelve a marcarla como enviada en la plataforma. Tienes %d intento(s) más antes de que el proceso falle permanentemente.\n\n" +
+            "Saludos,\nEl equipo de ProyPlus",
+            inv.getProject().getOwner().getFirstName(),
+            inv.getGeneratedBy().getUsername(),
+            inv.getAmount(),
+            inv.getCurrency(),
+            inv.getProject().getName(),
+            MAX_RETRIES - inv.getRetryCount()
+        );
+        mailService.sendEmail(toStudent, subject, body);
+
+        return mapper.toResponse(inv);
     }
 
     @Override

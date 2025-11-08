@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { ActivatedRoute, RouterLink } from '@angular/router'; // RouterLink ya estaba en una de las versiones
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
 import { ToolbarModule } from 'primeng/toolbar';
@@ -66,6 +66,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private docSvc = inject(ProjectDocumentsService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmationService);
+  private router = inject(Router);
 
   @ViewChild('contractContent') contractContentRef!: ElementRef<HTMLDivElement>;
 
@@ -111,7 +112,10 @@ export class ProyectosMaestroComponent implements OnInit {
     const contractInView = this.viewingOnly() || this.reviewingToSign || this.editing;
     return contractInView?.status || 'PENDING_STUDENT_SIGNATURE';
   });
-  currentContractStatusLabel = computed(() => this.getContractStatusLabel(this.currentContractStatus()));
+  currentContractStatusLabel = computed(() => {
+    const contractInView = this.viewingOnly() || this.reviewingToSign || this.editing;
+    return this.getContractStatusLabel(contractInView);
+  });
 
   reviewingToSign: IContract | null = null; // Nuevo estado para cuando un estudiante revisa un contrato para firmar
   currencyOptions = [
@@ -214,6 +218,30 @@ export class ProyectosMaestroComponent implements OnInit {
       case 'RECEIVED':
       case 'COMPLETED': return 2; // Treat COMPLETED as RECEIVED for this flow
       default: return -1;
+    }
+  });
+
+  // ===== Ciclo de Vida de la Devolución (para el diálogo de Transacciones) =====
+  refundLifecycleSteps = computed<MenuItem[]>(() => {
+    return [
+      { label: 'Devolución Pendiente', id: 'PENDING_RETURN' }, // Estudiante debe enviar
+      { label: 'Envío Notificado', id: 'PENDING_CONFIRMATION' }, // Inversor debe confirmar
+      { label: 'Fondos Devueltos', id: 'RETURNED' }, // Proceso completado
+    ];
+  });
+
+  refundLifecycleActiveIndex = computed<number>(() => {
+    const contract = this.selectedContractForTransactions();
+    if (!contract?.investment) return -1;
+
+    const investmentStatus = contract.investment.status;
+    switch (investmentStatus) {
+      case 'PENDING_REFUND':
+      case 'REFUND_NOT_RECEIVED': return 0; // Estudiante debe enviar/reenviar
+      case 'PENDING_RETURN': return 1; // Estudiante envió, inversor debe confirmar
+      case 'RETURNED': return 2;
+      case 'REFUND_FAILED': return 0; // Si falla, vuelve al primer paso visualmente
+      default: return -1; // No se muestra el ciclo de vida si no está en uno de estos estados
     }
   });
 
@@ -410,6 +438,82 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  deleteProject(): void {
+    const p = this.project();
+    if (!p || !this.isOwner()) return;
+
+    // Validamos el estado, la financiación y los contratos antes de mostrar el diálogo de confirmación
+    if (p.status !== 'PENDING_FUNDING' || (p.fundingRaised ?? 0) > 0 || this.contracts().length > 0) {
+      this.toast.add({ severity: 'warn', summary: 'Acción no permitida', detail: 'Solo se pueden eliminar proyectos que no hayan recibido financiación y no tengan contratos asociados.' });
+      return;
+    }
+
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres eliminar el proyecto "${p.title}"? Esta acción es irreversible.`,
+      header: 'Confirmar Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.svc.deleteProject(p.id).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El proyecto ha sido eliminado.' });
+            this.router.navigate(['/misproyectos']); // Navegar a la lista de proyectos
+          },
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo eliminar el proyecto.' })
+        });
+      }
+    });
+  }
+
+  completeProject(): void {
+    const p = this.project();
+    const user = this.currentUser;
+    if (!p || !user || !this.isOwner()) return;
+
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres marcar el proyecto "${p.title}" como completado? Esta acción es irreversible.`,
+      header: 'Confirmar Finalización',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, marcar como completado',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-success',
+      accept: () => {
+        this.svc.completeProject(p.id, user.id).subscribe({
+          next: (updatedProject) => {
+            this.project.set(updatedProject);
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'El proyecto ha sido marcado como completado.' });
+          },
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo completar el proyecto.' })
+        });
+      }
+    });
+  }
+
+  cancelProject(): void {
+    const p = this.project();
+    const user = this.currentUser;
+    if (!p || !user || !this.isOwner()) return;
+
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres cancelar el proyecto "${p.title}"? Esta acción es irreversible y podría implicar la devolución de fondos a los inversores.`,
+      header: 'Confirmar Cancelación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, cancelar proyecto',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.svc.cancelProject(p.id, user.id).subscribe({
+          next: (updatedProject) => {
+            this.project.set(updatedProject);
+            this.toast.add({ severity: 'warn', summary: 'Proyecto Cancelado', detail: 'El proyecto ha sido cancelado.' });
+          },
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo cancelar el proyecto.' })
+        });
+      }
+    });
+  }
 
   // ===== Crear / Editar contrato (Acordeón) =====
   openCreateContract(): void {
@@ -821,6 +925,29 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  /**
+   * El estudiante cancela un contrato que está firmado pero cuyo proyecto fue cancelado.
+   */
+  cancelContractByStudent(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres cancelar el contrato "${contract.textTitle}"? El siguiente paso será iniciar la devolución de los fondos.`,
+      header: 'Confirmar Cancelación de Contrato',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, cancelar contrato',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        const studentId = this.currentUser?.id;
+        if (!studentId) return;
+
+        this.svc.cancelContractByStudent(contract.idContract, studentId).subscribe({
+          next: (updated: IContract) => this.updateContractInList(updated),
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo cancelar el contrato.' })
+        });
+      }
+    });
+  }
+
   cancelContractByInvestor(contract: IContract): void {
     this.confirmSvc.confirm({
       message: `¿Estás seguro de que quieres retirar la oferta del contrato "${contract.textTitle}"?`,
@@ -866,6 +993,38 @@ export class ProyectosMaestroComponent implements OnInit {
             this.cancelEdit(); // Cierra el panel
           },
           error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo firmar el contrato.' })
+        });
+      }
+    });
+  }
+
+  /**
+   * El estudiante inicia el proceso de devolución de un contrato.
+   */
+  initiateRefundProcess(contract: IContract): void {
+    this.confirmSvc.confirm({
+      message: `¿Estás seguro de que quieres iniciar el proceso de devolución para el contrato "${contract.textTitle}"? Esto preparará la inversión para el reembolso.`,
+      header: 'Iniciar Devolución de Fondos',
+      icon: 'pi pi-undo',
+      acceptLabel: 'Sí, iniciar devolución',
+      rejectLabel: 'No',
+      accept: () => {
+        const studentId = this.currentUser?.id;
+        if (!studentId) return;
+
+        this.svc.refundContract(contract.idContract, studentId).subscribe({
+          next: (updated: IContract) => {
+            this.updateContractInList(updated);
+            // Si el modal de transacciones está abierto, actualizamos también su contenido
+            if (this.selectedContractForTransactions()) {
+              this.selectedContractForTransactions.update(c => {
+                // Reemplazamos el contrato completo para asegurar que la inversión se actualice
+                return c?.idContract === updated.idContract ? updated : c;
+              });
+            }
+            this.toast.add({ severity: 'info', summary: 'Proceso Iniciado', detail: 'Ahora puedes gestionar la devolución desde el panel de pagos.' });
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo iniciar la devolución.' })
         });
       }
     });
@@ -979,7 +1138,16 @@ export class ProyectosMaestroComponent implements OnInit {
     // Actualiza la lista principal de contratos
     this.contracts.update(list => list.map(c => {
       if (c.investment?.idInvestment === investmentId) {
-        const newContractStatus = updatedInvestment.status === 'CANCELLED' ? 'CANCELLED' : c.status;
+        let newContractStatus = c.status;
+        // Si la inversión se canceló, el contrato también.
+        if (updatedInvestment.status === 'CANCELLED') {
+          newContractStatus = 'CANCELLED';
+        }
+        // Si la inversión fue devuelta, el contrato pasa a REFUNDED.
+        if (updatedInvestment.status === 'RETURNED') {
+          newContractStatus = 'REFUNDED';
+        }
+
         return { ...c, investment: updatedInvestment, status: newContractStatus };
       }
       return c;
@@ -1138,6 +1306,124 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  confirmRefundSent(investmentId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Confirmas que has enviado la devolución de los fondos a la cuenta del inversor? Esta acción notificará al inversor para que confirme la recepción.',
+      header: 'Confirmar Envío de Devolución',
+      icon: 'pi pi-send',
+      acceptLabel: 'Sí, he enviado el dinero',
+      rejectLabel: 'No',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.confirmRefundSentByStudent(investmentId, studentId).subscribe({
+          next: (updated: IInvestment) => {
+            this.updateInvestmentInContract(investmentId, updated);
+            this.toast.add({ severity: 'success', summary: 'Notificado', detail: 'El inversor ha sido notificado.' });
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar el envío.' }),
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
+    });
+  }
+
+  markRefundAsNotReceived(investmentId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres marcar esta devolución como NO recibida? Esto notificará al estudiante para que revise el envío.',
+      header: 'Confirmar No Recepción',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, no lo he recibido',
+      rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.markRefundAsNotReceived(investmentId, investorId).subscribe({
+          next: (updated: IInvestment) => {
+            this.updateInvestmentInContract(investmentId, updated);
+            this.toast.add({
+              severity: 'warn',
+              summary: 'Registrado',
+              detail: 'Se ha notificado al estudiante que no has recibido la devolución.'
+            });
+          },
+          error: (err: any) => this.toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err.error?.message || 'No se pudo realizar la acción.'
+          }),
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
+    });
+  }
+
+  notifyInvestmentReturnSent(investmentId: number): void {
+    const studentId = this.currentUser?.id;
+    if (!studentId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres notificar la devolución de esta inversión? Asegúrate de haber realizado la transferencia antes de continuar.',
+      header: 'Confirmar Envío de Devolución',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, he devuelto los fondos',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.notifyInvestmentReturnSent(investmentId, studentId).subscribe({
+          next: (updatedInvestment: IInvestment) => {
+            this.toast.add({
+              severity: 'success',
+              summary: 'Notificación Enviada',
+              detail: 'Se ha notificado al inversor sobre la devolución de los fondos.'
+            });
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+          },
+          error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo notificar la devolución.' }),
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
+    });
+  }
+
+  confirmInvestmentReturnReceipt(investmentId: number): void {
+    const investorId = this.currentUser?.id;
+    if (!investorId) return;
+
+    this.confirmSvc.confirm({
+      message: '¿Estás seguro de que quieres confirmar la recepción de la devolución de tu inversión? Esta acción es irreversible.',
+      header: 'Confirmar Recepción de Devolución',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, he recibido la devolución',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.isProcessingTransaction.set(true);
+        this.svc.confirmInvestmentReturnReceipt(investmentId, investorId).subscribe({
+          next: (updatedInvestment) => {
+            this.toast.add({
+              severity: 'success',
+              summary: 'Recepción Confirmada',
+              detail: 'Has confirmado la recepción de la devolución.'
+            });
+            this.updateInvestmentInContract(investmentId, updatedInvestment);
+          },
+          error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' }),
+          complete: () => this.isProcessingTransaction.set(false)
+        });
+      }
+    });
+  }
+
+  getInvestmentStatusTooltip(investment: IInvestment | null | undefined): string {
+    if (!investment?.status) return '';
+    return `Estado de la inversión: ${this.getInvestmentStatusLabel(investment)}`;
+  }
+
   private updateEarningInContract(earningId: number, updatedEarning: IEarning): void {
     this.contracts.update(list => list.map(c => {
       // Buscamos el índice de la ganancia dentro del array de ganancias del contrato
@@ -1230,6 +1516,14 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
+  /**
+   * El estudiante reintenta el envío de una ganancia que fue marcada como no recibida.
+   * Llama al mismo método que el envío inicial, ya que el backend maneja la lógica de reintento.
+   */
+  retryEarningPayment(earningId: number): void {
+    this.confirmEarningPaymentSent(earningId);
+  }
+
   earningLifecycleActiveIndex(earning: IEarning): number {
     if (!earning) return -1;
 
@@ -1262,6 +1556,7 @@ export class ProyectosMaestroComponent implements OnInit {
         return isInvestor ? 'Pendiente de Envío' : 'Pendiente de Recepción';
 
       case 'PENDING_CONFIRMATION':
+        // Este estado es solo para el flujo de inversión inicial
         return isInvestor ? 'Envío Notificado (Esperando Confirmación)' : 'Confirmación Pendiente';
 
       case 'RECEIVED':
@@ -1279,11 +1574,18 @@ export class ProyectosMaestroComponent implements OnInit {
       case 'COMPLETED':
         return 'Inversión Completada';
 
-      case 'PENDING_RETURN':
+      case 'PENDING_REFUND':
         return 'Devolución Pendiente';
+
+      case 'PENDING_RETURN':
+        // En este estado, el estudiante ya envió, se espera confirmación del inversor.
+        return 'Devolución Notificada';
 
       case 'RETURNED':
         return 'Fondos Devueltos';
+      
+      case 'REFUND_FAILED':
+        return 'Fallo en la Devolución';
 
       default:
         return 'Desconocido';
@@ -1323,15 +1625,25 @@ export class ProyectosMaestroComponent implements OnInit {
     }
   }
 
-  getContractStatusLabel(status: IContract['status'] | string | null): string {
+  getContractStatusLabel(contract: IContract | null): string {
+    if (!contract) return '—';
+    const status = contract.status;
+
     switch (status) {
       case 'DRAFT': return 'Borrador (En Negociación)';
-      case 'PARTIALLY_SIGNED': return 'Aprobado (Pend. Firma)';
+      case 'PARTIALLY_SIGNED':
+        if (contract.investorSigned && !contract.studentSigned) return 'Esperando Firma del Estudiante';
+        if (!contract.investorSigned && contract.studentSigned) return 'Esperando Firma del Inversor';
+        if (!contract.investorSigned && !contract.studentSigned) return 'Pendiente de Ambas Firmas';
+        return 'Aprobado (Pend. Firma)'; // Fallback
+
       case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente de Firma';
       case 'SIGNED': return 'Firmado';
       case 'CANCELLED': return 'Cancelado';
+      case 'PENDING_REFUND': return 'Pendiente de Devolución';
       case 'REFUNDED': return 'Devuelto';
       case 'CLOSED': return 'Cerrado';
+      case 'REFUND_FAILED': return 'Fallo en Devolución';
       default: return status || '—';
     }
   }
