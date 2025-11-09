@@ -19,7 +19,7 @@
     <!-- Metadatos del Proyecto -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
       <div>
-        <div class="font-semibold text-gray-500 dark:text-gray-400">Líder del Proyecto</div>
+        <div class="font-semibold text-gray-500 dark:text-gray-400">Líder del proyecto</div>
         <div class="text-gray-800 dark:text-gray-100">{{ project()?.owner ?? 'No asignado' }}</div>
       </div>
       <div>
@@ -40,11 +40,11 @@
         <div><p-tag [value]="uni" [ngStyle]="tagStyle(uni, 2)"></p-tag></div>
       </div>
       <div *ngIf="project()?.startDate as date">
-        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de Inicio</div>
+        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de inicio</div>
         <div class="text-gray-800 dark:text-gray-100">{{ date | date:'dd/MM/yyyy' }}</div>
       </div>
       <div *ngIf="project()?.estimatedEndDate as date">
-        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha Fin Estimada</div>
+        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha fin estimada</div>
         <div class="text-gray-800 dark:text-gray-100">{{ date | date:'dd/MM/yyyy' }}</div>
       </div>
       <div class="md:col-span-2" *ngIf="project()?.fundingGoal != null || project()?.fundingRaised != null">
@@ -76,22 +76,20 @@
 
       <p-card>
         <div class="font-semibold mb-2 flex justify-between items-center">
-          <span>Documentación del Proyecto</span>
+          <span>Documentación del proyecto</span>
           <span class="text-sm font-normal opacity-60">{{ documents().length }} documento(s)</span>
         </div>
         <!-- Zona de subida de archivos (solo para el dueño) -->
         <p-fileUpload *ngIf="isOwner()"
-                      name="file"
-                      [url]="getUploadUrl()"
-                      [multiple]="true"
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png"
-                      [maxFileSize]="10000000"
-                      (onUpload)="onUpload($event)"
-                      (onError)="onUploadError($event)"
-                      [auto]="true"
-                      chooseLabel="Subir Documentos"
-                      [showCancelButton]="false"
-                      [showUploadButton]="false">
+                  #fileUploader              name="file"
+                  [multiple]="true"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png,.txt"
+                  [maxFileSize]="10000000"
+                  (onSelect)="onUpload($event)"    (onError)="onUploadError($event)"
+                  [customUpload]="true" 
+                  chooseLabel="Subir Documentos"
+                  [showCancelButton]="false"
+                  [showUploadButton]="false">
           <ng-template pTemplate="content">
             <!-- Se puede dejar vacío para que la subida sea automática -->
           </ng-template>
@@ -159,7 +157,7 @@
         <th>Título</th>
         <th>Monto</th>
         <th>Estado</th>
-        <th>Fecha de Creación</th>
+        <th>Fecha de creación</th>
         <th style="width:200px; text-align:center">Acciones</th>
       </tr>
     </ng-template>
@@ -248,49 +246,49 @@
 <p-confirmDialog></p-confirmDialog>
 
 <!-- ===== DIÁLOGO PARA CREAR/EDITAR CONTRATO ===== -->
-<p-dialog [header]="isReadonly() ? 'Detalles del Contrato' : (editing ? 'Editar Contrato' : 'Crear Nuevo Contrato')"
+<p-dialog [header]="isReadonly() ? 'Detalles del contrato' : (editing ? 'Editar contrato' : 'Crear Nuevo Contrato')"
           [visible]="contractModalVisible()" (visibleChange)="contractModalVisible.set($event)" [modal]="true" 
           [style]="{ width: '90vw', 'max-width': '1200px' }" [draggable]="false" (onHide)="cancelEdit()">
   <form [formGroup]="contractForm" class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 pt-4">
     <div class="md:col-span-2">
-      <label class="text-sm font-medium flex items-center gap-2">
+      <label class="font-medium block mb-1">
         <span>Título</span>
-        <i class="pi pi-info-circle cursor-pointer" pTooltip="Dale un nombre único a tu oferta de contrato para identificarla fácilmente."></i>
+        <i class="pi pi-info-circle text-gray-500 ml-1 cursor-pointer" pTooltip="Dale un nombre único a tu oferta de contrato para identificarla fácilmente."></i>
       </label>
-      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" />
+      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" class="w-full"/>
       <small class="text-red-500" *ngIf="contractForm.controls.title.invalid && contractForm.controls.title.touched">
         Título es requerido
       </small>
     </div>
     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
       <div class="md:col-span-2">
-        <label class="text-sm font-medium flex items-center gap-2">
+        <label class="font-medium block mb-1">
           <span>Monto</span>
-          <i class="pi pi-info-circle cursor-pointer" pTooltip="La cantidad de dinero que ofreces invertir en el proyecto."></i>
+          <i class="pi pi-info-circle text-gray-500 ml-1 cursor-pointer" pTooltip="La cantidad de dinero que ofreces invertir en el proyecto."></i>
         </label>
-        <p-inputNumber formControlName="amount" [min]="0" [useGrouping]="true" [minFractionDigits]="0" [maxFractionDigits]="2" [readonly]="isReadonly()"></p-inputNumber>
+        <p-inputNumber formControlName="amount" [min]="0" [useGrouping]="true" [minFractionDigits]="0" [maxFractionDigits]="2" [readonly]="isReadonly()" class="w-full"></p-inputNumber>
         <small class="text-red-500" *ngIf="contractForm.controls.amount.invalid && contractForm.controls.amount.touched">
           Monto inválido
         </small>
       </div>
       <div class="md:col-span-2">
-        <label class="text-sm font-medium flex items-center gap-2">
+        <label class="font-medium block mb-1">
           <span>Moneda</span>
-          <i class="pi pi-info-circle cursor-pointer" pTooltip="La divisa en la que se realizará la inversión. El sistema la convertirá a USD para calcular el progreso de financiación."></i>
+          <i class="pi pi-info-circle text-gray-500 ml-1 cursor-pointer" pTooltip="La divisa en la que se realizará la inversión. El sistema la convertirá a USD para calcular el progreso de financiación."></i>
         </label>
         <!-- MODO EDICIÓN: Mostrar el select nativo -->
-        <select *ngIf="!isReadonly()" formControlName="currency" class="w-full p-3 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600">
+        <select *ngIf="!isReadonly()" formControlName="currency" class="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600">
           <option *ngFor="let c of currencyOptions" [value]="c.value">{{ c.label }} ({{c.value}})</option>
         </select>
         <!-- MODO SOLO LECTURA: Mostrar el valor como texto simple -->
-        <div *ngIf="isReadonly()" class="w-full p-3 border border-gray-300 rounded-md bg-gray-100 dark:bg-gray-700/50 dark:border-gray-600">
+        <div *ngIf="isReadonly()" class="w-full p-2 border border-gray-300 rounded-md bg-gray-100 dark:bg-gray-700/50 dark:border-gray-600">
           {{ contractForm.controls.currency.value }}
         </div>
       </div>
       <div class="md:col-span-1 flex flex-col justify-end">
-        <label class="text-sm font-medium flex items-center gap-2">
+        <label class="font-medium block mb-1">
           <span>Estado</span>
-          <i class="pi pi-info-circle cursor-pointer" pTooltip="El estado actual del contrato. Comienza como 'Pendiente Firma' y cambia a 'Firmado' cuando el estudiante lo acepta."></i>
+          <i class="pi pi-info-circle text-gray-500 ml-1 cursor-pointer" pTooltip="El estado actual del contrato. Comienza como 'Pendiente Firma' y cambia a 'Firmado' cuando el estudiante lo acepta."></i>
         </label>
         <p-tag [value]="currentContractStatusLabel()"
                [ngStyle]="tagStyle(currentContractStatus())"></p-tag>
@@ -343,7 +341,7 @@
     <div class="md:col-span-2">
       <div class="flex justify-between items-center mb-1">
         <label class="text-sm font-medium flex items-center gap-2">
-          <span>Cláusulas y Detalles del Contrato</span>
+          <span>Cláusulas y detalles del contrato</span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="Aquí puedes detallar los términos, condiciones, obligaciones y cualquier otra cláusula relevante para el acuerdo."></i>
         </label>
         <button *ngIf="!isReadonly()" pButton type="button" icon="pi pi-book" label="Plantillas" (click)="menu.toggle($event)" class="p-button-text p-button-sm"></button>
@@ -351,7 +349,7 @@
       </div>
       <!-- Ciclo de Vida del Contrato -->
       <div class="md:col-span-2 mt-4" *ngIf="viewingOnly() || reviewingToSign || editing">
-        <h4 class="font-semibold text-lg mb-2">Ciclo de Vida del Contrato</h4>
+        <h4 class="font-semibold text-lg mb-2">Ciclo de vida del contrato</h4>
         <p-steps [model]="contractLifecycleSteps()" [readonly]="true" [activeIndex]="contractLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
       </div>
 
@@ -377,12 +375,12 @@
     <button *ngIf="isReadonly()" pButton label="Descargar en PDF" icon="pi pi-download" severity="info" (click)="downloadContractAsPDF()"></button>
 
     <!-- Botón para Guardar (cuando NO es solo lectura) -->
-    <button *ngIf="!isReadonly()" pButton label="Guardar Contrato" icon="pi pi-check" severity="warning" (click)="saveContract()" [disabled]="contractForm.invalid"></button>
+    <button *ngIf="!isReadonly()" pButton label="Guardar contrato" icon="pi pi-check" severity="warning" (click)="saveContract()" [disabled]="contractForm.invalid"></button>
     <!-- Botones para Firmar o Rechazar (Estudiante revisando) -->
     <button *ngIf="reviewingToSign" pButton label="Firmar y Aceptar Contrato" icon="pi pi-file-edit" severity="warning" (click)="saveContract()"></button>
     <!-- Botón para Aprobar y Bloquear (cuando se edita un DRAFT) -->
     <button *ngIf="editing && editing.status === 'DRAFT'" pButton
-            label="Aprobar y Bloquear Contrato" icon="pi pi-check-circle" severity="success"
+            label="Aprobar y bloquear contrato" icon="pi pi-check-circle" severity="success"
             (click)="agreeToContractTerms(editing)">
     </button>
     <button *ngIf="reviewingToSign" pButton label="Rechazar Contrato" icon="pi pi-times-circle" severity="danger" (click)="rejectContract(reviewingToSign)"></button>
@@ -390,7 +388,7 @@
 </p-dialog>
 
 <!-- ===== DIÁLOGO PARA GESTIÓN DE TRANSACCIONES ===== -->
-<p-dialog header="Gestión de Pagos del Contrato" [visible]="transactionModalVisible()"
+<p-dialog header="Gestión de pagos del contrato" [visible]="transactionModalVisible()"
           (visibleChange)="transactionModalVisible.set($event)" [modal]="true"
           [style]="{ width: '90vw', 'max-width': '1200px' }" [draggable]="false"
           (onHide)="selectedContractForTransactions.set(null)">
@@ -405,14 +403,14 @@
         </div>
       </div>
       <div class="text-right">
-        <div class="text-sm opacity-70">Monto Acordado</div>
+        <div class="text-sm opacity-70">Monto acordado</div>
         <div class="font-bold text-xl">{{ contract.amount | currency:contract.currency:'symbol':'1.0-0' }}</div>
       </div>
     </div>
 
     <!-- Ciclo de Vida de la Inversión -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mt-3">
-      <h3 class="font-semibold text-lg mb-3">Ciclo de Vida de la Inversión</h3>
+      <h3 class="font-semibold text-lg mb-3">Ciclo de vida de la inversión</h3>
       <div *ngIf="contract.investment; else noInvestmentInfo">
         <p-steps [model]="investmentLifecycleSteps()" [readonly]="true" [activeIndex]="investmentLifecycleActiveIndex()" styleClass="contract-steps"></p-steps>
       </div>
@@ -422,7 +420,7 @@
     </div>
     <!-- Contenido principal del modal -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-      <h3 class="font-semibold text-lg mb-3">Gestión de la Inversión</h3>
+      <h3 class="font-semibold text-lg mb-3">Gestión de la inversión</h3>
 
       <!-- Panel de estado y acciones -->
       <div *ngIf="contract.investment as investment" class="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-lg"
@@ -446,11 +444,11 @@
           <!-- Columna Derecha: Botones de Acción -->
           <div>
             <!-- Acción para el Inversor -->
-            <button *ngIf="isInvestor() && investment.status === 'IN_PROGRESS'" pButton label="Notificar Envío de Fondos" icon="pi pi-send" (click)="confirmInvestmentPaymentSent(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
+            <button *ngIf="isInvestor() && investment.status === 'IN_PROGRESS'" pButton label="Notificar envío de fondos" icon="pi pi-send" (click)="confirmInvestmentPaymentSent(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
             <!-- Acciones para el Dueño del Proyecto -->
             <div *ngIf="isOwner() && investment.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
-              <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmInvestmentReceipt(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
-              <button pButton label="Marcar como No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markInvestmentAsNotReceived(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
+              <button pButton label="Confirmar recepción" icon="pi pi-check-circle" severity="success" (click)="confirmInvestmentReceipt(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
+              <button pButton label="Marcar como no recibido" icon="pi pi-times-circle" severity="danger" (click)="markInvestmentAsNotReceived(investment.idInvestment)" [loading]="isProcessingTransaction()" [disabled]="isProcessingTransaction()"></button>
             </div>
           </div>
         </div>
@@ -462,7 +460,7 @@
 </p-dialog>
 
 <!-- ===== DIÁLOGO PARA GESTIÓN DE GANANCIAS (EARNINGS) ===== -->
-<p-dialog header="Gestión de Pago de Ganancias" [visible]="earningModalVisible()"
+<p-dialog header="Gestión de pago de ganancias" [visible]="earningModalVisible()"
           (visibleChange)="earningModalVisible.set($event)" [modal]="true"
           [style]="{ width: '90vw', 'max-width': '1200px' }" [draggable]="false"
           (onHide)="selectedContractForEarnings.set(null)">
@@ -477,14 +475,14 @@
         </div>
       </div>
       <div class="text-right" *ngIf="contract.earnings && contract.earnings.length > 0">
-        <div class="text-sm opacity-70">Monto Total a Devolver</div>
+        <div class="text-sm opacity-70">Monto total a devolver</div>
         <div class="font-bold text-xl">{{ contract.earnings[0].amount | currency:contract.earnings[0].currency:'symbol':'1.0-0' }}</div>
       </div>
     </div>
 
     <!-- Contenido principal del modal -->
     <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
-      <h3 class="font-semibold text-lg mb-3">Gestión de la Devolución de Ganancia</h3>
+      <h3 class="font-semibold text-lg mb-3">Gestión de la devolución de ganancia</h3>
       <div class="mb-4 text-sm opacity-80">
         Aquí puedes ver el estado de cada pago de ganancia asociado a este contrato.
       </div>
@@ -537,8 +535,8 @@
                         tooltipPosition="top"></button>
                 <!-- Acciones para el Inversor -->
                 <div *ngIf="isInvestor() && earning.status === 'PENDING_CONFIRMATION'" class="flex gap-2">
-                  <button pButton label="Confirmar Recepción" icon="pi pi-check-circle" severity="success" (click)="confirmEarningReceipt(earning.idEarning)" [loading]="isProcessingEarning()"></button>
-                  <button pButton label="No Recibido" icon="pi pi-times-circle" severity="danger" (click)="markEarningAsNotReceived(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                  <button pButton label="Confirmar recepción" icon="pi pi-check-circle" severity="success" (click)="confirmEarningReceipt(earning.idEarning)" [loading]="isProcessingEarning()"></button>
+                  <button pButton label="No recibido" icon="pi pi-times-circle" severity="danger" (click)="markEarningAsNotReceived(earning.idEarning)" [loading]="isProcessingEarning()"></button>
                 </div>
               </div>
             </div>
@@ -559,7 +557,7 @@
 </p-dialog>
 
 <!-- DIÁLOGO DE CONTACTO -->
-<p-dialog header="Contactar al Líder del Proyecto" [(visible)]="contactDialogVisible" [modal]="true" [style]="{ width: '50vw', 'min-width': '350px' }">
+<p-dialog header="Contactar al líder del proyecto" [(visible)]="contactDialogVisible" [modal]="true" [style]="{ width: '50vw', 'min-width': '350px' }">
   <form [formGroup]="contactForm" (ngSubmit)="sendContactEmail()">
     <div class="flex flex-col gap-4 pt-2">
       <div>

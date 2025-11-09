@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
 import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
+import { Router } from '@angular/router';
 
 
 type Student = { id: number; name: string; email?: string };
@@ -65,6 +66,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private docSvc = inject(ProjectDocumentsService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmationService);
+  private router = inject(Router);
 
   @ViewChild('contractContent') contractContentRef!: ElementRef<HTMLDivElement>;
 
@@ -176,8 +178,8 @@ export class ProyectosMaestroComponent implements OnInit {
   // ===== Ciclo de Vida de la Inversión (para el diálogo de Transacciones) =====
   investmentLifecycleSteps = computed<MenuItem[]>(() => {
     return [
-      { label: 'Pendiente Envío', id: 'IN_PROGRESS' }, // Inversor debe enviar
-      { label: 'Envío Notificado', id: 'PENDING_CONFIRMATION' }, // Inversor notificó, estudiante debe confirmar
+      { label: 'Pendiente envío', id: 'IN_PROGRESS' }, // Inversor debe enviar
+      { label: 'Envío notificado', id: 'PENDING_CONFIRMATION' }, // Inversor notificó, estudiante debe confirmar
       { label: 'Recibido', id: 'RECEIVED' }, // Estudiante confirmó
     ];
   });
@@ -246,31 +248,24 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
-  private loadDocuments(): void {
-    this.docSvc.getDocumentsByProject(this.projectId()).subscribe({
-      next: (docs) => this.documents.set(docs || []),
-      error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
-    });
+  loadDocuments() {
+    const id = this.projectId();
+    if (id) {
+      this.docSvc.getDocumentsByProject(id).subscribe({
+        next: (docs) => {
+        console.log('JSON de documentos recibido:', docs); 
+        this.documents.set(docs); 
+      },
+        error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
+      });
+    }
   }
 
   // --- Métodos para Documentos ---
 
-  getUploadUrl(): string {
-    return this.docSvc.getUploadUrl();
-  }
-
-  onUpload(event: { files: File[] }): void {
-    this.toast.add({ severity: 'success', summary: 'Éxito', detail: `${event.files.length} documento(s) subido(s).` });
-    this.loadDocuments(); // Recargar la lista de documentos
-  }
-
-  onUploadError(event: any): void {
-    const detail = event.error?.message || 'Ocurrió un error al subir el archivo.';
-    this.toast.add({ severity: 'error', summary: 'Error de Subida', detail });
-  }
 
   downloadDocument(doc: IProjectDocument): void {
-    window.open(this.docSvc.getDownloadUrl(doc.id), '_blank');
+    window.open(this.docSvc.getDownloadUrl(doc.idProjectDocument), '_blank');
   }
 
   deleteDocument(doc: IProjectDocument): void {
@@ -282,10 +277,10 @@ export class ProyectosMaestroComponent implements OnInit {
       rejectLabel: 'No',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.docSvc.deleteDocument(doc.id).subscribe({
+        this.docSvc.deleteDocument(doc.idProjectDocument).subscribe({
           next: () => {
             this.toast.add({ severity: 'info', summary: 'Eliminado', detail: 'El documento ha sido eliminado.' });
-            this.documents.update(docs => docs.filter(d => d.id !== doc.id));
+            this.documents.update(docs => docs.filter(d => d.idProjectDocument !== doc.idProjectDocument));
           },
           error: (err) => {
             this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo eliminar el documento.' });
@@ -294,6 +289,40 @@ export class ProyectosMaestroComponent implements OnInit {
       }
     });
   }
+
+  onUpload(event: { files: File[] }): void {
+    const file = event.files?.[0] as File;
+    const projectId = this.projectId();
+
+    if (!file || !projectId) {
+      this.toast.add({ severity: 'error', summary: 'Error de Subida', detail: 'Falta el archivo o el ID del proyecto.' });
+      return;
+    }
+
+    this.docSvc.uploadDocument(file, projectId).subscribe({
+      next: (newDoc) => {
+        this.toast.add({ 
+          severity: 'success', 
+          summary: 'Documentos', 
+          detail: `Documento '${newDoc.fileName}' subido con éxito.` 
+        });
+        this.loadDocuments(); 
+      },
+      error: (error) => {
+        const detail = error.error?.message || 'Error desconocido al intentar subir el archivo.';
+        this.toast.add({ 
+          severity: 'error', 
+          summary: 'Error de Subida', 
+          detail: detail 
+        });
+        console.error('Error al subir documento:', error);
+      }
+    });
+  }
+
+  
+
+
 
   // ===== Crear / Editar contrato (Acordeón) =====
   openCreateContract(): void {
@@ -892,7 +921,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres notificar el envío de los fondos? Esta acción no se puede deshacer.',
-      header: 'Confirmar Envío de Inversión',
+      header: 'Confirmar envío de inversión',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, he enviado los fondos',
       rejectLabel: 'No, cancelar',
@@ -902,7 +931,7 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedInvestment: IInvestment) => {
             this.toast.add({
               severity: 'success',
-              summary: 'Notificación Enviada',
+              summary: 'Notificación enviada',
               detail: 'Se ha notificado al estudiante sobre el envío de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
@@ -924,7 +953,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres confirmar la recepción de los fondos? Esta acción es irreversible.',
-      header: 'Confirmar Recepción de Fondos',
+      header: 'Confirmar recepción de fondos',
       icon: 'pi pi-check-circle',
       acceptLabel: 'Sí, he recibido los fondos',
       rejectLabel: 'No, cancelar',
@@ -934,10 +963,14 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedInvestment: IInvestment) => {
             this.toast.add({
               severity: 'success',
-              summary: 'Recepción Confirmada',
+              summary: 'Recepción confirmada',
               detail: 'Se ha confirmado la recepción del dinero y se ha notificado al inversor.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
+            const currentUrl = this.router.url;
+            this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+                this.router.navigate([currentUrl]);
+            });
           },
           error: (err: any) => {
             this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo confirmar la recepción.' });
@@ -954,7 +987,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres marcar esta inversión como NO recibida? Esto cancelará el contrato asociado.',
-      header: 'Confirmar No Recepción',
+      header: 'Confirmar no recepción',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, no la recibí',
       rejectLabel: 'Cancelar',
@@ -965,7 +998,7 @@ export class ProyectosMaestroComponent implements OnInit {
           next: (updatedInvestment: IInvestment) => {
             this.toast.add({
               severity: 'warn',
-              summary: 'Operación Registrada',
+              summary: 'Operación registrada',
               detail: 'Se ha notificado al inversor sobre la no recepción de los fondos.'
             });
             this.updateInvestmentInContract(investmentId, updatedInvestment);
@@ -1001,7 +1034,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres notificar el envío de la ganancia al inversor? Esta acción es irreversible.',
-      header: 'Confirmar Envío de Ganancia',
+      header: 'Confirmar envío de ganancia',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, he enviado la ganancia',
       rejectLabel: 'No, cancelar',
@@ -1026,7 +1059,7 @@ export class ProyectosMaestroComponent implements OnInit {
     
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres confirmar la recepción de la ganancia? Esta acción es irreversible.',
-      header: 'Confirmar Recepción de Ganancia',
+      header: 'Confirmar recepción de ganancia',
       icon: 'pi pi-check-circle',
       acceptLabel: 'Sí, he recibido la ganancia',
       rejectLabel: 'No, cancelar',
@@ -1051,7 +1084,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: '¿Estás seguro de que quieres marcar esta ganancia como NO recibida? Esto notificará al estudiante.',
-      header: 'Confirmar No Recepción',
+      header: 'Confirmar no recepción',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, no la recibí',
       rejectLabel: 'Cancelar',
@@ -1077,7 +1110,7 @@ export class ProyectosMaestroComponent implements OnInit {
 
     this.confirmSvc.confirm({
       message: 'Esto reiniciará el proceso de pago para esta ganancia, permitiéndote notificar el envío nuevamente. ¿Estás seguro?',
-      header: 'Confirmar Reintento de Envío',
+      header: 'Confirmar reintento de envío',
       icon: 'pi pi-replay',
       acceptLabel: 'Sí, reintentar',
       rejectLabel: 'No, cancelar',
@@ -1124,22 +1157,22 @@ export class ProyectosMaestroComponent implements OnInit {
 
     switch (status) {
       case 'IN_PROGRESS':
-        return isInvestor ? 'Pendiente de Envío' : 'Pendiente de Recepción';
+        return isInvestor ? 'Pendiente de envío' : 'Pendiente de recepción';
 
       case 'PENDING_CONFIRMATION':
-        return isInvestor ? 'Envío Notificado (Esperando Confirmación)' : 'Confirmación Pendiente';
+        return isInvestor ? 'Envío notificado (esperando confirmación)' : 'Confirmación pendiente';
 
       case 'RECEIVED':
-        return isInvestor ? 'Inversión Recibida por el Estudiante' : 'Fondos Recibidos';
+        return isInvestor ? 'Inversión recibida por el estudiante' : 'Fondos recibidos';
 
       case 'NOT_RECEIVED':
-        return isInvestor ? 'Rechazado por el Estudiante' : 'Marcado como No Recibido';
+        return isInvestor ? 'Rechazado por el estudiante' : 'Marcado como no recibido';
 
       case 'CANCELLED':
-        return 'Inversión Cancelada';
+        return 'Inversión cancelada';
 
       case 'COMPLETED':
-        return 'Inversión Completada';
+        return 'Inversión completada';
 
       default:
         return 'Desconocido';
@@ -1150,13 +1183,13 @@ export class ProyectosMaestroComponent implements OnInit {
     const isInvestor = this.isInvestor();
     switch (status) {
       case 'IN_PROGRESS':
-        return isInvestor ? 'Pendiente de Envío por el Estudiante' : 'Pendiente de Envío al Inversor';
+        return isInvestor ? 'Pendiente de envío por el estudiante' : 'Pendiente de envío al inversor';
       case 'PENDING_CONFIRMATION':
-        return isInvestor ? 'Confirmación de Recepción Pendiente' : 'Envío Notificado';
+        return isInvestor ? 'Confirmación de recepción pendiente' : 'Envío notificado';
       case 'RECEIVED':
-        return 'Ganancia Recibida';
+        return 'Ganancia recibida';
       case 'NOT_RECEIVED':
-        return 'Marcado como No Recibido';
+        return 'Marcado como no recibido';
       default:
         return 'Desconocido';
     }
@@ -1164,9 +1197,9 @@ export class ProyectosMaestroComponent implements OnInit {
 
   getContractStatusLabel(status: IContract['status'] | string | null): string {
     switch (status) {
-      case 'DRAFT': return 'Borrador (En Negociación)';
+      case 'DRAFT': return 'Borrador (en negociación)';
       case 'PARTIALLY_SIGNED': return 'Aprobado (Pend. Firma)';
-      case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente de Firma';
+      case 'PENDING_STUDENT_SIGNATURE': return 'Pendiente de firma';
       case 'SIGNED': return 'Firmado';
       case 'CANCELLED': return 'Cancelado';
       case 'REFUNDED': return 'Devuelto';
@@ -1178,6 +1211,6 @@ export class ProyectosMaestroComponent implements OnInit {
   tagStyle(text: string, i = 0) {
     const palette = ['#e0f2fe', '#dcfce7', '#fee2e2', '#fef9c3', '#ede9fe'];
     const idx = Math.abs((text || '').length + i) % palette.length;
-    return { background: palette[idx], color: '#111827', borderRadius: '9999px', padding: '0 8px', 'font-weight': 600 };
+    return { background: palette[idx], color: '#111827', borderRadius: '9999px', padding: '0 30px', margin: '0 0 25px 0','font-weight': 600 };
   }
 }

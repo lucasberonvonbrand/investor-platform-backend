@@ -4,7 +4,7 @@
   <div class="p-toolbar-group-left flex items-center gap-2">
     <button pButton icon="pi pi-arrow-left" (click)="goBack()" [text]="true" [rounded]="true" [size]="'small'"></button>
     <span class="p-input-icon-left">
-      <i class="pi pi-search"></i>
+      <i class="pi pi-search mr-2"></i>
       <input pInputText type="text" placeholder="Buscar proyectos..."
             [(ngModel)]="q" (input)="applyFilters()" />
     </span>

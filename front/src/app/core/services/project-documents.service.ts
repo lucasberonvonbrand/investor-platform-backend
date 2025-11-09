@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 export interface IProjectDocument {
-  id: number;
+  idProjectDocument: number;
   fileName: string;
   fileType: string;
   uploadDate: string; // O Date, dependiendo de lo que devuelva el backend
@@ -15,6 +15,14 @@ export interface IProjectDocument {
 export class ProjectDocumentsService {
   private http = inject(HttpClient);
   private apiUrl = `/api/project-documents`;
+
+
+  uploadDocument(file: File, projectId: number): Observable<IProjectDocument> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('projectId', projectId.toString()); 
+    return this.http.post<IProjectDocument>(`${this.apiUrl}/upload`, formData);
+  }
 
   /**
    * Obtiene la lista de documentos para un proyecto específico.
