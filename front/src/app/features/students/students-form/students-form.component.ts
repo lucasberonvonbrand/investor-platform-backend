@@ -4,6 +4,8 @@ import { NgIf, NgFor } from '@angular/common';
 import { StudentService } from '../../../core/services/students.service';
 import { DegreeStatus, University, Province, Student } from '../../../models/student.model';
 import { Router, RouterLink } from '@angular/router';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,7 +16,8 @@ import { KeyFilterModule } from 'primeng/keyfilter';
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule, ToastModule],
+  providers: [MessageService],
   templateUrl: './students-form.component.html',
   styleUrls: ['./students-form.component.scss']
 })
@@ -22,6 +25,7 @@ export class StudentFormComponent {
   private service = inject(StudentService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private toast = inject(MessageService);
 
   /** Si es true, el componente se comporta como un modal (no redirige, emite evento) */
   @Input() isModal = false;
@@ -126,8 +130,22 @@ export class StudentFormComponent {
           if (msg.includes('students.username')) this.usernameError.set('Username ya está en uso');
           if (msg.includes('students.email')) this.emailError.set('Email ya está en uso');
           if (msg.includes('students.dni')) this.dniError.set('DNI ya está en uso');
+
+          this.toast.add({
+              severity: 'warn',
+              summary: 'Datos duplicados',
+              detail: 'Algunos datos ya están registrados en el sistema.',
+              life: 4000
+          });
+
         } else {
-          this.successMessage.set('Error al registrar usuario.');
+          console.error('Error creando estudiante:', err);
+          this.toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Ocurrió un error al registrar el estudiante. Intente nuevamente.',
+            life: 4000
+          });
         }
       }
     });
