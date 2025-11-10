@@ -86,14 +86,19 @@ export class ProyectosMaestroComponent implements OnInit {
     return (p?.students as unknown as Student[]) ?? [];
   }
 
-  fundingProgress = computed(() => {
+  // Porcentaje de financiación, puede superar el 100%
+  fundingPercentage = computed(() => {
     const p = this.project();
     if (!p || !p.fundingGoal || p.fundingGoal <= 0 || !p.fundingRaised) {
       return 0;
     }
-    // Calcula el porcentaje y lo limita a un máximo de 100
-    return Math.min(100, (p.fundingRaised / p.fundingGoal) * 100);
+    return (p.fundingRaised / p.fundingGoal) * 100;
   });
+
+  // Porcentaje para la barra de progreso base (limitado a 100%)
+  fundingProgress = computed(() => Math.min(100, this.fundingPercentage()));
+  // Porcentaje de sobrefinanciación (lo que excede el 100%)
+  overfundingProgress = computed(() => Math.max(0, this.fundingPercentage() - 100));
 
   contracts = signal<IContract[]>([]);
   loading = signal<boolean>(false);
@@ -264,6 +269,15 @@ export class ProyectosMaestroComponent implements OnInit {
 
   goBack(): void {
     window.history.back();
+  }
+
+  /**
+   * Navega a la página de análisis de riesgo para el proyecto actual.
+   */
+  goToRiskAnalysis(): void {
+    const projectId = this.project()?.id;
+    if (!projectId) return;
+    this.router.navigate(['/analysis/risk', projectId]);
   }
 
   private loadProject(): void {

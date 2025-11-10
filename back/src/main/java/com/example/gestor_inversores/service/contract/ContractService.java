@@ -70,7 +70,8 @@ public class ContractService implements IContractService {
             throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
         }
 
-        validateOfferAmount(project, dto.getAmount(), dto.getCurrency());
+        // Se elimina la validación estricta aquí para permitir ofertas que puedan sobrefinanciar.
+        // validateOfferAmount(project, dto.getAmount(), dto.getCurrency());
 
         BigDecimal profit1 = dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit1Year();
         BigDecimal profit2 = dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit2Years();
@@ -121,7 +122,8 @@ public class ContractService implements IContractService {
             throw new ContractCannotBeModifiedException("Solo se pueden modificar contratos en estado de borrador (DRAFT).");
 
         if (dto.getAmount() != null) {
-            validateOfferAmount(contract.getProject(), dto.getAmount(), dto.getCurrency() != null ? dto.getCurrency() : contract.getCurrency());
+            // Se elimina la validación estricta para permitir la sobrefinanciación.
+            // validateOfferAmount(contract.getProject(), dto.getAmount(), dto.getCurrency() != null ? dto.getCurrency() : contract.getCurrency());
         }
 
         if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
@@ -617,22 +619,25 @@ public class ContractService implements IContractService {
         contractRepository.save(contract);
     }
 
-    private void validateOfferAmount(Project project, BigDecimal amount, Currency currency) {
-        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
-        BigDecimal offerAmountInUSD = amount;
-
-        if (currency != Currency.USD) {
-            if (currencyConversionService == null) {
-                throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
-            }
-            offerAmountInUSD = currencyConversionService.getConversionRate(currency.name(), "USD")
-                    .getRate().multiply(amount);
-        }
-
-        if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
-            throw new BusinessException(String.format(
-                    "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
-                    offerAmountInUSD, remainingBudget));
-        }
-    }
+    // El método validateOfferAmount ya no es necesario en este servicio, se puede eliminar o dejar comentado.
+    /*
+     private void validateOfferAmount(Project project, BigDecimal amount, Currency currency) {
+         BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
+         BigDecimal offerAmountInUSD = amount;
+ 
+         if (currency != Currency.USD) {
+             if (currencyConversionService == null) {
+                 throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
+             }
+             offerAmountInUSD = currencyConversionService.getConversionRate(currency.name(), "USD")
+                     .getRate().multiply(amount);
+         }
+ 
+         if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
+             throw new BusinessException(String.format(
+                     "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
+                     offerAmountInUSD, remainingBudget));
+         }
+     }
+    */
 }
