@@ -77,6 +77,13 @@ export interface ContactOwnerDTO {
   message: string;
 }
 
+export interface IConversionResult {
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
+}
+
 export interface IStudentDetail {
   id: number;
   username: string;
@@ -335,4 +342,26 @@ export class ProjectsMasterService {
     this._chat$.next([...this._chat$.value, created]);
     return of(created).pipe(delay(120));
   }
+
+  /**
+   * Convierte un monto de una moneda a otra usando la API.
+   */
+  convertCurrency(from: string, to: string, amount: number): Observable<IConversionResult> {
+    return this.http.get<IConversionResult>(`/api/currency/convert`, {
+      params: { from, to, amount: amount.toString() }
+    });
+  }
+
+  /**
+   * Verifica si ya existe un contrato con el mismo nombre para un proyecto.
+   */
+  checkContractExists(projectId: number, contractName: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`/api/contracts/exists`, {
+      params: {
+        projectId: projectId.toString(),
+        contractName: contractName
+      }
+    });
+  }
+
 }

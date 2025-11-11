@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Subscription, of, timer } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -25,6 +26,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { debounceTime, distinctUntilChanged, filter, switchMap, tap, map } from 'rxjs/operators';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { ProjectDocumentsService, IProjectDocument } from '../../../core/services/project-documents.service';
@@ -33,7 +35,7 @@ import type { ContactOwnerDTO, IInvestment, IEarning, IStudentDetail } from '../
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
-import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
+import { IMyProject, IContract } from '../../../core/services/projects-master.service';
 
 
 type Student = { id: number; name: string; email?: string };
@@ -130,7 +132,11 @@ export class ProyectosMaestroComponent implements OnInit {
     { label: 'Yuan Chino', value: 'CNY' }
   ];
   contractForm = this.fb.nonNullable.group({
-    title: ['', Validators.required],
+    title: ['', {
+      validators: [Validators.required],
+      asyncValidators: [this.contractNameValidator()],
+      updateOn: 'blur' // Opcional: validar solo cuando el usuario sale del campo
+    }],
     amount: [0, [Validators.required, Validators.min(0)]],
     currency: ['USD', Validators.required],
     profit1Year: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -140,6 +146,11 @@ export class ProyectosMaestroComponent implements OnInit {
   });
   
   contractTemplates: MenuItem[] = [];
+  
+  // ===== Lógica de Conversión de Moneda =====
+  convertedAmountUSD = signal<number | null>(null);
+  isConvertingCurrency = signal<boolean>(false);
+  private currencyConversionSub: Subscription | null = null;
 
   // ===== Formulario de Contacto =====
   contactDialogVisible = signal(false);
@@ -265,6 +276,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.loadContracts();
     this.loadDocuments();
     this.setupContractTemplates();
+    this.setupCurrencyConversionListener();
   }
 
   goBack(): void {
@@ -584,6 +596,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.reviewingToSign = null;
     this.viewingOnly.set(null);
     this.isReadonly.set(false); // Salir del modo solo lectura
+    this.convertedAmountUSD.set(null); // Limpiar el monto convertido al cerrar
   }
 
   saveContract(): void {
@@ -1666,5 +1679,54 @@ export class ProyectosMaestroComponent implements OnInit {
     const palette = ['#e0f2fe', '#dcfce7', '#fee2e2', '#fef9c3', '#ede9fe'];
     const idx = Math.abs((text || '').length + i) % palette.length;
     return { background: palette[idx], color: '#111827', borderRadius: '9999px', padding: '0 8px', 'font-weight': 600 };
+  }
+
+  private setupCurrencyConversionListener(): void {
+    // Cancelamos cualquier suscripción anterior para evitar fugas de memoria.
+    if (this.currencyConversionSub) {
+      this.currencyConversionSub.unsubscribe();
+    }
+
+    this.currencyConversionSub = this.contractForm.valueChanges.pipe(
+      debounceTime(400), // Espera 400ms después de que el usuario deja de escribir
+      // Solo reacciona si el monto o la moneda han cambiado
+      distinctUntilChanged((prev, curr) => prev.amount === curr.amount && prev.currency === curr.currency),
+      filter(() => !this.isReadonly()), // No ejecutar en modo solo lectura
+      tap(() => this.isConvertingCurrency.set(true)), // Inicia la carga
+      switchMap(formValue => {
+        const { amount, currency } = formValue;
+        if (currency && currency !== 'USD' && amount != null && amount > 0) {
+          return this.svc.convertCurrency(currency, 'USD', amount);
+        }
+        this.convertedAmountUSD.set(null); // Si no se necesita conversión, limpia el monto
+        return of(null); // Si no se necesita conversión, emite null
+      })
+    ).subscribe(result => {
+      this.convertedAmountUSD.set(result?.convertedAmount ?? null);
+      this.isConvertingCurrency.set(false); // Finaliza la carga
+    });
+  }
+
+  /**
+   * Validador asíncrono para el nombre del contrato.
+   * Verifica en tiempo real si el nombre ya está en uso para el proyecto actual.
+   */
+  private contractNameValidator() {
+    return (control: import('@angular/forms').AbstractControl) => {
+      const title = control.value;
+      if (!title) {
+        return of(null); // Si no hay título, no hay error
+      }
+
+      // Si estamos editando y el título no ha cambiado, no es necesario validar
+      if (this.editing && title.trim().toLowerCase() === this.editing.textTitle?.trim().toLowerCase()) {
+        return of(null);
+      }
+
+      return timer(500).pipe( // Espera 500ms antes de hacer la llamada
+        switchMap(() => this.svc.checkContractExists(this.projectId(), title)),
+        map(response => (response.exists ? { contractNameExists: true } : null))
+      );
+    };
   }
 }

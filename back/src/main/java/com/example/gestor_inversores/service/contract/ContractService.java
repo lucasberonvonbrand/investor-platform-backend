@@ -21,7 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ContractService implements IContractService {
@@ -613,6 +615,12 @@ public class ContractService implements IContractService {
         return contracts.stream()
                 .map(contractMapper::toResponseDTO)
                 .toList();
+    }
+
+    @Override
+    public Map<String, Boolean> checkContractExists(Long projectId, String contractName) {
+        boolean exists = contractRepository.existsByProjectIdProjectAndTextTitleIgnoreCase(projectId, contractName);
+        return Collections.singletonMap("exists", exists);
     }
 
     public void saveContract(Contract contract) {

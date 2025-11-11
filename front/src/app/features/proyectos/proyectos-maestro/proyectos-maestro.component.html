@@ -308,9 +308,19 @@
         <span>Título</span>
         <i class="pi pi-info-circle cursor-pointer" pTooltip="Dale un nombre único a tu oferta de contrato para identificarla fácilmente."></i>
       </label>
-      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" />
-      <small class="text-red-500" *ngIf="contractForm.controls.title.invalid && contractForm.controls.title.touched">
-        Título es requerido
+      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" [ngClass]="{'ng-invalid ng-dirty': contractForm.controls.title.invalid && contractForm.controls.title.touched}" />
+      
+      <!-- Contenedor de errores para el campo 'title' -->
+      <div *ngIf="contractForm.controls.title.invalid && (contractForm.controls.title.touched || contractForm.controls.title.dirty)">
+        <small class="text-red-500" *ngIf="contractForm.controls.title.hasError('required')">
+          El título es requerido.
+        </small>
+        <small class="text-red-500" *ngIf="contractForm.controls.title.hasError('contractNameExists')">
+          Ya existe un contrato con este nombre en el proyecto.
+        </small>
+      </div>
+      <small class="text-red-500" *ngIf="contractForm.controls.title.pending">
+        <i class="pi pi-spin pi-spinner" style="font-size: 0.8rem"></i> Verificando nombre...
       </small>
     </div>
     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
@@ -322,6 +332,17 @@
         <p-inputNumber formControlName="amount" [min]="0" [useGrouping]="true" [minFractionDigits]="0" [maxFractionDigits]="2" [readonly]="isReadonly()"></p-inputNumber>
         <small class="text-red-500" *ngIf="contractForm.controls.amount.invalid && contractForm.controls.amount.touched">
           Monto inválido
+        </small>
+        <!-- NUEVO: Mostrar el monto convertido a USD -->
+        <small *ngIf="contractForm.value.currency !== 'USD' && contractForm.value.amount" class="block text-right opacity-70 mt-1">
+          Equivalente a:
+          <span *ngIf="!isConvertingCurrency(); else loadingConversion">
+            <strong>{{ convertedAmountUSD() | currency:'USD':'':'1.2-2' }} USD</strong>
+          </span>
+          <ng-template #loadingConversion>
+            <i class="pi pi-spin pi-spinner" style="font-size: 0.8rem"></i>
+            <span class="opacity-70">Calculando...</span>
+          </ng-template>
         </small>
       </div>
       <div class="md:col-span-2">
