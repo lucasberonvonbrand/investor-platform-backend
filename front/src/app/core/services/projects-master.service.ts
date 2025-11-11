@@ -46,7 +46,10 @@ export interface IEarning {
   createdAt: string;
   status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'NOT_RECEIVED';
   retriesLeft?: number; // Intentos restantes para el reenvío
-  // ... otras propiedades que pueda tener una ganancia
+  // Propiedades adicionales para más detalle
+  profitRate?: number;
+  baseAmount?: number;
+  profitAmount?: number;
 }
 
 export interface IContract {

@@ -1,12 +1,5 @@
-<!-- Modal de error -->
-<app-auth-error-modal
-  [open]="!!serverError()"
-  [title]="'Error al iniciar la sesión'"
-  [message]="messageFor(serverError()!)"
-  (close)="serverError.set(null)">
-</app-auth-error-modal>
-
 <div class="min-h-screen bg-animated-gradient flex items-center justify-center p-4 relative overflow-hidden">
+  <p-toast></p-toast> <!-- Componente para mostrar las notificaciones -->
   <!-- Burbujas animadas -->
   <div class="absolute inset-0 pointer-events-none">
     <div class="absolute top-10 left-20 w-16 h-16 rounded-full bg-slate-600/10 backdrop-blur-sm floating" style="animation-delay: 0s;"></div>

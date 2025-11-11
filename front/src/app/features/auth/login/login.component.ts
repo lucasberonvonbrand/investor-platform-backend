@@ -3,21 +3,24 @@ import { CommonModule } from "@angular/common";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { Subscription } from "rxjs";
+import { MessageService } from "primeng/api";
+import { ToastModule } from "primeng/toast";
 import { AuthService } from "./auth.service";
 import type { AuthError } from "../shared/auth-errors";
-import { AuthErrorModalComponent } from "../shared/auth-error-modal.component";
 
 @Component({
   standalone: true,
   selector: "app-login",
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AuthErrorModalComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, ToastModule],
   templateUrl: "./login.component.html",
-  styleUrls: ['./login.component.scss']
+  styleUrls: ['./login.component.scss'],
+  providers: [MessageService] // Añadir MessageService a los providers
 })
 export class LoginComponent implements OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private auth = inject(AuthService);
+  private messageService = inject(MessageService); // Inyectar MessageService
 
   @ViewChild("fileInput") fileInput!: ElementRef<HTMLInputElement>;
 
@@ -27,7 +30,6 @@ export class LoginComponent implements OnDestroy {
   });
 
   loading = signal(false);
-  serverError = signal<AuthError | null>(null);
   masked = signal(true);
 
   // imagen (opcional)
@@ -36,24 +38,7 @@ export class LoginComponent implements OnDestroy {
 
   private subs = new Subscription();
 
-  constructor() {
-    // limpio el modal al editar el formulario
-    this.subs.add(
-      this.form.valueChanges.subscribe(() => {
-        if (this.serverError()) this.serverError.set(null);
-      })
-    );
-  }
-
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  // ========= helpers de mensaje para el modal =========
-  messageFor(err: AuthError): string {
-    if (!err) return "";
-    const base = err.title?.endsWith(".") ? err.title.slice(0, -1) : err.title;
-    const det = err.detail ?? "";
-    return det && det !== err.title ? `${base}. — ${det}` : base;
-  }
 
   // ========= Imagen =========
   openFilePicker() { this.fileInput?.nativeElement.click(); }
@@ -92,7 +77,6 @@ export class LoginComponent implements OnDestroy {
   onSubmit() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.loading.set(true);
-    this.serverError.set(null);
 
     const { username, password } = this.form.getRawValue();
 
@@ -111,8 +95,26 @@ export class LoginComponent implements OnDestroy {
         }
       },
       error: (err) => {
-        this.serverError.set(err);
         this.loading.set(false);
+        
+        // Lógica mejorada para mensajes de error amigables
+        let errorMessage = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.';
+
+        // CORRECCIÓN: Primero verificamos el mensaje de cuenta desactivada, ya que también puede venir con status 401.
+        if (err.detail?.includes('desactivada') || err.message?.includes('desactivada')) {
+          errorMessage = 'Tu cuenta se encuentra inactiva. Contacta a soporte.';
+        } else if (err.status === 401 || err.title?.includes('BadCredentialsException')) {
+          errorMessage = 'El usuario o la contraseña son incorrectos.';
+        } else if (err.detail?.includes('no fue encontrado') || err.message?.includes('no fue encontrado')) {
+          errorMessage = 'El usuario o la contraseña son incorrectos.'; // Mismo mensaje que credenciales inválidas por seguridad
+        }
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error de Inicio de Sesión',
+          detail: errorMessage,
+          life: 5000 // El mensaje dura 5 segundos
+        });
       },
       complete: () => this.loading.set(false),
     });

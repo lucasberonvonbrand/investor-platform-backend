@@ -35,13 +35,22 @@ export class InvestmentDetailComponent implements OnInit {
   investment = signal<IInvestedProject | null>(null);
   loading = signal<boolean>(true);
 
-  fundingProgress = computed(() => {
+  // Porcentaje de financiación total (puede superar el 100%)
+  fundingPercentage = computed(() => {
     const p = this.investment()?.project;
     if (!p || !p.fundingGoal || p.fundingGoal <= 0 || !p.fundingRaised) {
       return 0;
     }
-    return Math.min(100, (p.fundingRaised / p.fundingGoal) * 100);
+    return (p.fundingRaised / p.fundingGoal) * 100;
   });
+
+  // Porcentaje para la barra de progreso base (limitado a 100%)
+  fundingProgress = computed(() => {
+    return Math.min(100, this.fundingPercentage());
+  });
+
+  // Porcentaje de sobrefinanciación (lo que excede el 100%)
+  overfundingProgress = computed(() => Math.max(0, this.fundingPercentage() - 100));
 
   projectionChartData = computed(() => {
     const inv = this.investment();
@@ -62,7 +71,10 @@ export class InvestmentDetailComponent implements OnInit {
       datasets: [
         {
           label: 'Ganancia Proyectada',
-          data: projections.map(p => inv.amount * (p.rate! / 100)),
+          // CORRECCIÓN: El backend ya devuelve la tasa como una fracción (ej: 0.1 para 10%).
+          // No es necesario dividir por 100 de nuevo.
+          // El error anterior era `inv.amount * (p.rate! / 100)`, lo que causaba un cálculo incorrecto.
+          data: projections.map(p => inv.amount * p.rate!),
           fill: false,
           borderColor: documentStyle.getPropertyValue('--p-primary-500'),
           backgroundColor: documentStyle.getPropertyValue('--p-primary-500'),
@@ -131,8 +143,8 @@ export class InvestmentDetailComponent implements OnInit {
       case 'IN_PROGRESS': return 'En Progreso';
       case 'PENDING_CONFIRMATION': return 'Pendiente de Confirmación';
       case 'RECEIVED': return 'Recibida por el Estudiante';
-      case 'COMPLETED': return 'Completada';
-      case 'NOT_RECEIVED': return 'No Recibida';
+      case 'COMPLETED': return 'Inversión Completada';
+      case 'NOT_RECEIVED': return 'No Recibida por el Estudiante';
       case 'CANCELLED': return 'Cancelada';
       case 'PENDING_RETURN': return 'Devolución Pendiente';
       case 'RETURNED': return 'Devolución Completada';
