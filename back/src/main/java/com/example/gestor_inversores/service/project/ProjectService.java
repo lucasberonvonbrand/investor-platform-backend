@@ -126,6 +126,15 @@ public class ProjectService implements IProjectService {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
+        // Si la descripción cambia, se vuelve a evaluar la etiqueta con la IA
+        if (!projectDTO.getDescription().equals(searchedProject.getDescription())) {
+            String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(projectDTO.getDescription())).toUpperCase();
+            String cleanedTag = selectedTag.trim();
+            System.out.println("Etiqueta re-evaluada por cambio en descripción: " + cleanedTag);
+            ProjectTag tag = projectTagService.getTagByName(cleanedTag);
+            searchedProject.setProjectTag(tag);
+        }
+
         Project updatedProject = ProjectMapper.requestProjectUpdateToProject(projectDTO, searchedProject);
         updatedProject.setModifiedAt(LocalDateTime.now());
 
@@ -170,6 +179,17 @@ public class ProjectService implements IProjectService {
     public void delete(Long id) {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
+
+        // VALIDACIÓN: No permitir la eliminación si el proyecto ya tiene contratos asociados.
+        List<Contract> contracts = contractRepository.findByProject_IdProject(id);
+        if (!contracts.isEmpty()) {
+            throw new BusinessException("El proyecto no puede ser eliminado porque ya tiene contratos asociados.");
+        }
+
+        // VALIDACIÓN: No permitir la eliminación si el proyecto ya ha recibido fondos.
+        if (searchedProject.getCurrentGoal().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BusinessException("El proyecto no puede ser eliminado porque ya ha recibido inversiones.");
+        }
 
         searchedProject.setDeleted(true);
         searchedProject.setDeletedAt(LocalDateTime.now());

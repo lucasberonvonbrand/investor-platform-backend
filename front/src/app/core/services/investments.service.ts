@@ -27,6 +27,8 @@ export interface IInvestment {
   createdAt: string;
   confirmedAt: string | null;
   projectId: number;
+  remainingRetries?: number; // Nuevo campo para mostrar los reintentos restantes
+  retryCount?: number; // Añadido para manejar los reintentos
   profit1Year?: number;
   profit2Years?: number;
   profit3Years?: number;

@@ -27,7 +27,7 @@ export interface IMyProject {
 
 export interface IInvestment {
   idInvestment: number;
-  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_RETURN' | 'RETURNED';
+  status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'COMPLETED' | 'NOT_RECEIVED' | 'CANCELLED' | 'PENDING_REFUND' | 'PENDING_RETURN' | 'RETURNED' | 'REFUND_FAILED' | 'REFUND_NOT_RECEIVED';
   amount: number;
   currency: string;
   createdAt: string;
@@ -35,6 +35,8 @@ export interface IInvestment {
   generatedById: number;
   projectId: number;
   confirmedByStudentId: number | null;
+  retryCount?: number; // Añadido para manejar los reintentos
+  remainingRetries?: number; // Nuevo campo para mostrar los reintentos restantes
 }
 
 export interface IEarning {
@@ -54,7 +56,7 @@ export interface IContract {
   title?: string; // El título que viene del listado
   textTitle?: string; // El título que se envía al crear
   amount: number;
-  status: 'DRAFT' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'CANCELLED' | 'REFUNDED' | 'CLOSED' | 'PENDING_STUDENT_SIGNATURE';
+  status: 'DRAFT' | 'PARTIALLY_SIGNED' | 'SIGNED' | 'CANCELLED' | 'PENDING_REFUND' | 'REFUNDED' | 'CLOSED' | 'PENDING_STUDENT_SIGNATURE' | 'REFUND_FAILED';
   currency?: 'USD' | 'ARS' | 'CNY' | 'EUR';
   profit1Year?: number;
   profit2Years?: number;
@@ -63,6 +65,8 @@ export interface IContract {
   endDate?: string | null;
   description?: string | null; // Cambiado de 'clauses' a 'description' para coincidir con la API
   investment?: IInvestment; // Añadido
+  investorSigned?: boolean; // NUEVO: para saber si el inversor firmó
+  studentSigned?: boolean;  // NUEVO: para saber si el estudiante firmó
   earnings?: IEarning[]; // Añadido
 }
 
@@ -73,6 +77,22 @@ export interface ContactOwnerDTO {
   message: string;
 }
 
+export interface IStudentDetail {
+  id: number;
+  username: string;
+  email: string;
+  photoUrl?: string;
+  firstName: string;
+  lastName: string;
+  dni: string;
+  phone: string;
+  university: string;
+  career: string;
+  degreeStatus: string;
+  linkedinUrl?: string;
+  description?: string;
+}
+
 export interface IChatMessage {
   id: number;
   projectId: number;
@@ -80,6 +100,13 @@ export interface IChatMessage {
   authorName: string;
   message: string;
   createdAt: string; // ISO
+}
+
+export interface IConversionResult {
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
 }
 
 /**
@@ -123,6 +150,19 @@ export class ProjectsMasterService {
   getContractsByInvestorAndProject(investorId: number, projectId: number): Observable<IContract[]> {
     return this.http.get<IContract[]>(`/api/contracts/investor/${investorId}/project/${projectId}`);
   }
+  getStudentById(studentId: number): Observable<IStudentDetail> {
+    return this.http.get<IStudentDetail>(`/api/students/${studentId}`);
+  }
+  getAllStudents(): Observable<{ id: number; name: string }[]> {
+    // Corregido: Apuntamos al endpoint que devuelve la lista de nombres de estudiantes.
+    return this.http.get<{ id: number; firstName: string; lastName: string }[]>(`/api/students/names`).pipe(
+      map(students => students.map(s => ({
+        id: s.id,
+        // Combinamos firstName y lastName en un solo campo 'name' para el selector
+        name: `${s.firstName} ${s.lastName}`.trim()
+      })))
+    );
+  }
   upsertContract(dto: Partial<IContract> & { projectId: number; createdByInvestorId?: number }): Observable<IContract> {
     if (dto.idContract) {
       // Para actualizar, el backend podría esperar un payload diferente.
@@ -133,6 +173,22 @@ export class ProjectsMasterService {
       return this.http.post<IContract>(`/api/contracts`, dto);
     }
   }
+  
+  updateProject(id: number, payload: Partial<IMyProject>): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/${id}`, payload).pipe(map(adaptProject));
+  }
+
+  deleteProject(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/projects/${id}`);
+  }
+
+  completeProject(projectId: number, ownerId: number): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/complete/${projectId}?ownerId=${ownerId}`, {}).pipe(map(adaptProject));
+  }
+
+  cancelProject(projectId: number, ownerId: number): Observable<IMyProject> {
+    return this.http.put<any>(`/api/projects/cancel/${projectId}?ownerId=${ownerId}`, {}).pipe(map(adaptProject));
+  }
 
   cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
     return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
@@ -140,6 +196,10 @@ export class ProjectsMasterService {
 
   cancelContractByStudent(contractId: number, studentId: number): Observable<IContract> {
     return this.http.put<IContract>(`/api/contracts/cancel-by-student/${contractId}`, { studentId });
+  }
+
+  refundContract(contractId: number, studentId: number): Observable<IContract> {
+    return this.http.put<IContract>(`/api/contracts/refund/${contractId}`, { studentId });
   }
 
   contactProjectOwner(projectId: number, data: ContactOwnerDTO): Observable<void> {
@@ -199,6 +259,23 @@ export class ProjectsMasterService {
 
   markInvestmentAsNotReceived(investmentId: number, studentId: number): Observable<IInvestment> {
     return this.http.put<IInvestment>(`/api/investments/mark-not-received/${investmentId}`, { studentId });
+  }
+
+  notifyInvestmentReturnSent(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/notify-return-sent/${investmentId}`, { studentId });
+  }
+
+  confirmInvestmentReturnReceipt(investmentId: number, investorId: number): Observable<IInvestment> {
+    // Corregido para apuntar al endpoint correcto del backend
+    return this.http.put<IInvestment>(`/api/investments/confirm-refund/${investmentId}`, { investorId });
+  }
+
+  confirmRefundSentByStudent(investmentId: number, studentId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/confirm-refund-sent/${investmentId}`, { studentId });
+  }
+
+  markRefundAsNotReceived(investmentId: number, investorId: number): Observable<IInvestment> {
+    return this.http.put<IInvestment>(`/api/investments/mark-refund-not-received/${investmentId}`, { investorId });
   }
 
   confirmEarningPaymentSent(earningId: number, studentId: number): Observable<IEarning> {
@@ -266,9 +343,24 @@ export class ProjectsMasterService {
     return of(created).pipe(delay(120));
   }
 
-  updateProject(id: number, patch: Partial<IMyProject>): Observable<IMyProject> {
-    const idx = this._projects.findIndex(p => p.id === id);
-    if (idx >= 0) this._projects[idx] = { ...this._projects[idx], ...patch };
-    return of(this._projects[idx]).pipe(delay(150));
+  /**
+   * Convierte un monto de una moneda a otra usando la API.
+   */
+  convertCurrency(from: string, to: string, amount: number): Observable<IConversionResult> {
+    return this.http.get<IConversionResult>(`/api/currency/convert`, {
+      params: { from, to, amount: amount.toString() }
+    });
+  }
+
+  /**
+   * Verifica si ya existe un contrato con el mismo nombre para un proyecto.
+   */
+  checkContractExists(projectId: number, contractName: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`/api/contracts/exists`, {
+      params: {
+        projectId: projectId.toString(),
+        contractName: contractName
+      }
+    });
   }
 }
