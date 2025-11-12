@@ -185,8 +185,7 @@ export class GestionProyectosFormComponent implements OnInit {
     const projectFromState: IProject | null = navProject ?? historyProject ?? null;
 
     if (projectFromState) {
-      console.log('[GestionProyectos] Proyecto cargado desde el estado de navegación (Datos principales).');
-      this.patchProjectData(projectFromState);
+     this.patchProjectData(projectFromState);
     }
 
     const finalProjectId = projectFromState?.id ?? projectIdFromUrl;
@@ -263,7 +262,6 @@ export class GestionProyectosFormComponent implements OnInit {
         profit3Years: l.profit3Years,
         actions: []
       } as ResponseContractDTO));
-      console.log('[GestionProyectos] contracts loaded', this.contracts.length);
     });
   }
 
@@ -279,7 +277,6 @@ export class GestionProyectosFormComponent implements OnInit {
         generatedById: l.generatedById ?? 0,
         confirmedAt: l.confirmedAt ?? null
       } as ResponseInvestmentDTO));
-      console.log('[GestionProyectos] investments loaded', this.investments.length);
     });
   }
 
@@ -296,7 +293,6 @@ export class GestionProyectosFormComponent implements OnInit {
         confirmedAt: l.confirmedAt ?? null,
         contractId: l.contractId ?? 0
       } as ResponseEarningDTO));
-      console.log('[GestionProyectos] earnings loaded', this.earnings.length);
     });
   }
 

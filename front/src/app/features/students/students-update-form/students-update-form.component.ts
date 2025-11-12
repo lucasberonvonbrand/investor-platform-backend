@@ -84,22 +84,17 @@ export class StudentsUpdateComponent implements OnInit {
 //////////////STUDENT SERVICE
 ngOnInit(): void {
 
-    console.log('TRACE 1: Ejecutando ngOnInit...');
     this.buildForm({} as Student); 
-    console.log('TRACE 2: Formulario inicializado con estructura vacía.');
 
 
     const userId = this.auth.userId; // Esto devuelve el 'username'
     const role = this.auth.getUserRole();
 
-    console.log('🔍 username:', userId, 'role:', role);
 
  if (role === 'ROLE_STUDENT' && userId) {
-      console.log(`TRACE 3: Usuario '${userId}' es estudiante. Iniciando llamada API...`);
       this.isLoading = true;
       this.studentService.getById(userId).subscribe({
         next: (student) => {
-          console.log('TRACE 4: ¡Éxito! Datos recibidos:', student);
           this.student = student;
           this.originalEmail = student.email;
           this.buildForm(student);
@@ -160,8 +155,7 @@ ngOnInit(): void {
 
     this.http.patch(apiUrl, formValue).subscribe({
       next: (updated) => {
-        console.log('Perfil actualizado:', updated);
-        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
+       this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
         setTimeout(() => {
           this.router.navigateByUrl('/misproyectos');
         }, 2000); // Redirige después de 2 segundos

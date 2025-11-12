@@ -81,7 +81,6 @@ export class ProyectosTableAdminComponent implements OnInit {
     console.log('[ProyectosTableAdmin] -> cargar proyectos (getAll)');
     this.svc.getAllAdmin().subscribe({
       next: (list: IProject[]) => {
-        console.log('[ProyectosTableAdmin] servicio devolvió', list?.length ?? 0, 'proyectos');
         
         this.allProjects = list || [];
         

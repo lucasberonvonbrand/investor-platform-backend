@@ -68,7 +68,6 @@ export class InvestedProjectsService {
 
   getByInvestment(): Observable<IInvestedProject[]> {
     const investorId = this.getUserId();
-    console.log('Este es el id del usuario actual:', investorId);
     const url = `${this.api}/by-investment/${investorId}`;
 
   return this.http.get<IInvestedProjectApi[]>(url).pipe(

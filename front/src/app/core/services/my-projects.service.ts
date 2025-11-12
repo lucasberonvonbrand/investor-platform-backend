@@ -71,9 +71,6 @@ getMine(): Observable<IMyProject[]> {
   if (!id) return of([]);
 
   const url = `/api/projects/by-owner/${id}`;
-  // (opcional) log para verificar
-  // console.log('[MyProjects] GET', url);
-
   return this.http.get<IMyProjectApi[]>(url).pipe(
     map(list => (list ?? []).map(adapt))
   );
