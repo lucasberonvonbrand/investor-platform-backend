@@ -52,7 +52,7 @@
         <div class="font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-2">
           <span>Estado</span>
           <i class="pi pi-info-circle text-sm cursor-pointer"
-             pTooltip="El estado del proyecto avanza automáticamente. Cambiará a 'En Progreso' cuando se confirme la primera inversión, y a 'Completado' al alcanzar la meta de financiación."
+             pTooltip="Un proyecto inicia como 'Pendiente de Financiación'. Si alcanza su meta, pasa a 'En Progreso'. Al finalizar, se marca como 'Completado'. Si no alcanza la meta, queda como 'No Financiado'. Si el estudiante lo interrumpe, pasa a 'Cancelado'."
              tooltipPosition="top"></i>
         </div>
         <div><p-tag [value]="getProjectStatusLabel(project()?.status)" [ngStyle]="tagStyle(project()?.status ?? '—', 1)"></p-tag></div>
@@ -62,11 +62,11 @@
         <div><p-tag [value]="uni" [ngStyle]="tagStyle(uni, 2)"></p-tag></div>
       </div>
       <div *ngIf="project()?.startDate as date">
-        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de inicio</div>
+        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de fin de financiación / fecha de inicio del desarrollo</div>
         <div class="text-gray-800 dark:text-gray-100">{{ date | date:'dd/MM/yyyy' }}</div>
       </div>
       <div *ngIf="project()?.estimatedEndDate as date">
-        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha fin estimada</div>
+        <div class="font-semibold text-gray-500 dark:text-gray-400">Fecha de finalización estimada</div>
         <div class="text-gray-800 dark:text-gray-100">{{ date | date:'dd/MM/yyyy' }}</div>
       </div>
       <div class="md:col-span-2" *ngIf="project()?.fundingGoal != null || project()?.fundingRaised != null">
@@ -75,13 +75,22 @@
           <span class="text-lg font-bold text-primary-500">{{ project()?.fundingRaised | currency:'USD':'symbol':'1.0-0' }}</span>
           <span class="text-gray-500">de {{ project()?.fundingGoal | currency:'USD':'symbol':'1.0-0' }}</span>
         </div>
-        <p-progressBar [value]="fundingProgress()" [showValue]="false" styleClass="mt-2 h-2"
-                       [ngClass]="{
-                         'progress-low': fundingProgress() < 33,
-                         'progress-medium': fundingProgress() >= 33 && fundingProgress() < 70,
-                         'progress-high': fundingProgress() >= 70
-                       }">
-        </p-progressBar>
+        <!-- Barra de progreso personalizada para sobrefinanciación. Usamos flex para apilar las barras. -->
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2 flex"
+             [pTooltip]="overfundingProgress() > 0 ? '¡Meta superada! La barra verde representa el 100% del objetivo y la azul el excedente recaudado.' : ''"
+             tooltipPosition="top">
+          <!-- Barra de progreso hasta el 100% -->
+          <div class="h-2.5 rounded-l-full"
+               [ngClass]="{
+                 'bg-red-500': fundingProgress() < 33,
+                 'bg-yellow-400': fundingProgress() >= 33 && fundingProgress() < 70,
+                 'bg-green-500': fundingProgress() >= 70,
+                 'rounded-r-full': overfundingProgress() <= 0
+               }"
+               [style.width.%]="fundingProgress()"></div>
+          <!-- Barra de sobrefinanciación (solo visible si es mayor a 0) -->
+          <div *ngIf="overfundingProgress() > 0" class="h-2.5 bg-blue-500 rounded-r-full" [style.width.%]="overfundingProgress()"></div>
+        </div>
       </div>
     </div>
 
@@ -156,9 +165,8 @@
       <button pButton icon="pi pi-file-plus" label="Iniciar Contrato"
               (click)="openCreateContract()"
               class="p-button-warning p-button-lg"></button>
-      <button pButton icon="pi pi-chart-bar" label="Analizar Riesgo"
+      <button pButton type="button" icon="pi pi-chart-bar" label="Analizar Riesgo" (click)="goToRiskAnalysis()"
               class="p-button-warning p-button-lg"
-              [routerLink]="['/analysis/risk', project()?.id]"
               [disabled]="!project()"></button>
     </div>
   </div>
@@ -298,9 +306,19 @@
         <span>Título</span>
         <i class="pi pi-info-circle text-gray-500 ml-1 cursor-pointer" pTooltip="Dale un nombre único a tu oferta de contrato para identificarla fácilmente."></i>
       </label>
-      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" class="w-full"/>
-      <small class="text-red-500" *ngIf="contractForm.controls.title.invalid && contractForm.controls.title.touched">
-        Título es requerido
+      <input pInputText formControlName="title" placeholder="Ej: Contrato de inversión" [readonly]="isReadonly()" [ngClass]="{'ng-invalid ng-dirty': contractForm.controls.title.invalid && contractForm.controls.title.touched}" />
+      
+      <!-- Contenedor de errores para el campo 'title' -->
+      <div *ngIf="contractForm.controls.title.invalid && (contractForm.controls.title.touched || contractForm.controls.title.dirty)">
+        <small class="text-red-500" *ngIf="contractForm.controls.title.hasError('required')">
+          El título es requerido.
+        </small>
+        <small class="text-red-500" *ngIf="contractForm.controls.title.hasError('contractNameExists')">
+          Ya existe un contrato con este nombre en el proyecto.
+        </small>
+      </div>
+      <small class="text-red-500" *ngIf="contractForm.controls.title.pending">
+        <i class="pi pi-spin pi-spinner" style="font-size: 0.8rem"></i> Verificando nombre...
       </small>
     </div>
     <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
@@ -312,6 +330,17 @@
         <p-inputNumber formControlName="amount" [min]="0" [useGrouping]="true" [minFractionDigits]="0" [maxFractionDigits]="2" [readonly]="isReadonly()" class="w-full"></p-inputNumber>
         <small class="text-red-500" *ngIf="contractForm.controls.amount.invalid && contractForm.controls.amount.touched">
           Monto inválido
+        </small>
+        <!-- NUEVO: Mostrar el monto convertido a USD -->
+        <small *ngIf="contractForm.value.currency !== 'USD' && contractForm.value.amount" class="block text-right opacity-70 mt-1">
+          Equivalente a:
+          <span *ngIf="!isConvertingCurrency(); else loadingConversion">
+            <strong>{{ convertedAmountUSD() | currency:'USD':'':'1.2-2' }} USD</strong>
+          </span>
+          <ng-template #loadingConversion>
+            <i class="pi pi-spin pi-spinner" style="font-size: 0.8rem"></i>
+            <span class="opacity-70">Calculando...</span>
+          </ng-template>
         </small>
       </div>
       <div class="md:col-span-2">

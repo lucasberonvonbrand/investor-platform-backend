@@ -46,7 +46,10 @@ export interface IEarning {
   createdAt: string;
   status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'NOT_RECEIVED';
   retriesLeft?: number; // Intentos restantes para el reenvío
-  // ... otras propiedades que pueda tener una ganancia
+  // Propiedades adicionales para más detalle
+  profitRate?: number;
+  baseAmount?: number;
+  profitAmount?: number;
 }
 
 export interface IContract {
@@ -75,6 +78,13 @@ export interface ContactOwnerDTO {
   fromName: string;
   subject: string;
   message: string;
+}
+
+export interface IConversionResult {
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
 }
 
 export interface IStudentDetail {
