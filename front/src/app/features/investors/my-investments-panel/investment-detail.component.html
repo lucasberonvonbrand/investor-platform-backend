@@ -39,14 +39,27 @@
             <span class="value">{{ inv.createdAt | date:'dd/MM/yyyy' }}</span>
           </div>
           <div class="stat-item">
+            <span class="label">Monto Recaudado:</span>
+            <span class="value amount">{{ inv.project.fundingRaised | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+          <div class="stat-item">
             <span class="label">Meta de Financiación:</span>
             <span class="value">{{ inv.project.fundingGoal | currency:'USD':'symbol':'1.2-2' }}</span>
           </div>
         </div>
 
         <div class="funding-progress">
-          <span class="label">Progreso de Financiación ({{ fundingProgress() | number:'1.0-2' }}%)</span>
-          <p-progressBar [value]="fundingProgress()"></p-progressBar>
+          <span class="label">Progreso de Financiación ({{ fundingPercentage() | number:'1.0-2' }}%)</span>
+          <!-- Barra de progreso personalizada para sobrefinanciación -->
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1 flex"
+               [pTooltip]="overfundingProgress() > 0 ? '¡Meta superada! La barra verde representa el 100% del objetivo y la azul el excedente recaudado.' : ''"
+               tooltipPosition="top">
+            <div class="h-2.5 rounded-l-full"
+                 [ngClass]="{ 'bg-green-500': fundingProgress() >= 70, 'bg-yellow-400': fundingProgress() < 70, 'rounded-r-full': overfundingProgress() <= 0 }"
+                 [style.width.%]="fundingProgress()"></div>
+            <!-- Barra de sobrefinanciación -->
+            <div *ngIf="overfundingProgress() > 0" class="h-2.5 bg-blue-500 rounded-r-full" [style.width.%]="overfundingProgress()"></div>
+          </div>
         </div>
 
         <ng-template pTemplate="footer">
@@ -65,18 +78,22 @@
           </ng-template>
 
           @if (inv.earnings && inv.earnings.length > 0) {
-            <p-table [value]="inv.earnings" styleClass="p-datatable-sm">
+            <p-table [value]="inv.earnings" styleClass="p-datatable-sm w-full">
               <ng-template pTemplate="header">
                 <tr>
-                  <th>Fecha de Pago</th>
-                  <th>Monto</th>
+                  <th>Fecha de Generación</th>
+                  <th class="text-right">Inversión Base</th>
+                  <th class="text-right">Tasa de Ganancia</th>
+                  <th class="text-right">Monto Ganancia</th>
                   <th>Estado</th>
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-earning>
                 <tr>
-                  <td>{{ earning.paymentDate | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ earning.amount | currency:earning.currency:'symbol':'1.2-2' }}</td>
+                  <td>{{ earning.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-right">{{ earning.baseAmount | currency:earning.currency:'symbol':'1.2-2' }}</td>
+                  <td class="text-right">{{ earning.profitRate | percent:'1.2-2' }}</td>
+                  <td class="text-right font-semibold">{{ earning.profitAmount | currency:earning.currency:'symbol':'1.2-2' }}</td>
                   <td>
                     <p-tag [value]="getEarningStatusLabel(earning.status)" [severity]="getEarningStatusSeverity(earning.status)"></p-tag>
                   </td>
@@ -85,9 +102,18 @@
             </p-table>
           } @else {
             <div class="empty-state">
-              <i class="pi pi-info-circle"></i>
-              <p>Aún no se han generado ganancias para esta inversión.</p>
-              <span>Las ganancias se calcularán y mostrarán aquí una vez que el proyecto se complete.</span>
+              <!-- Mensaje específico si la inversión fue devuelta o cancelada -->
+              @if (inv.status === 'RETURNED' || inv.status === 'CANCELLED' || inv.status === 'NOT_RECEIVED') {
+                <i class="pi pi-undo text-blue-500"></i>
+                <p>No se generaron ganancias</p>
+                <span>Esta inversión fue devuelta o cancelada, por lo que el ciclo finalizó sin generar beneficios.</span>
+              }
+              <!-- Mensaje genérico para otros casos -->
+              @else {
+                <i class="pi pi-info-circle"></i>
+                <p>Aún no se han generado ganancias para esta inversión.</p>
+                <span>Las ganancias se calcularán y mostrarán aquí una vez que el contrato asociado se cierre.</span>
+              }
             </div>
           }
         </p-card>
@@ -95,7 +121,9 @@
     </div>
 
     <!-- Sección de Proyección de Ganancias a Ancho Completo -->
-    @if (projectionChartData(); as chartData) {
+    <!-- CORRECCIÓN: Solo mostrar proyecciones si el estado de la inversión es apropiado (no cancelado, no devuelto, etc.) -->
+    @if (inv.status !== 'RETURNED' && inv.status !== 'CANCELLED' && inv.status !== 'NOT_RECEIVED' && inv.status !== 'PENDING_RETURN') {
+      @if (projectionChartData(); as chartData) {
       <p-card class="mt-4">
         <ng-template pTemplate="title">
           <div class="flex align-items-center gap-2">
@@ -112,7 +140,9 @@
             @for (ds of chartData.datasets; track ds) {
               @for (item of ds.data; track $index) {
                 <div class="projection-item">
-                  <span class="term">{{ chartData.labels[$index] }} ({{ (inv.profit1Year! + ($index * 5)) | number:'1.0-0' }}%)</span>
+                  <!-- CORRECCIÓN: La variable 'projections' no existe aquí. 
+                       Calculamos el porcentaje a partir del monto de la inversión y la ganancia proyectada. -->
+                  <span class="term">{{ chartData.labels[$index] }} ({{ (item / inv.amount * 100) | number:'1.0-0' }}%)</span>
                   <span class="profit">+{{ item | currency:inv.currency:'':'1.2-2' }} {{ inv.currency }}</span>
                 </div>
               }
@@ -120,15 +150,17 @@
           </div>
         </div>
       </p-card>
-    } @else {
-      <p-card class="mt-4">
-        <div class="empty-state">
-          <i class="pi pi-info-circle"></i>
-          <p>No hay proyecciones de ganancias disponibles.</p>
-          <span>Las proyecciones se basan en los términos del contrato asociado al proyecto.</span>
-        </div>
-      </p-card>
+      } @else {
+        <p-card class="mt-4">
+          <div class="empty-state">
+            <i class="pi pi-info-circle"></i>
+            <p>No hay proyecciones de ganancias disponibles.</p>
+            <span>Las proyecciones se basan en los términos del contrato asociado al proyecto.</span>
+          </div>
+        </p-card>
+      }
     }
+
   } @else {
     <p-card>
       <div class="empty-state">

@@ -46,7 +46,10 @@ export interface IEarning {
   createdAt: string;
   status: 'IN_PROGRESS' | 'PENDING_CONFIRMATION' | 'RECEIVED' | 'NOT_RECEIVED';
   retriesLeft?: number; // Intentos restantes para el reenvío
-  // ... otras propiedades que pueda tener una ganancia
+  // Propiedades adicionales para más detalle
+  profitRate?: number;
+  baseAmount?: number;
+  profitAmount?: number;
 }
 
 export interface IContract {
@@ -77,6 +80,13 @@ export interface ContactOwnerDTO {
   message: string;
 }
 
+export interface IConversionResult {
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
+}
+
 export interface IStudentDetail {
   id: number;
   username: string;
@@ -100,6 +110,13 @@ export interface IChatMessage {
   authorName: string;
   message: string;
   createdAt: string; // ISO
+}
+
+export interface IConversionResult {
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  convertedAmount: number;
 }
 
 /**
@@ -334,5 +351,26 @@ export class ProjectsMasterService {
     };
     this._chat$.next([...this._chat$.value, created]);
     return of(created).pipe(delay(120));
+  }
+
+  /**
+   * Convierte un monto de una moneda a otra usando la API.
+   */
+  convertCurrency(from: string, to: string, amount: number): Observable<IConversionResult> {
+    return this.http.get<IConversionResult>(`/api/currency/convert`, {
+      params: { from, to, amount: amount.toString() }
+    });
+  }
+
+  /**
+   * Verifica si ya existe un contrato con el mismo nombre para un proyecto.
+   */
+  checkContractExists(projectId: number, contractName: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(`/api/contracts/exists`, {
+      params: {
+        projectId: projectId.toString(),
+        contractName: contractName
+      }
+    });
   }
 }

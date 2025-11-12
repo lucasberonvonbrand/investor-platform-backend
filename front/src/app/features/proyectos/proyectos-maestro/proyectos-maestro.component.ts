@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Subscription, of, timer } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -25,6 +26,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { debounceTime, distinctUntilChanged, filter, switchMap, tap, map } from 'rxjs/operators';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { ProjectDocumentsService, IProjectDocument } from '../../../core/services/project-documents.service';
@@ -33,7 +35,7 @@ import type { ContactOwnerDTO, IInvestment, IEarning, IStudentDetail } from '../
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SafeHtmlPipe } from '../../../shared/pipes/safe-html.pipe';
-import type { IMyProject, IContract } from '../../../core/services/projects-master.service';
+import { IMyProject, IContract } from '../../../core/services/projects-master.service';
 
 
 type Student = { id: number; name: string; email?: string };
@@ -86,14 +88,19 @@ export class ProyectosMaestroComponent implements OnInit {
     return (p?.students as unknown as Student[]) ?? [];
   }
 
-  fundingProgress = computed(() => {
+  // Porcentaje de financiación, puede superar el 100%
+  fundingPercentage = computed(() => {
     const p = this.project();
     if (!p || !p.fundingGoal || p.fundingGoal <= 0 || !p.fundingRaised) {
       return 0;
     }
-    // Calcula el porcentaje y lo limita a un máximo de 100
-    return Math.min(100, (p.fundingRaised / p.fundingGoal) * 100);
+    return (p.fundingRaised / p.fundingGoal) * 100;
   });
+
+  // Porcentaje para la barra de progreso base (limitado a 100%)
+  fundingProgress = computed(() => Math.min(100, this.fundingPercentage()));
+  // Porcentaje de sobrefinanciación (lo que excede el 100%)
+  overfundingProgress = computed(() => Math.max(0, this.fundingPercentage() - 100));
 
   contracts = signal<IContract[]>([]);
   loading = signal<boolean>(false);
@@ -125,7 +132,11 @@ export class ProyectosMaestroComponent implements OnInit {
     { label: 'Yuan Chino', value: 'CNY' }
   ];
   contractForm = this.fb.nonNullable.group({
-    title: ['', Validators.required],
+    title: ['', {
+      validators: [Validators.required],
+      asyncValidators: [this.contractNameValidator()],
+      updateOn: 'blur' // Opcional: validar solo cuando el usuario sale del campo
+    }],
     amount: [0, [Validators.required, Validators.min(0)]],
     currency: ['USD', Validators.required],
     profit1Year: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
@@ -135,6 +146,11 @@ export class ProyectosMaestroComponent implements OnInit {
   });
   
   contractTemplates: MenuItem[] = [];
+  
+  // ===== Lógica de Conversión de Moneda =====
+  convertedAmountUSD = signal<number | null>(null);
+  isConvertingCurrency = signal<boolean>(false);
+  private currencyConversionSub: Subscription | null = null;
 
   // ===== Formulario de Contacto =====
   contactDialogVisible = signal(false);
@@ -260,10 +276,20 @@ export class ProyectosMaestroComponent implements OnInit {
     this.loadContracts();
     this.loadDocuments();
     this.setupContractTemplates();
+    this.setupCurrencyConversionListener();
   }
 
   goBack(): void {
     window.history.back();
+  }
+
+  /**
+   * Navega a la página de análisis de riesgo para el proyecto actual.
+   */
+  goToRiskAnalysis(): void {
+    const projectId = this.project()?.id;
+    if (!projectId) return;
+    this.router.navigate(['/analysis/risk', projectId]);
   }
 
   private loadProject(): void {
@@ -294,22 +320,50 @@ export class ProyectosMaestroComponent implements OnInit {
     });
   }
 
-  private loadDocuments(): void {
-    this.docSvc.getDocumentsByProject(this.projectId()).subscribe({
-      next: (docs) => this.documents.set(docs || []),
-      error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
-    });
+loadDocuments() {
+    const id = this.projectId();
+    if (id) {
+      this.docSvc.getDocumentsByProject(id).subscribe({
+        next: (docs) => {
+        console.log('JSON de documentos recibido:', docs); 
+        this.documents.set(docs); 
+      },
+        error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
+      });
+    }
   }
 
   // --- Métodos para Documentos ---
 
-  getUploadUrl(): string {
-    return this.docSvc.getUploadUrl();
-  }
-
   onUpload(event: { files: File[] }): void {
-    this.toast.add({ severity: 'success', summary: 'Éxito', detail: `${event.files.length} documento(s) subido(s).` });
-    this.loadDocuments(); // Recargar la lista de documentos
+    const file = event.files?.[0] as File;
+    const projectId = this.projectId();
+
+    if (!file || !projectId) {
+      this.toast.add({ severity: 'error', summary: 'Error de Subida', detail: 'Falta el archivo o el ID del proyecto.' });
+      return;
+    }
+
+    this.docSvc.uploadDocument(file, projectId).subscribe({
+      next: (newDoc) => {
+        this.toast.add({ 
+          severity: 'success', 
+          summary: 'Documentos', 
+          detail: `Documento '${newDoc.fileName}' subido con éxito.` 
+        });
+        this.loadDocuments(); 
+      },
+      error: (error) => {
+        const detail = error.error?.message || 'Error desconocido al intentar subir el archivo.';
+        this.toast.add({ 
+          severity: 'error', 
+          summary: 'Error de Subida', 
+          detail: detail 
+        });
+        console.error('Error al subir documento:', error);
+
+      }
+    });
   }
 
   onUploadError(event: any): void {
@@ -318,7 +372,7 @@ export class ProyectosMaestroComponent implements OnInit {
   }
 
   downloadDocument(doc: IProjectDocument): void {
-    window.open(this.docSvc.getDownloadUrl(doc.id), '_blank');
+    window.open(this.docSvc.getDownloadUrl(doc.idProjectDocument), '_blank');
   }
 
   deleteDocument(doc: IProjectDocument): void {
@@ -330,10 +384,10 @@ export class ProyectosMaestroComponent implements OnInit {
       rejectLabel: 'No',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.docSvc.deleteDocument(doc.id).subscribe({
+        this.docSvc.deleteDocument(doc.idProjectDocument).subscribe({
           next: () => {
             this.toast.add({ severity: 'info', summary: 'Eliminado', detail: 'El documento ha sido eliminado.' });
-            this.documents.update(docs => docs.filter(d => d.id !== doc.id));
+            this.documents.update(docs => docs.filter(d => d.idProjectDocument !== doc.idProjectDocument));
           },
           error: (err) => {
             this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo eliminar el documento.' });
@@ -342,6 +396,7 @@ export class ProyectosMaestroComponent implements OnInit {
       }
     });
   }
+
 
   showStudentDetails(studentId: number): void {
     // Permitir ver detalles si es inversor O si es el dueño del proyecto
@@ -570,6 +625,7 @@ export class ProyectosMaestroComponent implements OnInit {
     this.reviewingToSign = null;
     this.viewingOnly.set(null);
     this.isReadonly.set(false); // Salir del modo solo lectura
+    this.convertedAmountUSD.set(null); // Limpiar el monto convertido al cerrar
   }
 
   saveContract(): void {
@@ -1652,5 +1708,54 @@ export class ProyectosMaestroComponent implements OnInit {
     const palette = ['#e0f2fe', '#dcfce7', '#fee2e2', '#fef9c3', '#ede9fe'];
     const idx = Math.abs((text || '').length + i) % palette.length;
     return { background: palette[idx], color: '#111827', borderRadius: '9999px', padding: '0 8px', 'font-weight': 600 };
+  }
+
+  private setupCurrencyConversionListener(): void {
+    // Cancelamos cualquier suscripción anterior para evitar fugas de memoria.
+    if (this.currencyConversionSub) {
+      this.currencyConversionSub.unsubscribe();
+    }
+
+    this.currencyConversionSub = this.contractForm.valueChanges.pipe(
+      debounceTime(400), // Espera 400ms después de que el usuario deja de escribir
+      // Solo reacciona si el monto o la moneda han cambiado
+      distinctUntilChanged((prev, curr) => prev.amount === curr.amount && prev.currency === curr.currency),
+      filter(() => !this.isReadonly()), // No ejecutar en modo solo lectura
+      tap(() => this.isConvertingCurrency.set(true)), // Inicia la carga
+      switchMap(formValue => {
+        const { amount, currency } = formValue;
+        if (currency && currency !== 'USD' && amount != null && amount > 0) {
+          return this.svc.convertCurrency(currency, 'USD', amount);
+        }
+        this.convertedAmountUSD.set(null); // Si no se necesita conversión, limpia el monto
+        return of(null); // Si no se necesita conversión, emite null
+      })
+    ).subscribe(result => {
+      this.convertedAmountUSD.set(result?.convertedAmount ?? null);
+      this.isConvertingCurrency.set(false); // Finaliza la carga
+    });
+  }
+
+  /**
+   * Validador asíncrono para el nombre del contrato.
+   * Verifica en tiempo real si el nombre ya está en uso para el proyecto actual.
+   */
+  private contractNameValidator() {
+    return (control: import('@angular/forms').AbstractControl) => {
+      const title = control.value;
+      if (!title) {
+        return of(null); // Si no hay título, no hay error
+      }
+
+      // Si estamos editando y el título no ha cambiado, no es necesario validar
+      if (this.editing && title.trim().toLowerCase() === this.editing.textTitle?.trim().toLowerCase()) {
+        return of(null);
+      }
+
+      return timer(500).pipe( // Espera 500ms antes de hacer la llamada
+        switchMap(() => this.svc.checkContractExists(this.projectId(), title)),
+        map(response => (response.exists ? { contractNameExists: true } : null))
+      );
+    };
   }
 }

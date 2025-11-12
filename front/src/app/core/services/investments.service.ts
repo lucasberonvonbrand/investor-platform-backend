@@ -113,10 +113,10 @@ export class InvestmentsService {
 
         return contracts$.pipe(
           switchMap(contracts => {
-            // Buscamos el primer contrato firmado que generó una inversión.
-            // CAMBIO: Buscamos CUALQUIER contrato, no solo 'SIGNED'.
-            // Si una inversión existe, debe tener un contrato asociado, sin importar el estado.
-            const relatedContract = contracts.length > 0 ? contracts[0] : null;
+            // CORRECCIÓN: Buscamos el contrato específico que está asociado a esta inversión por su ID.
+            // El error anterior era que tomaba el primer contrato del proyecto (contracts[0]),
+            // lo que causaba que se mostraran ganancias de otras inversiones.
+            const relatedContract = contracts.find(c => c.investment?.idInvestment === investment.idInvestment);
             
             if (!relatedContract) { // Fallback por si no hay contratos (poco probable)
               return project$.pipe(map(project => ({ ...investment, project, earnings: [] }))); }
@@ -124,10 +124,17 @@ export class InvestmentsService {
             const earnings$ = this.projectsMasterSvc.getEarningsByContractId(relatedContract.idContract);
 
             return combineLatest([project$, earnings$]).pipe(
-              map(([project, earnings]) => ({
-                ...investment, project, earnings,
-                profit1Year: relatedContract.profit1Year, profit2Years: relatedContract.profit2Years, profit3Years: relatedContract.profit3Years,
-              }))
+              map(([project, earnings]) => {
+                // Mapeamos las ganancias para asegurar que todos los campos estén presentes
+                const detailedEarnings = earnings.map(e => ({
+                  ...e,
+                  profitRate: e.profitRate,
+                  baseAmount: e.baseAmount,
+                  profitAmount: e.profitAmount,
+                }));
+
+                return { ...investment, project, earnings: detailedEarnings, profit1Year: relatedContract.profit1Year, profit2Years: relatedContract.profit2Years, profit3Years: relatedContract.profit3Years };
+              })
             );
           })
         );

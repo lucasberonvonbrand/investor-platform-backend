@@ -5,6 +5,8 @@ import { HttpClient } from '@angular/common/http';
 import { StudentService } from '../../../core/services/students.service';
 import { DegreeStatus, University, Province, Student } from '../../../models/student.model';
 import { Router, RouterLink } from '@angular/router';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 // PrimeNG
 import { InputTextModule } from 'primeng/inputtext';
@@ -31,7 +33,8 @@ export function pastDateValidator(control: AbstractControl): ValidationErrors | 
 @Component({
   selector: 'app-student-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule], // Keep this line as is
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, KeyFilterModule, TooltipModule, ToastModule],
+  providers: [MessageService],
   templateUrl: './students-form.component.html',
   styleUrls: ['./students-form.component.scss']
 })
@@ -39,6 +42,7 @@ export class StudentFormComponent implements OnInit {
   private service = inject(StudentService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private toast = inject(MessageService);
   private http = inject(HttpClient);
 
   /** Si es true, el componente se comporta como un modal (no redirige, emite evento) */

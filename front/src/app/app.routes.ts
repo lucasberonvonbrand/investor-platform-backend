@@ -8,6 +8,7 @@ import { roleGuard } from './features/auth/login/role.guard';
 import { studentOnlyGuard } from './features/auth/guards/student-only.guard'; // ⬅️ NUEVO
 
 export const routes: Routes = [
+  { path: 'index', loadComponent: () => import('./features/landing-page/landing.component').then(m => m.LandingComponent) },
   { path: 'auth/login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
   { path: 'auth/forgot',   loadComponent: () => import('./features/auth/forgot/forgot.component').then(m => m.ForgotComponent) },
   { path: 'auth/register', loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
@@ -16,7 +17,7 @@ export const routes: Routes = [
   { path: 'auth/reset-password', loadComponent: () => import('./features/auth/reset/reset-password.component').then(c => c.ResetPasswordComponent) },
 
   {
-    path: '',
+    path: '', // Las rutas hijas ahora están en el nivel raíz, pero protegidas por el guard
     canActivate: [authGuard],
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
@@ -95,5 +96,5 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '**', redirectTo: 'auth/login' },
+  { path: '**', redirectTo: 'index' }, // Redirige a la landing page si la ruta no existe
 ];

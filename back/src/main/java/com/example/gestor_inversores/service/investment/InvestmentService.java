@@ -169,6 +169,7 @@ public class InvestmentService implements IInvestmentService {
             throw new UpdateException("Esta inversión no puede ser confirmada en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + inv.getStatus());
         }
 
+        // 1. Convertir el monto de la inversión a USD para una comparación consistente.
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
             amountInUSD = currencyConversionService
@@ -177,15 +178,8 @@ public class InvestmentService implements IInvestmentService {
                     .multiply(inv.getAmount());
         }
 
-        BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
-
-        if (amountInUSD.subtract(remainingBudget).compareTo(new BigDecimal("0.01")) > 0) {
-            throw new BusinessException(String.format(
-                    "No se puede confirmar la inversión. El monto (%.2f USD) excede el capital restante necesario para el proyecto (%.2f USD).",
-                    amountInUSD, remainingBudget
-            ));
-        }
-
+        // 2. Actualizar el estado de la inversión y los montos del proyecto.
+        // En este punto, aceptamos la inversión, incluso si sobrefinancia.
         inv.setStatus(InvestmentStatus.RECEIVED);
         inv.setConfirmedBy(student);
         inv.setConfirmedAt(LocalDate.now());
@@ -193,6 +187,7 @@ public class InvestmentService implements IInvestmentService {
         BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
         project.setCurrentGoal(newCurrentGoal);
 
+        // 3. Comprobar si el proyecto se ha financiado con esta inversión.
         boolean justFunded = false;
         if (project.getStatus() == ProjectStatus.PENDING_FUNDING &&
             newCurrentGoal.compareTo(project.getBudgetGoal()) >= 0) {
@@ -200,10 +195,12 @@ public class InvestmentService implements IInvestmentService {
             justFunded = true;
         }
 
+        // 4. Guardar los cambios en la base de datos.
         projectRepo.save(project);
 
         Investment savedInvestment = investmentRepo.save(inv);
 
+        // 5. Enviar notificaciones por correo.
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("¡Tu inversión para el proyecto '%s' ha sido confirmada!", savedInvestment.getProject().getName());
         String body = String.format(
