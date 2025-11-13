@@ -31,13 +31,6 @@ import { InvestorService } from '../core/services/investors.service';
 })
 export class ShellComponent {
  sidebarCollapsed = false;
- isDark = document.documentElement.classList.contains('app-dark');
-
-toggleDarkMode() {
-  this.isDark = !this.isDark;
-  document.documentElement.classList.toggle('app-dark', this.isDark);
-  localStorage.setItem('theme:dark', String(this.isDark));
-}
 
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -127,9 +120,7 @@ userItems = [
   }
 
   toggleSidebar() { 
-    this.isDark = !this.isDark;
-    document.documentElement.classList.toggle('app-dark', this.isDark);
-    localStorage.setItem('theme:dark', String(this.isDark));
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
   openUserMenu(event: MouseEvent) { this.userMenu.toggle(event); }
   go(url: string) { this.router.navigateByUrl(url); }
