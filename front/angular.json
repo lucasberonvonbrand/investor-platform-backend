@@ -45,8 +45,19 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": { "buildTarget": "proy-plus:build" },
           "configurations": {
-            "local":  { "buildTarget": "proy-plus:build:development", "proxyConfig": "proxy.local.js" },
-            "docker": { "buildTarget": "proy-plus:build:development", "proxyConfig": "proxy.docker.js" }
+            "local": {
+              "buildTarget": "proy-plus:build:development",
+              "proxyConfig": "proxy.local.js"
+            },
+            "docker": {
+              "buildTarget": "proy-plus:build:development",
+              "proxyConfig": "proxy.docker.js",
+              "host": "0.0.0.0",
+              "port": 4200,
+              "allowedHosts": ["www.proyplus.com", "72.60.11.35"],
+              "publicHost": "www.proyplus.com",
+              "liveReload": false
+            }
           }
         }
       }

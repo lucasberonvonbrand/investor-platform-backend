@@ -12,7 +12,7 @@ RUN npm ci
 
 # Copia el resto del código
 COPY . .
-
+RUN npm run build:prod 
 # Vars útiles en contenedor
 ENV HOST=0.0.0.0
 ENV PORT=4200
@@ -22,6 +22,7 @@ ENV NG_CLI_ANALYTICS=off
 # ...
 # ...
 EXPOSE 4200
-CMD ["sh","-c","npx ng serve --host 0.0.0.0 --port 4200 --poll 2000 --proxy-config proxy.docker.js"]
+CMD ["sh","-c","npx ng serve --host 0.0.0.0 --port 4200 --poll 2000 --proxy-config proxy.docker.js --live-reload=false --hmr=false"]
+
 
 

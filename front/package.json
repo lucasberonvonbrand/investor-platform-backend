@@ -40,7 +40,8 @@
   "scripts": {
     "ng": "ng",
     "start:local": "ng serve --configuration local",
-    "start:docker": "ng serve --host 0.0.0.0 --port 4200 --poll 2000 --configuration docker",
+    "start:docker": "ng serve --host 0.0.0.0 --port 4200 --poll 2000 --configuration docker --allowed-hosts www.proyplus.com,72.60.11.35 --public-host www.proyplus.com --live-reload=false --hmr=false",
+    "build:prod": "ng build --configuration production",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
