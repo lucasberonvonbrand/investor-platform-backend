@@ -31,13 +31,6 @@ import { InvestorService } from '../core/services/investors.service';
 })
 export class ShellComponent {
  sidebarCollapsed = false;
- isDark = document.documentElement.classList.contains('app-dark');
-
-toggleDarkMode() {
-  this.isDark = !this.isDark;
-  document.documentElement.classList.toggle('app-dark', this.isDark);
-  localStorage.setItem('theme:dark', String(this.isDark));
-}
 
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -80,7 +73,6 @@ userItems = [
     if (isInvestor) {
       managementItems.push({ label: 'Mis Inversiones', icon: 'pi pi-dollar', routerLink: '/mis-inversiones' });
       managementItems.push({ label: 'Mis proyectos Invertidos', icon: 'pi pi-briefcase', routerLink: '/mis-proyectos-invertidos' });
-      managementItems.push({ label: 'Noticias', icon: 'pi pi-bell', routerLink: '/noticias' });
     }
     // Items comunes para ambos roles logueados
     if (isStudent || isInvestor) {
@@ -128,9 +120,7 @@ userItems = [
   }
 
   toggleSidebar() { 
-    this.isDark = !this.isDark;
-    document.documentElement.classList.toggle('app-dark', this.isDark);
-    localStorage.setItem('theme:dark', String(this.isDark));
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
   openUserMenu(event: MouseEvent) { this.userMenu.toggle(event); }
   go(url: string) { this.router.navigateByUrl(url); }

@@ -464,6 +464,17 @@
           (visibleChange)="transactionModalVisible.set($event)" [modal]="true"
           [style]="{ width: '90vw', 'max-width': '1200px' }" [draggable]="false"
           (onHide)="selectedContractForTransactions.set(null)">
+  <!-- Información General del Contrato -->
+  <div class="mb-4 p-3 border rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <i class="pi pi-file-text text-2xl text-primary-500"></i>
+      <div>
+        <div class="font-semibold">{{ selectedContractForTransactions()?.textTitle }}</div>
+        <div class="text-sm opacity-70">Contrato #{{ selectedContractForTransactions()?.idContract }}</div>
+      </div>
+    </div>
+    <div class="text-right"><div class="text-sm opacity-70">Monto Acordado</div><div class="font-bold text-xl">{{ selectedContractForTransactions()?.amount | currency:selectedContractForTransactions()?.currency:'symbol':'1.0-0' }}</div></div>
+  </div>
   <ng-container *ngIf="selectedContractForTransactions() as contract">
     <!-- Encabezado con información clave -->
     <div class="mb-4 p-3 border rounded-lg bg-gray-100 dark:bg-gray-900 flex items-center justify-between">
@@ -554,6 +565,7 @@
             </div>
 
           </div>
+
         </div>
       <div *ngIf="!contract.investment" class="text-center p-4">
         <!-- Botón para iniciar el proceso de devolución si el proyecto está cancelado y el contrato firmado -->
