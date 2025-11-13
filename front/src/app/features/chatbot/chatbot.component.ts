@@ -30,7 +30,7 @@ export class ChatbotComponent implements OnInit {
 
   constructor(private router: Router, private chatService: ChatbotService, private sanitizer: DomSanitizer) {
     this.router.events.subscribe(() => {
-      this.shouldShowChatbot = !this.router.url.includes('/auth/login');
+      this.shouldShowChatbot = this.router.url !== '/auth/login';
     });
   }
 
