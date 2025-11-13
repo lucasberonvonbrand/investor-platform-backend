@@ -1,7 +1,9 @@
 // src/app/features/proyectos/proyectos.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin, timer } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { switchMap } from 'rxjs/operators';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ToastModule } from 'primeng/toast';
@@ -9,7 +11,8 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { ProjectsService, CreateProjectDto, ProjectStatus } from '../../core/services/projects.service';
@@ -33,9 +36,10 @@ type StudentWithFullName = StudentName & { fullName: string };
     CardModule,
     InputTextModule, // InputTextarea está incluido en InputTextModule en algunas versiones
     ButtonModule,
-    TooltipModule
+    TooltipModule,
+    ConfirmDialogModule
   ],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
 })
 export class ProyectosComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -44,13 +48,24 @@ export class ProyectosComponent implements OnInit {
   private msg = inject(MessageService);
   private authSvc = inject(AuthService);
   private router = inject(Router);
+  private confirmationService = inject(ConfirmationService);
 
   projectForm!: FormGroup;
 
   // UI carga / progreso
-  isLoading = false;
-  progress = 0;
+  creationState: 'idle' | 'creating' | 'success' = 'idle';
+  get isLoading(): boolean { return this.creationState === 'creating'; }
+  assignedTag: string = ''; // Para guardar la etiqueta de la IA
 
+  loadingMessages = [
+    'Analizando descripción del proyecto...',
+    'Identificando palabras clave con IA...',
+    'Evaluando viabilidad del presupuesto...',
+    'Asignando categoría principal...',
+    'Generando perfil de riesgo inicial...',
+    'Finalizando creación del proyecto...'
+  ];
+  currentLoadingMessage = '';
   // Data para autocompletes
   allStudents: StudentWithFullName[] = [];
   studentsLoading = false;
@@ -245,7 +260,25 @@ export class ProyectosComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.projectForm.invalid) return;
+    if (this.projectForm.invalid) {
+      this.projectForm.markAllAsTouched();
+      this.msg.add({ severity: 'warn', summary: 'Formulario incompleto', detail: 'Por favor, revisa los campos marcados en rojo.' });
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas crear este proyecto? Nuestra IA lo analizará y clasificará automáticamente.',
+      header: 'Confirmar Creación',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, crear',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.proceedWithCreation();
+      }
+    });
+  }
+
+  private proceedWithCreation(): void {
 
     const v = this.projectForm.getRawValue() as { // Usar getRawValue() para incluir controles deshabilitados
       name: string;
@@ -257,7 +290,6 @@ export class ProyectosComponent implements OnInit {
       students: StudentWithFullName[];
     };
 
-    // Asegurarse de que v.owner no sea null/undefined antes de acceder a .id
     if (!v.owner) {
       this.msg.add({
         severity: 'error',
@@ -282,32 +314,45 @@ export class ProyectosComponent implements OnInit {
     };
 
     // Feedback de progreso en UI
-    this.isLoading = true;
-    this.progress = 0;
-    const prog = setInterval(() => {
-      this.progress = Math.min(95, this.progress + 7);
-    }, 200);
+    this.creationState = 'creating';
+    let messageIndex = 0;
+    this.currentLoadingMessage = this.loadingMessages[messageIndex];
+    const prog = setInterval(() => { // Simula el cambio de mensajes durante el proceso
+      messageIndex = (messageIndex + 1) % this.loadingMessages.length;
+      this.currentLoadingMessage = this.loadingMessages[messageIndex];
+    }, 4000); // Cambia el mensaje cada 4 segundos
 
-    this.projectsSrv.create(dto).subscribe({
-      next: (created: { id: number }) => {
+    // Esperar a que la API responda Y que pasen al menos 10 segundos
+    // La respuesta de 'create' ya contiene el tagName, no necesitamos la segunda llamada.
+    const createProject$ = this.projectsSrv.create(dto);
+
+    const minTime$ = timer(10000);
+
+    forkJoin([createProject$, minTime$]).subscribe({
+      // Especificamos el tipo de la respuesta esperada del backend
+      next: ([createdProject, _]) => { // Usamos directamente la respuesta de la creación
         clearInterval(prog);
-        this.progress = 100;
-
-        this.msg.add({
-          severity: 'success',
-          summary: 'Proyecto creado',
-          detail: 'Proyecto creado con éxito.',
-          life: 3500,
-        });
-
-        // Redirigir a la lista de proyectos del usuario
-        this.router.navigate(['/misproyectos']);
+        this.assignedTag = (createdProject as any).tagName || 'General'; // Corregido: leer 'tagName' de la respuesta de creación
+        this.creationState = 'success';
       },
       error: (err: unknown) => {
         clearInterval(prog);
-        this.isLoading = false;
+        this.creationState = 'idle';
 
-        const details = this.handleServerValidation(err);
+        // --- INICIO: Manejo de error de cuota de API ---
+        if (err instanceof HttpErrorResponse && err.status === 429) {
+          this.msg.add({
+            severity: 'warn',
+            summary: 'Servicio de IA congestionado',
+            detail: 'Nuestro asistente de IA está procesando muchas solicitudes. Por favor, espera un minuto y vuelve a intentarlo.',
+            life: 8000,
+          });
+          console.error('Error 429: Cuota de la API de IA excedida.', err);
+          return; // No continuar con el manejo de errores genérico
+        }
+        // --- FIN: Manejo de error de cuota de API ---
+
+        const details = this.handleServerValidation(err); // Manejo de otros errores de validación
         if (details.length) {
           this.msg.add({
             severity: 'error',
@@ -326,5 +371,10 @@ export class ProyectosComponent implements OnInit {
         console.error('Error al crear proyecto', err);
       },
     });
+  }
+
+  onContinue(): void {
+    this.creationState = 'idle';
+    this.router.navigate(['/misproyectos']);
   }
 }
