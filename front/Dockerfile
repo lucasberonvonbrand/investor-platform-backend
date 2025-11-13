@@ -23,7 +23,7 @@ RUN npm run build
 FROM nginx:1.25-alpine
 
 # Copiamos los archivos construidos desde la etapa 'builder' al directorio web de Nginx
-COPY --from=builder /app/dist/proy-plus/browser /usr/share/nginx/html
+COPY --from=builder /app/dist/proy-plus /usr/share/nginx/html
 
 # Exponemos el puerto 80 (puerto por defecto de Nginx)
 EXPOSE 80
