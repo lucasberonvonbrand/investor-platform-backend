@@ -325,7 +325,6 @@ loadDocuments() {
     if (id) {
       this.docSvc.getDocumentsByProject(id).subscribe({
         next: (docs) => {
-        console.log('JSON de documentos recibido:', docs); 
         this.documents.set(docs); 
       },
         error: (err) => this.toast.add({ severity: 'error', summary: 'Documentos', detail: 'No se pudieron cargar los documentos.' })
@@ -950,7 +949,6 @@ loadDocuments() {
    * Abre el modal para gestionar los pagos (inversión y ganancias) de un contrato.
    */
   openTransactionModal(contract: IContract): void {
-    console.log('Abriendo modal para el contrato:', contract); // <-- AÑADIR ESTA LÍNEA PARA DEPURAR
     this.selectedContractForTransactions.set(contract);
     this.transactionModalVisible.set(true);
   }

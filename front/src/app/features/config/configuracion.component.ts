@@ -60,7 +60,6 @@ ngOnInit(): void {
 
   guardar() {
     if (this.configuracionForm.valid) {
-      console.log('Datos guardados:', this.configuracionForm.value);
       alert('Perfil actualizado con éxito ✅');
     } else {
       alert('Por favor, completa los campos requeridos ❌');
@@ -69,100 +68,10 @@ ngOnInit(): void {
 
   cancelar() {
     if (this.configuracionForm.valid) {
-      console.log('Datos guardados:', this.configuracionForm.value);
       alert('Perfil actualizado con éxito ✅');
     } 
   }
-
-/*
-  onFileSelect(event: any) {
-    const file: File = event.target.files[0];
-    if (file) {
-      this.selectedFile = {
-        file: file,
-        url: URL.createObjectURL(file)
-      };
-    }
-  }
-
-  onFileDrop(event: DragEvent) {
-    event.preventDefault();
-    const file = event.dataTransfer?.files[0];
-    if (file) {
-      this.selectedFile = {
-        file: file,
-        url: URL.createObjectURL(file)
-      };
-    }
-  }
-
-  onDragOver(event: DragEvent) {
-    event.preventDefault();
-  }
-*/
-/*
-  onSubmit() {
-    if (this.projectForm.valid) {
-      const formData = new FormData();
-      formData.append('title', this.projectForm.value.title);
-      formData.append('description', this.projectForm.value.description);
-      formData.append('status', this.projectForm.value.status);
-      formData.append('objective', this.projectForm.value.objective);
-      formData.append('startDate', this.projectForm.value.startDate);
-      formData.append('endDate', this.projectForm.value.endDate);
-      formData.append('creator', this.projectForm.value.creator);
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile.file, this.selectedFile.file.name);
-      }
-
-      this.isLoading = true; 
-      this.progress = 0; 
-
-      const interval = setInterval(() => {
-        this.progress += 10;
-        if (this.progress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            this.isLoading = false; 
-            this.projectForm.reset(); 
-          }, 500);
-        }
-      }, 300); 
-    }
-  }
-*/
-
-
-
-
 }
 
 
-      /////////////////////////////////////////////////////////////////////////////////////////
-      /** Método para manejar el envío del formulario
-      onSubmit() {
-      Verifica si el formulario es válido (todos los campos requeridos están llenos)
-      if (this.projectForm.valid) {
-      const formData = new FormData();
-      
-      Agrega cada campo del formulario al objeto FormData
-      formData.append('title', this.projectForm.value.title);
-      formData.append('description', this.projectForm.value.description);
-      formData.append('status', this.projectForm.value.status);
-      formData.append('objective', this.projectForm.value.objective);
-      formData.append('startDate', this.projectForm.value.startDate);
-      formData.append('endDate', this.projectForm.value.endDate);
-      formData.append('creator', this.projectForm.value.creator);
-
-      Si hay un archivo seleccionado, lo agrega a FormData
-      if (this.selectedFile) {
-        formData.append('file', this.selectedFile.file, this.selectedFile.file.name);
-      }
-      
-      Muestra los datos que se enviarían (para depuración)
-      console.log('Form data to be sent:', formData);
-      
-      Aquí puedes agregar la lógica para enviar formData a tu API
-      Por ejemplo, usando un servicio de HttpClient:
-       this.miServicio.crearProyecto(formData).subscribe(respuesta => { ... }); 
-       */
+   

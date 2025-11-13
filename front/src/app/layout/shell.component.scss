@@ -11,9 +11,6 @@
   --sidebar-item-hover-bg: var(--surface-hover);
   --sidebar-item-active-bg: var(--surface-card);
   --sidebar-accent: var(--primary-color);
-
-  display: block;
-  height: 100dvh;
 }
 
 /* ===== Topbar ===== */
@@ -140,17 +137,4 @@
 /* responsive: sidebar colapsado en pantallas chicas */
 @media (max-width: 960px) {
   .layout { grid-template-columns: 64px 1fr; }
-}
-:host {
-  --topbar-h: 56px;
-
-  /* 🎨 tokens del sidebar (derivan de las anteriores) */
-  --sidebar-bg: var(--surface-ground);
-  --sidebar-item-bg: transparent;
-  --sidebar-item-hover-bg: var(--surface-hover, #eef2f7);
-  --sidebar-item-active-bg: var(--surface-card);
-  --sidebar-accent: var(--primary-color, #3b82f6);
-
-  display: block;
-  height: 100dvh;
 }
