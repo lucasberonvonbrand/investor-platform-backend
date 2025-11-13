@@ -8,6 +8,7 @@ import { roleGuard } from './features/auth/login/role.guard';
 import { studentOnlyGuard } from './features/auth/guards/student-only.guard'; // ⬅️ NUEVO
 
 export const routes: Routes = [
+  { path: '', redirectTo: 'index', pathMatch: 'full' }, // Redirige la raíz a la landing page
   { path: 'index', loadComponent: () => import('./features/landing-page/landing.component').then(m => m.LandingComponent) },
   { path: 'auth/login',    loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
   { path: 'auth/forgot',   loadComponent: () => import('./features/auth/forgot/forgot.component').then(m => m.ForgotComponent) },
@@ -18,7 +19,7 @@ export const routes: Routes = [
 
   {
     path: '', // Las rutas hijas ahora están en el nivel raíz, pero protegidas por el guard
-    canActivate: [authGuard],
+    canActivate: [authGuard], // Este guard ahora solo se activa si intentas acceder a una ruta dentro del shell
     loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'marquesinas' },
@@ -30,7 +31,6 @@ export const routes: Routes = [
       { path: 'inversor-perfil',canActivate: [authGuard, roleGuard('ROLE_INVESTOR')],loadComponent: () => import('./features/investors/investors-update-form/investors-update-form.component').then(m => m.InvestorsUpdateFormComponent)},
       { path: 'proyectos',        loadComponent: () => import('./features/proyectos/crear-proyectos.component').then(m => m.ProyectosComponent) },
       { path: 'marquesinas',   loadComponent: () => import('./features/mismarquesinas/mismarquesinas.component').then(m => m.MismarquesinasComponent) },
-      { path: 'noticias',         loadComponent: () => import('./features/noticias/noticias.component').then(m => m.NoticiasComponent) },
       { path: 'estudiantes',      loadComponent: () => import('./features/students/students-table/students-table.component').then(m => m.StudentsTableComponent) },
       { path: 'inversores',       loadComponent: () => import('./features/investors/investors-table/investors-table.component').then(m => m.InvestorsTableComponent) },
       { path: 'Miperfil',         redirectTo: 'mi-perfil', pathMatch: 'full' },
@@ -96,5 +96,5 @@ export const routes: Routes = [
     ],
   },
 
-  { path: '**', redirectTo: 'index' }, // Redirige a la landing page si la ruta no existe
+  { path: '**', redirectTo: 'index' }, // Este sigue siendo el fallback para rutas no encontradas
 ];
