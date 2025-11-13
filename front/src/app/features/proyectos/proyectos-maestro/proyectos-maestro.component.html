@@ -227,11 +227,11 @@
                     icon="pi pi-pencil" pTooltip="Editar Borrador" severity="warning"
                     (click)="editContract(row)">
             </button>
+            <!-- Botón para cancelar/retirar oferta (Inversor) -->
             <button pButton [text]="true" [rounded]="true" [size]="'small'"
-                    *ngIf="row.status === 'PENDING_STUDENT_SIGNATURE'"
-                    icon="pi pi-times-circle" pTooltip="Retirar Oferta" severity="danger"
-                    (click)="cancelContractByInvestor(row)">
-            </button>
+                    *ngIf="row.status === 'DRAFT' || row.status === 'PARTIALLY_SIGNED'"
+                    icon="pi pi-times-circle" pTooltip="Cancelar Contrato" severity="danger"
+                    (click)="cancelContractByInvestor(row)"></button>
             <button pButton [text]="true" [rounded]="true" [size]="'small'"
                     *ngIf="row.status === 'PARTIALLY_SIGNED' && !row.investorSigned"
                     icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"
@@ -246,6 +246,11 @@
                     icon="pi pi-pencil" pTooltip="Editar Borrador" severity="warning"
                     (click)="editContract(row)">
             </button>
+            <!-- Botón para cancelar (Estudiante) -->
+            <button pButton [text]="true" [rounded]="true" [size]="'small'"
+                    *ngIf="row.status === 'DRAFT' || row.status === 'PARTIALLY_SIGNED'"
+                    icon="pi pi-times-circle" pTooltip="Cancelar Contrato" severity="danger"
+                    (click)="cancelContractByStudent(row)"></button>
             <button pButton [text]="true" [rounded]="true" [size]="'small'"
                     *ngIf="row.status === 'PARTIALLY_SIGNED'"
                     icon="pi pi-file-edit" pTooltip="Firmar Contrato" severity="success"

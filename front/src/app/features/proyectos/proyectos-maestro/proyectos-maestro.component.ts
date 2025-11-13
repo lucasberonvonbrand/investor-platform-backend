@@ -982,20 +982,25 @@ loadDocuments() {
   /**
    * El estudiante cancela un contrato que está firmado pero cuyo proyecto fue cancelado.
    */
-  cancelContractByStudent(contract: IContract): void {
+   cancelContractByStudent(contract: IContract): void {
+    const isDraftOrPartial = contract.status === 'DRAFT' || contract.status === 'PARTIALLY_SIGNED';
+    const message = isDraftOrPartial
+      ? `¿Estás seguro de que quieres cancelar el contrato "${contract.textTitle}"? Esta acción es irreversible.`
+      : `¿Estás seguro de que quieres cancelar el contrato "${contract.textTitle}"? El siguiente paso será iniciar la devolución de los fondos.`;
+
     this.confirmSvc.confirm({
-      message: `¿Estás seguro de que quieres cancelar el contrato "${contract.textTitle}"? El siguiente paso será iniciar la devolución de los fondos.`,
+      message: message,
       header: 'Confirmar Cancelación de Contrato',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, cancelar contrato',
       rejectLabel: 'No',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        const studentId = this.currentUser?.id;
-        if (!studentId) return;
-
-        this.svc.cancelContractByStudent(contract.idContract, studentId).subscribe({
-          next: (updated: IContract) => this.updateContractInList(updated),
+         const studentId = this.currentUser?.id;
+         if (!studentId) return;
+ 
+         this.svc.cancelContractByStudent(contract.idContract, studentId).subscribe({
+          next: (updated: IContract) => { this.updateContractInList(updated); this.toast.add({ severity: 'warn', summary: 'Cancelado', detail: 'El contrato ha sido cancelado.' }); },
           error: (err: any) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo cancelar el contrato.' })
         });
       }
@@ -1004,21 +1009,22 @@ loadDocuments() {
 
   cancelContractByInvestor(contract: IContract): void {
     this.confirmSvc.confirm({
-      message: `¿Estás seguro de que quieres retirar la oferta del contrato "${contract.textTitle}"?`,
+      message: `¿Estás seguro de que quieres cancelar el contrato "${contract.textTitle}"? Esta acción no se puede deshacer.`,
       header: 'Confirmar Cancelación',
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, retirar oferta',
+      acceptLabel: 'Sí, cancelar',
       rejectLabel: 'No',
+      acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         const investorId = this.currentUser?.id;
         if (!investorId) {
           this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo identificar al usuario.' });
           return;
         }
-        this.svc.cancelContractByInvestor((contract as any).idContract, investorId).subscribe({
+        this.svc.cancelContractByInvestor(contract.idContract, investorId).subscribe({
           next: (updatedContract) => {
             this.updateContractInList(updatedContract);
-            this.toast.add({ severity: 'info', summary: 'Cancelado', detail: 'La oferta de contrato ha sido retirada.' });
+            this.toast.add({ severity: 'warn', summary: 'Cancelado', detail: 'El contrato ha sido cancelado.' });
           },
           error: (err) => this.toast.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'No se pudo cancelar la oferta.' })
         });

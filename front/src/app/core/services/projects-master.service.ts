@@ -201,7 +201,7 @@ export class ProjectsMasterService {
   }
 
   cancelContractByInvestor(contractId: number, investorId: number): Observable<IContract> {
-    return this.http.post<IContract>(`/api/contracts/${contractId}/cancel-by-investor`, { investorId });
+    return this.http.put<IContract>(`/api/contracts/cancel-by-investor/${contractId}`, { investorId });
   }
 
   cancelContractByStudent(contractId: number, studentId: number): Observable<IContract> {
