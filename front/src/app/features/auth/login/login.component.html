@@ -83,5 +83,21 @@
     </div>
 
 
+    <!-- Overlay de Carga con Animación Moderna -->
+    <div *ngIf="loading()" class="loading-overlay">
+      <div class="loading-content">
+        <div class="spinner">
+          <div class="dot1"></div>
+          <div class="dot2"></div>
+        </div>
+        <div class="loading-text-container">
+          <h3 class="loading-title">Iniciando Sesión</h3>
+          <p class="loading-message">
+            Verificando credenciales...
+          </p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>

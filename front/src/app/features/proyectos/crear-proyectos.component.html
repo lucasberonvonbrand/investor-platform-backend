@@ -1,4 +1,5 @@
 <p-toast></p-toast>
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
   <p-card header="Crear Nuevo Proyecto" subheader="Completá los datos para dar de alta tu iniciativa" styleClass="w-full max-w-4xl">
     <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
@@ -118,15 +119,34 @@
       </div>
     </form>
 
-    <!-- Overlay de carga -->
-    <div class="loading-overlay" *ngIf="isLoading">
+    <!-- Overlay de Carga (mientras se crea) -->
+    <div *ngIf="creationState === 'creating'" class="loading-overlay">
       <div class="loading-content">
-        <h3>Creando proyecto...</h3>
-        <p>Por favor espere mientras se procesa la información.</p>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" [style.width]="progress + '%'"></div>
+        <div class="spinner">
+          <div class="dot1"></div>
+          <div class="dot2"></div>
         </div>
-        <p class="progress-text">{{ progress }}%</p>
+        <div class="loading-text-container">
+          <h3 class="loading-title">Analizando tu proyecto con IA</h3>
+          <p class="loading-message">
+            {{ currentLoadingMessage }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay de Éxito (después de crear) -->
+    <div *ngIf="creationState === 'success'" class="loading-overlay">
+      <div class="loading-content success-content">
+        <i class="pi pi-check-circle success-icon"></i>
+        <h3 class="loading-title">¡Proyecto Creado y Analizado!</h3>
+        <p class="loading-message">
+          Nuestra IA ha clasificado tu proyecto en la categoría:
+        </p>
+        <div class="tag-display">
+          {{ assignedTag }}
+        </div>
+        <button pButton type="button" label="Continuar" icon="pi pi-arrow-right" iconPos="right" (click)="onContinue()" class="mt-6"></button>
       </div>
     </div>
   </p-card>

@@ -2,7 +2,7 @@ import { Component, ElementRef, ViewChild, inject, signal, OnDestroy } from "@an
 import { CommonModule } from "@angular/common";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
-import { Subscription } from "rxjs";
+import { Subscription, forkJoin, timer } from "rxjs";
 import { MessageService } from "primeng/api";
 import { ToastModule } from "primeng/toast";
 import { AuthService } from "./auth.service";
@@ -80,8 +80,11 @@ export class LoginComponent implements OnDestroy {
 
     const { username, password } = this.form.getRawValue();
 
-    this.auth.login(username!, password!).subscribe({
-      next: () => {
+    const login$ = this.auth.login(username!, password!);
+    const minTime$ = timer(1500); // 1.5 segundos de duración mínima
+
+    forkJoin([login$, minTime$]).subscribe({
+      next: ([session, _]) => { // El primer elemento de la tupla es el resultado del login
         // auth.login ya persiste la sesión; ahora leemos el rol
         const role = (this.auth.getUserRole() || '').toUpperCase();
 
