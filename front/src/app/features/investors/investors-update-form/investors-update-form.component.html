@@ -45,7 +45,7 @@
               <span>Persona de Contacto <span class="text-red-500">*</span></span>
               <i class="pi pi-info-circle cursor-pointer" pTooltip="Nombre completo del representante principal de la cuenta."></i>
             </label>
-            <input type="text" id="contactPerson" pInputText formControlName="contactPerson" class="w-full"/>
+            <input type="text" id="contactPerson" pInputText formControlName="contactPerson" class="w-full" pKeyFilter="alpha"/>
             <small *ngIf="isInvalidField('contactPerson')" class="p-error">{{ getFieldError('contactPerson') }}</small>
           </div>
 
@@ -54,7 +54,7 @@
               <span>Teléfono <span class="text-red-500">*</span></span>
               <i class="pi pi-info-circle cursor-pointer" pTooltip="Un número de teléfono de contacto directo."></i>
             </label>
-            <input type="text" id="phone" pInputText formControlName="phone" class="w-full"/>
+            <input type="text" id="phone" pInputText formControlName="phone" class="w-full" pKeyFilter="num"/>
             <small *ngIf="isInvalidField('phone')" class="p-error">{{ getFieldError('phone') }}</small>
           </div>
 

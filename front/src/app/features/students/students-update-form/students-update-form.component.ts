@@ -16,6 +16,7 @@ import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { KeyFilterModule } from 'primeng/keyfilter';
 
 /**
  * Validador personalizado para asegurar que la fecha sea anterior a la fecha actual.
@@ -40,7 +41,8 @@ export function pastDateValidator(control: AbstractControl): ValidationErrors | 
     CardModule, 
     ButtonModule, 
     InputTextModule,
-    TooltipModule,
+    TooltipModule,    
+    KeyFilterModule,
     ConfirmDialogModule
   ],
   providers: [MessageService, ConfirmationService]
@@ -50,7 +52,6 @@ export class StudentsUpdateComponent implements OnInit {
  studentsUpdateForm!: FormGroup;
  student!: Student;
  isLoading = false;
- originalEmail: string = '';
 
   provinces: { label: string, value: Province }[];
   universities: { label: string, value: University }[];
@@ -96,7 +97,6 @@ ngOnInit(): void {
       this.studentService.getById(userId).subscribe({
         next: (student) => {
           this.student = student;
-          this.originalEmail = student.email;
           this.buildForm(student);
           this.isLoading = false;
         },
@@ -116,15 +116,11 @@ ngOnInit(): void {
   private buildForm(student: Student) {
     this.studentsUpdateForm = this.fb.group({
       username: [{ value: student.username ?? '', disabled: true }, [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      email: [student.email ?? '',
-        [Validators.required, Validators.email, Validators.maxLength(100)], // Validadores síncronos
-        [this.emailValidator()] // Validador asíncrono
-      ],
-
+      email: [{ value: student.email ?? '', disabled: true }, [Validators.required, Validators.email, Validators.maxLength(100)]],
       firstName: [student.firstName ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       lastName: [student.lastName ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       dni: [{ value: student.dni ?? '', disabled: true }, [Validators.required, Validators.maxLength(20)]],
-      phone: [student.phone ?? '', [Validators.required, Validators.maxLength(50)]],
+      phone: [student.phone ?? '', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
       dateOfBirth: [student.dateOfBirth ?? '', [Validators.required, pastDateValidator]],
       university: [student.university ?? '', Validators.required],      
       career: [student.career ?? '', Validators.required],
@@ -142,27 +138,37 @@ ngOnInit(): void {
   }
 
   guardar() {
+    if (this.studentsUpdateForm.pristine) {
+      this.toast.add({ severity: 'info', summary: 'Sin cambios', detail: 'No has realizado ninguna modificación.' });
+      return;
+    }
+
     if (this.studentsUpdateForm.invalid) {
       this.studentsUpdateForm.markAllAsTouched();
-      this.studentsUpdateForm.updateValueAndValidity();
       this.toast.add({ severity: 'warn', summary: 'Atención', detail: 'Por favor, completa todos los campos requeridos.' });
       return;
     }
 
-    // Usamos getRawValue() para incluir los campos deshabilitados como email y dni si el backend los necesita para validación.
-    const formValue = this.studentsUpdateForm.getRawValue();
-    const apiUrl = `/api/students/${this.student.id}`; // URL del endpoint PATCH
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas guardar los cambios realizados en tu perfil?',
+      header: 'Confirmar Cambios',
+      icon: 'pi pi-save',
+      acceptLabel: 'Sí, guardar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        const formValue = this.studentsUpdateForm.getRawValue();
+        const apiUrl = `/api/students/${this.student.id}`;
 
-    this.http.patch(apiUrl, formValue).subscribe({
-      next: (updated) => {
-       this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
-        setTimeout(() => {
-          this.router.navigateByUrl('/misproyectos');
-        }, 2000); // Redirige después de 2 segundos
-      },
-      error: (err) => {
-        console.error('Error actualizando perfil:', err);
-        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil. Inténtalo de nuevo.' });
+        this.http.patch(apiUrl, formValue).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
+            this.studentsUpdateForm.markAsPristine(); // Resetea el estado del formulario para deshabilitar el botón de guardar
+          },
+          error: (err) => {
+            console.error('Error actualizando perfil:', err);
+            this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil. Inténtalo de nuevo.' });
+          }
+        });
       }
     });
   }
@@ -230,23 +236,8 @@ ngOnInit(): void {
     if (errors['email']) return 'Email inválido';
     if (errors['pattern']) return 'Formato inválido';
     if (errors['futureDate']) return 'La fecha no puede ser hoy ni futura.';
-    if (errors['emailExists']) return 'El email ya está en uso.';
 
     return null;
   }
 
-  private emailValidator(): AsyncValidatorFn {
-    return (control: AbstractControl) => {
-      if (!control.value || control.value === this.originalEmail) {
-        return of(null);
-      }
-      return of(control.value).pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        switchMap(value => this.http.get<boolean>(`/api/users/check-email/${value}`)),
-        map(exists => (exists ? { emailExists: true } : null)),
-        catchError(() => of(null))
-      );
-    };
-  }
 }

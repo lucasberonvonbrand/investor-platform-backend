@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors, AsyncValidatorFn } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
@@ -17,6 +17,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { KeyFilterModule } from 'primeng/keyfilter';
 
 @Component({
   selector: 'app-investors-update-form',
@@ -25,7 +26,7 @@ import { ConfirmationService } from 'primeng/api';
   standalone: true,
   imports: [
     ReactiveFormsModule, CommonModule, ToastModule, 
-    CardModule, ButtonModule, InputTextModule, TooltipModule, ConfirmDialogModule
+    CardModule, ButtonModule, InputTextModule, TooltipModule, ConfirmDialogModule, KeyFilterModule
   ],
   providers: [MessageService, ConfirmationService]
 })
@@ -33,7 +34,6 @@ export class InvestorsUpdateFormComponent implements OnInit {
   investorsUpdateForm!: FormGroup;
   investor!: Investor;
   isLoading = false;
-  originalEmail: string = '';
 
   provinces: { label: string, value: Province }[];
 
@@ -63,7 +63,6 @@ export class InvestorsUpdateFormComponent implements OnInit {
       this.investorService.getById(userId).subscribe({
         next: (investor) => {
           this.investor = investor;
-          this.originalEmail = investor.email;
           this.buildForm(investor);
           this.isLoading = false;
         },
@@ -81,10 +80,7 @@ export class InvestorsUpdateFormComponent implements OnInit {
   private buildForm(investor: Investor) {
     this.investorsUpdateForm = this.fb.group({
       username: [{ value: investor.username ?? '', disabled: true }, [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      email: [investor.email ?? '',
-        [Validators.required, Validators.email],
-        [this.emailValidator()]
-      ],
+      email: [{ value: investor.email ?? '', disabled: true }, [Validators.required, Validators.email]],
       cuit: [{ value: investor.cuit ?? '', disabled: true }, [Validators.required, Validators.minLength(11), Validators.maxLength(11)]],
       contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       phone: [investor.phone ?? '', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
@@ -102,25 +98,37 @@ export class InvestorsUpdateFormComponent implements OnInit {
   }
 
   guardar() {
+    if (this.investorsUpdateForm.pristine) {
+      this.toast.add({ severity: 'info', summary: 'Sin cambios', detail: 'No has realizado ninguna modificación.' });
+      return;
+    }
+
     if (this.investorsUpdateForm.invalid) {
       this.investorsUpdateForm.markAllAsTouched();
       this.toast.add({ severity: 'warn', summary: 'Atención', detail: 'Por favor, completa todos los campos requeridos.' });
       return;
     }
 
-    const formValue = this.investorsUpdateForm.getRawValue();
-    const apiUrl = `/api/investors/${this.investor.id}`;
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas guardar los cambios realizados en tu perfil?',
+      header: 'Confirmar Cambios',
+      icon: 'pi pi-save',
+      acceptLabel: 'Sí, guardar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        const formValue = this.investorsUpdateForm.getRawValue();
+        const apiUrl = `/api/investors/${this.investor.id}`;
 
-    this.http.patch(apiUrl, formValue).subscribe({
-      next: () => {
-        this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
-        setTimeout(() => {
-          this.router.navigateByUrl('/dashboard'); // O la ruta que corresponda
-        }, 2000);
-      },
-      error: (err) => {
-        console.error('Error actualizando perfil:', err);
-        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil. Inténtalo de nuevo.' });
+        this.http.patch(apiUrl, formValue).subscribe({
+          next: () => {
+            this.toast.add({ severity: 'success', summary: 'Éxito', detail: 'Perfil actualizado correctamente' });
+            this.investorsUpdateForm.markAsPristine(); // Resetea el estado del formulario para deshabilitar el botón de guardar
+          },
+          error: (err) => {
+            console.error('Error actualizando perfil:', err);
+            this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar el perfil. Inténtalo de nuevo.' });
+          }
+        });
       }
     });
   }
@@ -184,23 +192,8 @@ export class InvestorsUpdateFormComponent implements OnInit {
     if (errors['maxlength']) return `Máximo ${errors['maxlength'].requiredLength} caracteres`;
     if (errors['email']) return 'Email inválido';
     if (errors['pattern']) return 'Formato inválido';
-    if (errors['emailExists']) return 'El email ya está en uso.';
 
     return null;
   }
 
-  private emailValidator(): AsyncValidatorFn {
-    return (control: AbstractControl) => {
-      if (!control.value || control.value === this.originalEmail) {
-        return of(null);
-      }
-      return of(control.value).pipe(
-        debounceTime(500),
-        distinctUntilChanged(),
-        switchMap(value => this.http.get<boolean>(`/api/users/check-email/${value}`)),
-        map(exists => (exists ? { emailExists: true } : null)),
-        catchError(() => of(null))
-      );
-    };
-  }
 }
