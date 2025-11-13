@@ -68,6 +68,9 @@ export class ProjectsPanelComponent implements OnInit {
         this.reload(url);
       }
     });
+
+    // Llamada inicial para cargar los datos la primera vez que el componente se muestra
+    this.reload();
   }
 
   reload(currentUrl?: string): void {
