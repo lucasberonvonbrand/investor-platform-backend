@@ -38,7 +38,7 @@
           <span>Nombre <span class="text-red-500">*</span></span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu nombre de pila."></i>
         </label>
-        <input type="text" id="firstName" placeholder="Ingrese nombre" pInputText formControlName="firstName" class="w-full"/>
+        <input type="text" id="firstName" placeholder="Ingrese nombre" pInputText formControlName="firstName" class="w-full" maxlength="20" pKeyFilter="alpha"/>
         <small *ngIf="isInvalidField('firstName')" class="p-error">{{ getFieldError('firstName') }}</small>
       </div>
 
@@ -48,7 +48,7 @@
           <span>Apellido <span class="text-red-500">*</span></span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu apellido."></i>
         </label>
-        <input type="text" id="lastName" pInputText placeholder="Ingrese apellido" formControlName="lastName" class="w-full"/>
+        <input type="text" id="lastName" pInputText placeholder="Ingrese apellido" formControlName="lastName" class="w-full" maxlength="20" pKeyFilter="alpha"/>
         <small *ngIf="isInvalidField('lastName')" class="p-error">{{ getFieldError('lastName') }}</small>
       </div>
 
@@ -68,7 +68,7 @@
           <span>Teléfono <span class="text-red-500">*</span></span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="Un número de teléfono de contacto directo."></i>
         </label>
-        <input type="text" id="phone" pInputText placeholder="Ingrese teléfono" formControlName="phone" class="w-full"/>
+        <input type="text" id="phone" pInputText placeholder="Ingrese teléfono" formControlName="phone" class="w-full" maxlength="10" pKeyFilter="num"/>
         <small *ngIf="isInvalidField('phone')" class="p-error">{{ getFieldError('phone') }}</small>
       </div>
 
@@ -99,7 +99,7 @@
           <span>Carrera <span class="text-red-500">*</span></span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="El nombre de la carrera que estás cursando."></i>
         </label>
-        <input type="text" id="configuracionCarrera" pInputText placeholder="Ingrese carrera" formControlName="career" autocomplete="off" class="w-full">
+        <input type="text" id="configuracionCarrera" pInputText placeholder="Ingrese carrera" formControlName="career" autocomplete="off" class="w-full" maxlength="25">
         <small *ngIf="isInvalidField('career')" class="p-error">{{ getFieldError('career') }}</small>
       </div>
 
@@ -192,5 +192,3 @@
     </p-card>
   </div>
 </div>
-
-
