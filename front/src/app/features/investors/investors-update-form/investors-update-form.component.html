@@ -45,7 +45,7 @@
               <span>Persona de Contacto <span class="text-red-500">*</span></span>
               <i class="pi pi-info-circle cursor-pointer" pTooltip="Nombre completo del representante principal de la cuenta."></i>
             </label>
-            <input type="text" id="contactPerson" pInputText formControlName="contactPerson" class="w-full" pKeyFilter="alpha"/>
+            <input type="text" id="contactPerson" pInputText formControlName="contactPerson" class="w-full"/>
             <small *ngIf="isInvalidField('contactPerson')" class="p-error">{{ getFieldError('contactPerson') }}</small>
           </div>
 
@@ -131,5 +131,21 @@
         </div>
       </form>
     </p-card>
+  </div>
+
+  <!-- Overlay de Carga con Animación Moderna -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="spinner">
+        <div class="dot1"></div>
+        <div class="dot2"></div>
+      </div>
+      <div class="loading-text-container">
+        <h3 class="loading-title">Guardando Cambios</h3>
+        <p class="loading-message">
+          Actualizando tu perfil...
+        </p>
+      </div>
+    </div>
   </div>
 </div>

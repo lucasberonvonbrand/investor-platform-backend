@@ -80,10 +80,10 @@ export class InvestorsUpdateFormComponent implements OnInit {
   private buildForm(investor: Investor) {
     this.investorsUpdateForm = this.fb.group({
       username: [{ value: investor.username ?? '', disabled: true }, [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      email: [{ value: investor.email ?? '', disabled: true }, [Validators.required, Validators.email]],
+      email: [{ value: investor.email ?? '', disabled: true }, [Validators.required, Validators.email, Validators.maxLength(100)]],
       cuit: [{ value: investor.cuit ?? '', disabled: true }, [Validators.required, Validators.minLength(11), Validators.maxLength(11)]],
       contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
-      phone: [investor.phone ?? '', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
+      phone: [investor.phone ?? '', [Validators.required, Validators.maxLength(20), Validators.pattern(/^\+?\d{8,15}$/)]],
       webSite: [investor.webSite ?? '', [Validators.maxLength(100)]],
       linkedinUrl: [investor.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)]],
       description: [investor.description ?? '', Validators.maxLength(500)],
@@ -117,7 +117,7 @@ export class InvestorsUpdateFormComponent implements OnInit {
       rejectLabel: 'No, cancelar',
       accept: () => {
         const formValue = this.investorsUpdateForm.getRawValue();
-        const apiUrl = `/api/investors/${this.investor.id}`;
+        const apiUrl = `/api/investors/${this.investor?.id}`;
 
         this.http.patch(apiUrl, formValue).subscribe({
           next: () => {
