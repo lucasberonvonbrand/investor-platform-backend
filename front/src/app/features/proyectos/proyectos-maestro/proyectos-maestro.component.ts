@@ -315,43 +315,49 @@ export class ProyectosMaestroComponent implements OnInit {
   }
 
   private loadContracts(): void {
-    this.svc.getContracts(this.projectId()).pipe(
-      switchMap((contracts: IContract[]) => {
-        if (!contracts || contracts.length === 0) {
-          return of([]); // Si no hay contratos, devolvemos un array vacío.
-        }
+    this.svc.getContracts(this.projectId())
+      .pipe(switchMap(contracts => this.enrichContractsWithInvestorNames(contracts)))
+      .subscribe({ next: (enrichedContracts) => this.contracts.set(enrichedContracts) });
+  }
 
-        // 1. Obtenemos los IDs únicos de los inversores.
-        const investorIds = [...new Set(contracts.map(c => c.createdByInvestorId).filter(id => id != null))] as number[];
+  /**
+   * Toma una lista de contratos y, si a alguno le falta el nombre del inversor,
+   * hace las llamadas a la API necesarias para obtenerlos y los devuelve enriquecidos.
+   * @param contracts - La lista de contratos a procesar.
+   * @returns Un Observable con la lista de contratos enriquecidos.
+   */
+  private enrichContractsWithInvestorNames(contracts: IContract[]): Observable<IContract[]> {
+    if (!contracts || contracts.length === 0) {
+      return of([]);
+    }
 
-        if (investorIds.length === 0) {
-          return of(contracts); // Si no hay IDs de inversores, devolvemos los contratos como están.
-        }
+    const investorIdsToFetch = [
+      ...new Set(
+        contracts
+          .filter(c => c.createdByInvestorId && !c.investorName)
+          .map(c => c.createdByInvestorId as number)
+      ),
+    ];
 
-        // 2. Creamos un array de observables para obtener los detalles de cada inversor.
-        const investorObservables = investorIds.map(id =>
-          this.investorSvc.getById(id).pipe( // <-- CORREGIDO: Se usa investorSvc
-            catchError(() => of({ id, username: 'Desconocido' })) // Fallback por si un inversor no se encuentra
-          )
-        );
+    if (investorIdsToFetch.length === 0) {
+      return of(contracts);
+    }
 
-        // 3. Usamos forkJoin para esperar a que todas las llamadas a la API de inversores terminen.
-        return forkJoin(investorObservables).pipe(
-          map((investors) => { // Quitamos el tipo estricto para que TypeScript infiera el tipo correcto
-            const investorMap = new Map(investors.map(inv => [inv.id, inv.username]));
-            // 4. Mapeamos los contratos para añadirles el nombre del inversor.
-            return contracts.map(contract => ({
-              ...contract,
-              investorName: contract.createdByInvestorId ? investorMap.get(contract.createdByInvestorId) : 'N/A'
-            }));
-          })
-        );
+    const investorObservables = investorIdsToFetch.map(id =>
+      this.investorSvc.getById(id).pipe(
+        catchError(() => of({ id, username: 'Desconocido' }))
+      )
+    );
+
+    return forkJoin(investorObservables).pipe(
+      map((investors) => {
+        const investorMap = new Map(investors.map(inv => [inv.id, inv.username]));
+        return contracts.map(contract => ({
+          ...contract,
+          investorName: contract.investorName || (contract.createdByInvestorId ? investorMap.get(contract.createdByInvestorId) : 'N/A')
+        }));
       })
-    ).subscribe({
-      next: (enrichedContracts: IContract[]) => {
-        this.contracts.set(enrichedContracts);
-      }
-    });
+    );
   }
 
 loadDocuments() {
@@ -1143,9 +1149,11 @@ loadDocuments() {
   }
 
   private updateContractInList(updated: IContract): void {
-    this.contracts.update(list =>
-      list.map(c => c.idContract === updated.idContract ? updated : c)
-    );
+    // Envolvemos el contrato actualizado en un array y lo pasamos a la función de enriquecimiento.
+    this.enrichContractsWithInvestorNames([updated]).subscribe(enriched => {
+      const finalContract = enriched[0];
+      this.contracts.update(list => list.map(c => c.idContract === finalContract.idContract ? finalContract : c));
+    });
   }
 
   /**
@@ -1798,6 +1806,11 @@ loadDocuments() {
    */
   private contractNameValidator() {
     return (control: import('@angular/forms').AbstractControl) => {
+      // FIX: Si estamos en modo solo lectura, no ejecutar la validación.
+      if (this.isReadonly()) {
+        return of(null);
+      }
+
       const title = control.value;
       if (!title) {
         return of(null); // Si no hay título, no hay error
