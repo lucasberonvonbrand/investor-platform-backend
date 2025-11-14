@@ -443,6 +443,9 @@ public class ContractService implements IContractService {
                 if (contract.getStatus() != ContractStatus.SIGNED) {
                     throw new ContractCannotBeModifiedException("Solo contratos firmados pueden cerrarse.");
                 }
+                if (contract.getProject().getStatus() == ProjectStatus.PENDING_FUNDING) {
+                    throw new BusinessException("No se puede cerrar un contrato si el proyecto aún está pendiente de financiación.");
+                }
             }
             case CANCELLED -> {
                 if (contract.getStatus() == ContractStatus.CLOSED ||
