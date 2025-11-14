@@ -283,10 +283,14 @@
             <button pButton type="button" label="Gestionar Inversión" icon="pi pi-dollar"
                     class="p-button-secondary p-button-outlined p-button-sm ml-2"
                     (click)="openTransactionModal(row)"></button>
-
-            <button *ngIf="isOwner() && row.investment?.status === 'RECEIVED' && project()?.status !== 'CANCELLED'" pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
+            <!-- El botón "Cerrar Contrato" solo se habilita si el proyecto está EN PROGRESO -->
+            <button *ngIf="isOwner() && row.investment?.status === 'RECEIVED' && project()?.status !== 'CANCELLED'"
+                    pButton type="button" label="Cerrar Contrato" icon="pi pi-check-circle"
                     class="p-button-success p-button-outlined p-button-sm ml-2"
-                    (click)="closeContract(row)"></button>
+                    (click)="closeContract(row)"
+                    [disabled]="project()?.status === 'PENDING_FUNDING'"
+                    [pTooltip]="project()?.status === 'PENDING_FUNDING' ? 'No se puede cerrar un contrato de un proyecto que aún está en etapa de financiación.' : 'Cierra el contrato para generar las ganancias del inversor.'"
+                    tooltipPosition="top"></button>
           </ng-container>
           <!-- Botón para gestionar las ganancias (cuando el contrato está cerrado) -->
           <button *ngIf="row.status === 'CLOSED'" pButton type="button" label="Gestionar Ganancias" icon="pi pi-chart-line"
