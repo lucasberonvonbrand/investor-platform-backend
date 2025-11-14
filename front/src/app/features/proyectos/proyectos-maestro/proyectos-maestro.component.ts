@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef } from '@angular/core';
-import { Subscription, of, timer } from 'rxjs';
+import { Subscription, of, timer, forkJoin, Observable } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -26,10 +26,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { MessageService, ConfirmationService, MenuItem } from 'primeng/api';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { debounceTime, distinctUntilChanged, filter, switchMap, tap, map } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, switchMap, tap, map, catchError } from 'rxjs/operators';
 
 import { ProjectsMasterService } from '../../../core/services/projects-master.service';
 import { ProjectDocumentsService, IProjectDocument } from '../../../core/services/project-documents.service';
+import { InvestorService } from '../../../core/services/investors.service';
+import { Investor } from '../../../models/investor.model';
 import { AuthService, Session } from '../../auth/login/auth.service';
 import type { ContactOwnerDTO, IInvestment, IEarning, IStudentDetail } from '../../../core/services/projects-master.service';
 import jsPDF from 'jspdf';
@@ -68,6 +70,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private docSvc = inject(ProjectDocumentsService);
   private auth = inject(AuthService);
   private confirmSvc = inject(ConfirmationService);
+  private investorSvc = inject(InvestorService);
   private router = inject(Router);
 
   @ViewChild('contractContent') contractContentRef!: ElementRef<HTMLDivElement>;
@@ -171,8 +174,15 @@ export class ProyectosMaestroComponent implements OnInit {
 
   // ===== Modal de Detalles del Estudiante =====
   studentDetailModalVisible = signal(false);
-  selectedStudent = signal<IStudentDetail | null>(null);
+  // selectedStudent se reemplaza por selectedUser para manejar ambos roles
+  selectedUser = signal<IStudentDetail | null>(null);
   loadingStudentDetails = signal(false);
+
+  // ===== Modal de Detalles del Inversor (NUEVO) =====
+  investorDetailModalVisible = signal(false);
+  selectedInvestor = signal<Investor | null>(null);
+  loadingInvestorDetails = signal(false);
+
 
   // ===== Modal de Edición de Proyecto =====
   editProjectModalVisible = signal(false);
@@ -305,17 +315,41 @@ export class ProyectosMaestroComponent implements OnInit {
   }
 
   private loadContracts(): void {
-    this.svc.getContracts(this.projectId()).subscribe({
-      next: (list: IContract[]) => {
-        let contractsToShow = list || [];
-        // --- FILTRO DE SEGURIDAD ---
-        // Si el usuario es un inversor, solo debe ver sus propios contratos.
-        // El dueño del proyecto puede ver todos.
-        if (this.isInvestor() && !this.isOwner()) {
-          const currentUserId = this.currentUser?.id;
-          contractsToShow = contractsToShow.filter(c => c.createdByInvestorId === currentUserId);
+    this.svc.getContracts(this.projectId()).pipe(
+      switchMap((contracts: IContract[]) => {
+        if (!contracts || contracts.length === 0) {
+          return of([]); // Si no hay contratos, devolvemos un array vacío.
         }
-        this.contracts.set(contractsToShow);
+
+        // 1. Obtenemos los IDs únicos de los inversores.
+        const investorIds = [...new Set(contracts.map(c => c.createdByInvestorId).filter(id => id != null))] as number[];
+
+        if (investorIds.length === 0) {
+          return of(contracts); // Si no hay IDs de inversores, devolvemos los contratos como están.
+        }
+
+        // 2. Creamos un array de observables para obtener los detalles de cada inversor.
+        const investorObservables = investorIds.map(id =>
+          this.investorSvc.getById(id).pipe( // <-- CORREGIDO: Se usa investorSvc
+            catchError(() => of({ id, username: 'Desconocido' })) // Fallback por si un inversor no se encuentra
+          )
+        );
+
+        // 3. Usamos forkJoin para esperar a que todas las llamadas a la API de inversores terminen.
+        return forkJoin(investorObservables).pipe(
+          map((investors) => { // Quitamos el tipo estricto para que TypeScript infiera el tipo correcto
+            const investorMap = new Map(investors.map(inv => [inv.id, inv.username]));
+            // 4. Mapeamos los contratos para añadirles el nombre del inversor.
+            return contracts.map(contract => ({
+              ...contract,
+              investorName: contract.createdByInvestorId ? investorMap.get(contract.createdByInvestorId) : 'N/A'
+            }));
+          })
+        );
+      })
+    ).subscribe({
+      next: (enrichedContracts: IContract[]) => {
+        this.contracts.set(enrichedContracts);
       }
     });
   }
@@ -396,25 +430,43 @@ loadDocuments() {
     });
   }
 
+  /**
+   * Muestra los detalles de un usuario (estudiante o inversor) en un modal.
+   * @param userId El ID del usuario a mostrar.
+   * @param userType El rol del usuario ('student' o 'investor').
+   */
+  showUserDetails(userId: number, userType: 'student' | 'investor'): void {
+    if (userType === 'investor') {
+      this.loadingInvestorDetails.set(true);
+      this.selectedInvestor.set(null);
+      this.investorDetailModalVisible.set(true);
 
-  showStudentDetails(studentId: number): void {
-    // Permitir ver detalles si es inversor O si es el dueño del proyecto
-    if (!this.isInvestor() && !this.isOwner()) return;
+      this.investorSvc.getById(userId).subscribe({
+        next: (investor) => {
+          this.selectedInvestor.set(investor);
+        },
+        error: (err) => {
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles del inversor.' });
+          this.investorDetailModalVisible.set(false);
+        },
+        complete: () => this.loadingInvestorDetails.set(false)
+      });
+    } else {
+      this.loadingStudentDetails.set(true);
+      this.selectedUser.set(null);
+      this.studentDetailModalVisible.set(true);
 
-    this.loadingStudentDetails.set(true);
-    this.selectedStudent.set(null);
-    this.studentDetailModalVisible.set(true);
-
-    this.svc.getStudentById(studentId).subscribe({
-      next: (student) => {
-        this.selectedStudent.set(student);
-      },
-      error: (err) => {
-        this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles del estudiante.' });
-        this.studentDetailModalVisible.set(false);
-      },
-      complete: () => this.loadingStudentDetails.set(false)
-    });
+      this.svc.getStudentById(userId).subscribe({
+        next: (user: IStudentDetail) => {
+          this.selectedUser.set(user);
+        },
+        error: (err: any) => {
+          this.toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los detalles del usuario.' });
+          this.studentDetailModalVisible.set(false);
+        },
+        complete: () => this.loadingStudentDetails.set(false)
+      });
+    }
   }
 
   // ===== Lógica de Edición de Proyecto =====
