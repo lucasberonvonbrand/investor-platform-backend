@@ -40,7 +40,7 @@
       <div>
         <div class="font-semibold text-gray-500 dark:text-gray-400">Líder del Proyecto</div>
         <div class="text-gray-800 dark:text-gray-100"
-             [class.cursor-pointer]="isInvestor() || isOwner()" (click)="project()?.ownerId && showStudentDetails(project()!.ownerId!)">
+             [class.cursor-pointer]="isInvestor() || isOwner()" (click)="project()?.ownerId && showUserDetails(project()!.ownerId!, 'student')">
           <span class="hover:underline" [pTooltip]="(isInvestor() || isOwner()) ? 'Ver detalles del estudiante' : ''">{{ project()?.owner ?? 'No asignado' }}</span>
         </div>
       </div>
@@ -98,7 +98,7 @@
       <p-card>
         <div class="font-semibold mb-2">Equipo</div>
         <ul class="list-disc ml-4">
-          <li *ngFor="let s of team" [class.cursor-pointer]="isInvestor() || isOwner()" (click)="showStudentDetails(s.id)">
+          <li *ngFor="let s of team" [class.cursor-pointer]="isInvestor() || isOwner()" (click)="showUserDetails(s.id, 'student')">
             <span class="hover:underline" [pTooltip]="(isInvestor() || isOwner()) ? 'Ver detalles del estudiante' : ''">
               {{ s.name }}
             </span>
@@ -200,9 +200,16 @@
       <tr>
         <th style="width:80px">Número de contrato</th>
         <th>Título</th>
-        <th>Monto</th>
-        <th>Estado</th>
-        <th>Fecha de creación</th>
+        <th pSortableColumn="amount">Monto <p-sortIcon field="amount"></p-sortIcon></th>
+        <th pSortableColumn="status">Estado <p-sortIcon field="status"></p-sortIcon></th>
+        <!-- Nueva Columna: Inversor -->
+        <th *ngIf="isOwner()">
+          <div class="flex items-center">
+            <span>Inversor</span>
+            <i class="pi pi-info-circle ml-2 cursor-pointer" pTooltip="El creador del contrato. Haz clic en el nombre para ver sus detalles."></i>
+          </div>
+        </th>
+        <th pSortableColumn="createdAt">Fecha de creación <p-sortIcon field="createdAt"></p-sortIcon></th>
         <th style="width:200px; text-align:center">Acciones</th>
       </tr>
     </ng-template>
@@ -210,11 +217,17 @@
     <ng-template pTemplate="body" let-row>
       <tr>
         <!-- Datos de la fila del contrato -->
-         <td class="text-right">{{ row.idContract }}</td>
+        <td class="text-right">{{ row.idContract }}</td>
         <td>{{ row.textTitle }}</td>
         <td>{{ row.amount | currency:(row.currency ?? 'USD'):'symbol':'1.0-0' }}</td>
         <td><p-tag [value]="getContractStatusLabel(row)" [ngStyle]="tagStyle(row.status)"></p-tag></td>
-        <td>{{ row.createdAt | date:'dd/MM/yyyy' }}</td>
+        <!-- Celda para el nombre del Inversor -->
+        <td *ngIf="isOwner()">
+          <a (click)="showUserDetails(row.createdByInvestorId, 'investor')" class="text-indigo-600 hover:underline cursor-pointer font-medium">
+            {{ row.investorName || 'No disponible' }}
+          </a>
+        </td>
+        <td>{{ row.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
         <td class="text-center">
           <!-- ==================================================================== -->
           <!-- Acciones condicionales según el rol y el estado del contrato -->
@@ -706,7 +719,7 @@
 <!-- DIÁLOGO DE DETALLES DEL ESTUDIANTE -->
 <p-dialog header="Detalles del Estudiante" [(visible)]="studentDetailModalVisible" [modal]="true" [style]="{ width: '50vw', 'min-width': '450px', 'max-width': '700px' }">
   <ng-container *ngIf="!loadingStudentDetails(); else loadingStudentTpl">
-    <div *ngIf="selectedStudent() as student" class="p-2">
+    <div *ngIf="selectedUser() as student" class="p-2">
       <!-- Encabezado -->
       <div class="text-center mb-6">
         <h3 class="text-2xl font-bold">{{ student.firstName }} {{ student.lastName }}</h3>
@@ -751,6 +764,55 @@
   </ng-template>
   <ng-template pTemplate="footer">
     <button pButton label="Cerrar" severity="secondary" (click)="studentDetailModalVisible.set(false)"></button>
+  </ng-template>
+</p-dialog>
+
+<!-- DIÁLOGO DE DETALLES DEL INVERSOR (NUEVO) -->
+<p-dialog header="Detalles del Inversor" [(visible)]="investorDetailModalVisible" [modal]="true" [style]="{ width: '50vw', 'min-width': '450px', 'max-width': '700px' }">
+  <ng-container *ngIf="!loadingInvestorDetails(); else loadingInvestorTpl">
+    <div *ngIf="selectedInvestor() as investor" class="p-2">
+      <!-- Encabezado -->
+      <div class="text-center mb-6">
+        <h3 class="text-2xl font-bold">{{ investor.username }}</h3>
+        <a *ngIf="investor.webSite" [href]="investor.webSite" target="_blank" rel="noopener noreferrer"
+           pButton icon="pi pi-globe" label="Sitio Web" class="p-button-sm p-button-text mt-2"></a>
+      </div>
+
+      <!-- Información en Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+        <div>
+          <div class="font-semibold text-gray-500 dark:text-gray-400">Persona de Contacto</div>
+          <div class="text-gray-800 dark:text-gray-100">{{ investor.contactPerson || 'No especificado' }}</div>
+        </div>
+        <div>
+          <div class="font-semibold text-gray-500 dark:text-gray-400">CUIT</div>
+          <div class="text-gray-800 dark:text-gray-100">{{ investor.cuit || 'No especificado' }}</div>
+        </div>
+        <div>
+          <div class="font-semibold text-gray-500 dark:text-gray-400">Email de Contacto</div>
+          <div class="text-gray-800 dark:text-gray-100">{{ investor.email }}</div>
+        </div>
+        <div>
+          <div class="font-semibold text-gray-500 dark:text-gray-400">Teléfono</div>
+          <div class="text-gray-800 dark:text-gray-100">{{ investor.phone || 'No especificado' }}</div>
+        </div>
+        <div class="sm:col-span-2" *ngIf="investor.address">
+          <div class="font-semibold text-gray-500 dark:text-gray-400">Dirección</div>
+          <div class="text-gray-800 dark:text-gray-100 mt-1">
+            {{ investor.address.street }} {{ investor.address.number }}, {{ investor.address.city }}, {{ investor.address.province }} ({{ investor.address.postalCode }})
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #loadingInvestorTpl>
+    <div class="flex items-center justify-center p-8 gap-2">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Cargando detalles del inversor...</span>
+    </div>
+  </ng-template>
+  <ng-template pTemplate="footer">
+    <button pButton label="Cerrar" severity="secondary" (click)="investorDetailModalVisible.set(false)"></button>
   </ng-template>
 </p-dialog>
 

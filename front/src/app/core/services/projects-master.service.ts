@@ -71,6 +71,7 @@ export interface IContract {
   investorSigned?: boolean; // NUEVO: para saber si el inversor firmó
   studentSigned?: boolean;  // NUEVO: para saber si el estudiante firmó
   earnings?: IEarning[]; // Añadido
+  investorName?: string; // NUEVO: para el nombre del inversor
 }
 
 export interface ContactOwnerDTO {
