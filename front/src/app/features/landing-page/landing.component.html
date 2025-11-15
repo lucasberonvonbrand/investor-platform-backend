@@ -2,8 +2,11 @@
 
   <!-- Header -->
   <header class="landing-header fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center">
-    <div class="logo text-2xl font-bold text-primary-500">
-      Proy+
+    <div class="flex items-center gap-4">
+      <div class="logo text-2xl font-bold text-primary-500">
+        Proy+
+      </div>
+      <button pButton label="Apóyanos en Cafecito" icon="pi pi-heart-fill" class="p-button-outlined p-button-secondary" (click)="navigateToCafecito()"></button>
     </div>
     <div class="actions flex items-center gap-2">
       <button pButton label="Iniciar Sesión" class="p-button-text" (click)="navigateToLogin()"></button>
@@ -201,8 +204,14 @@
 
   <!-- Footer -->
   <footer class="landing-footer bg-gray-800 text-gray-300 py-4 px-4">
-    <div class="text-center">
-      <p class="text-sm opacity-60">&copy; {{ ('' | date:'yyyy') }} Proy+. Todos los derechos reservados.</p>
+    <div class="max-w-4xl mx-auto text-center">
+      <p class="text-gray-400 mb-3">
+        Tu "cafecito" es el combustible que nos ayuda a mantener la plataforma funcionando y a seguir creyendo que las grandes ideas pueden hacerse realidad.
+      </p>
+      <a href="https://cafecito.app/proyplus" target="_blank" rel="noopener noreferrer" class="inline-block bg-yellow-400 text-gray-900 font-bold py-2 px-4 rounded-full hover:bg-yellow-300 transition-colors">
+        <i class="pi pi-heart-fill mr-2"></i>¡Invitános un cafecito y sé parte de la historia!
+      </a>
+      <p class="text-sm opacity-60 mt-4">&copy; {{ ('' | date:'yyyy') }} Proy+. Todos los derechos reservados.</p>
     </div>
   </footer>
 

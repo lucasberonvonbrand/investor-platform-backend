@@ -49,4 +49,8 @@ export class LandingComponent implements OnInit {
   navigateToRegister(): void {
     this.router.navigate(['/auth/register']);
   }
+
+  navigateToCafecito(): void {
+    window.open('https://cafecito.app/proyplus', '_blank');
+  }
 }
