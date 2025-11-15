@@ -12,11 +12,12 @@ import { map, catchError, debounceTime, switchMap, distinctUntilChanged } from '
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { KeyFilterModule } from 'primeng/keyfilter';
 
 @Component({
   selector: 'app-investor-form',
   standalone: true,
-  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, TooltipModule],
+  imports: [ReactiveFormsModule, NgIf, NgFor, RouterLink, InputTextModule, ButtonModule, TooltipModule, KeyFilterModule],
   templateUrl: './investors-form.component.html',
   styleUrls: ['./investors-form.component.scss']
 })
@@ -55,14 +56,14 @@ export class InvestorFormComponent implements OnInit {
       ],
       contactPerson: ['', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       phone: ['', [Validators.required, Validators.pattern(/^\+?\d{8,15}$/)]],
-      webSite: ['', [Validators.maxLength(100)]],
-      linkedinUrl: ['', Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)],
+      webSite: ['', [Validators.pattern(/^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/)]],
+      linkedinUrl: ['', Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/)],
       description: ['', Validators.maxLength(500)],
       street: ['', Validators.required],
       number: ['', Validators.required],
       city: ['', Validators.required],
       province: ['', Validators.required],
-      postalCode: ['', Validators.required]
+      postalCode: ['', [Validators.required, Validators.pattern('^[0-9]+$')]]
     });
   }
 

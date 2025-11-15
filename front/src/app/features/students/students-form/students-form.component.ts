@@ -98,8 +98,8 @@ export class StudentFormComponent implements OnInit {
       number: ['', Validators.required],
       city: ['', Validators.required],
       province: ['', Validators.required],
-      postalCode: ['', Validators.required],
-      linkedinUrl: ['', Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)],
+      postalCode: ['', [Validators.required, Validators.pattern('^[0-9]+$')]],
+      linkedinUrl: ['', Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/)],
       description: ['', Validators.maxLength(500)] // Campo de descripción
     });
   }

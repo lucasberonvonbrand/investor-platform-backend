@@ -119,7 +119,7 @@
               <span>Código Postal <span class="text-red-500">*</span></span>
               <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu código postal."></i>
             </label>
-            <input id="postalCode" type="text" pInputText formControlName="postalCode" class="w-full mt-1" />
+            <input id="postalCode" type="text" pInputText formControlName="postalCode" class="w-full mt-1" pKeyFilter="int" />
             <small *ngIf="getFieldError('postalCode')" class="p-error">{{ getFieldError('postalCode') }}</small>
           </div>
 
