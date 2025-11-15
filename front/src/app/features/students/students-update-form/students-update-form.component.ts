@@ -125,14 +125,14 @@ ngOnInit(): void {
       university: [student.university ?? '', Validators.required],      
       career: [student.career ?? '', [Validators.required, Validators.maxLength(25)]],
       degreeStatus: [student.degreeStatus ?? '', Validators.required],
-      linkedinUrl: [student.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)]],
+      linkedinUrl: [student.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/)]],
       description: [student.description ?? '', Validators.maxLength(500)],
       address: this.fb.group({
         street: [student.address?.street ?? '', [Validators.required, Validators.maxLength(50)]],
         number: [student.address?.number ?? '', [Validators.required, Validators.maxLength(5)]],
         city: [student.address?.city ?? '', [Validators.required, Validators.maxLength(50)]],
         province: [student.address?.province ?? '', Validators.required],
-        postalCode: [student.address?.postalCode ?? null, [Validators.required, Validators.maxLength(10)]]
+        postalCode: [student.address?.postalCode ?? null, [Validators.required, Validators.pattern('^[0-9]+$')]]
       })
     });
   }

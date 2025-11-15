@@ -68,7 +68,7 @@
           <span>Teléfono <span class="text-red-500">*</span></span>
           <i class="pi pi-info-circle cursor-pointer" pTooltip="Un número de teléfono de contacto directo."></i>
         </label>
-        <input type="text" id="phone" pInputText placeholder="Ingrese teléfono" formControlName="phone" class="w-full" maxlength="10" pKeyFilter="num"/>
+        <input type="text" id="phone" pInputText placeholder="Ingrese teléfono" formControlName="phone" class="w-full" maxlength="15" pKeyFilter="pnum"/>
         <small *ngIf="isInvalidField('phone')" class="p-error">{{ getFieldError('phone') }}</small>
       </div>
 
@@ -158,7 +158,7 @@
                 <span>Código Postal <span class="text-red-500">*</span></span>
                 <i class="pi pi-info-circle cursor-pointer" pTooltip="Tu código postal."></i>
               </label>
-              <input id="postalCode" type="text" pInputText placeholder="Ingrese código postal" formControlName="postalCode" class="w-full"/>
+              <input id="postalCode" type="text" pInputText placeholder="Ingrese código postal" formControlName="postalCode" class="w-full" pKeyFilter="int"/>
               <small *ngIf="isInvalidField('postalCode', addressFormGroup)" class="p-error">{{ getFieldError('postalCode', addressFormGroup) }}</small>
             </div>
             <div class="field">

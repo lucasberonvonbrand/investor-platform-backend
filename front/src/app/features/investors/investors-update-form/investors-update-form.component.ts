@@ -84,15 +84,15 @@ export class InvestorsUpdateFormComponent implements OnInit {
       cuit: [{ value: investor.cuit ?? '', disabled: true }, [Validators.required, Validators.minLength(11), Validators.maxLength(11)]],
       contactPerson: [investor.contactPerson ?? '', [Validators.required, Validators.maxLength(100), Validators.pattern('^[a-zA-ZÀ-ÿ\\s]*$')]],
       phone: [investor.phone ?? '', [Validators.required, Validators.maxLength(20), Validators.pattern(/^\+?\d{8,15}$/)]],
-      webSite: [investor.webSite ?? '', [Validators.maxLength(100)]],
-      linkedinUrl: [investor.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/.*|linkedin\.com\/.*)?$/)]],
+      webSite: [investor.webSite ?? '', [Validators.pattern(/^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/)]],
+      linkedinUrl: [investor.linkedinUrl ?? '', [Validators.pattern(/^(https?:\/\/)?(www\.)?linkedin\.com\/.*$/)]],
       description: [investor.description ?? '', Validators.maxLength(500)],
       address: this.fb.group({
         street: [investor.address?.street ?? '', Validators.required],
         number: [investor.address?.number ?? '', Validators.required],
         city: [investor.address?.city ?? '', Validators.required],
         province: [investor.address?.province ?? '', Validators.required],
-        postalCode: [investor.address?.postalCode ?? null, Validators.required]
+        postalCode: [investor.address?.postalCode ?? null, [Validators.required, Validators.pattern('^[0-9]+$')]]
       })
     });
   }
