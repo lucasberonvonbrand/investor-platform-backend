@@ -98,108 +98,151 @@ public class GeminiService implements IGeminiService {
 
     private String loadDocumentation() {
         return """
-            BASE DE CONOCIMIENTO PARA EL CHATBOT DE PROYPLUS (Versión Final y Verificada)
+        BASE DE CONOCIMIENTO PARA EL CHATBOT DE PROYPLUS (Versión Final y Verificada)
 
-            1. ¿Qué es ProyPlus? (Introducción General)
-            ProyPlus es una plataforma innovadora que conecta a estudiantes universitarios con ideas y proyectos brillantes con una red de inversores dispuestos a financiar ese talento. 
-            Nuestra misión es doble:
-            - **Para Estudiantes:** Ofrecer una vía para obtener financiación real, llevar sus proyectos académicos o personales al siguiente nivel y ganar experiencia en el mundo de los negocios.
-            - **Para Inversores:** Brindar una oportunidad única para descubrir y potenciar a la próxima generación de profesionales, invirtiendo en proyectos prometedores y obteniendo un retorno por su apoyo.
-            
-            La plataforma gestiona todo el ciclo de vida de esta relación, desde la presentación del proyecto hasta la devolución de las ganancias, garantizando un proceso transparente y estructurado para ambas partes.
+        1. ¿Qué es ProyPlus? (Introducción General)
+        ProyPlus es una plataforma innovadora que conecta a estudiantes universitarios con ideas y proyectos brillantes con una red de inversores dispuestos a financiar ese talento. 
+        Nuestra misión es doble:
+        - **Para Estudiantes:** Ofrecer una vía para obtener financiación real, llevar sus proyectos académicos o personales al siguiente nivel y ganar experiencia en el mundo de los negocios.
+        - **Para Inversores:** Brindar una oportunidad única para descubrir y potenciar a la próxima generación de profesionales, invirtiendo en proyectos prometedores y obteniendo un retorno por su apoyo.
+        
+        La plataforma gestiona todo el ciclo de vida de esta relación, desde la presentación del proyecto hasta la devolución de las ganancias, garantizando un proceso transparente y estructurado para ambas partes.
 
-            2. Para Estudiantes: El Camino del Creador
-            2.1. Registro y Creación de Proyectos
-            Regístrate con el rol de "Estudiante". Al crear un proyecto, proporcionarás detalles clave como título, descripción, meta de financiación en USD y fechas. 
-            Al guardar, nuestro sistema de Inteligencia Artificial analiza tu descripción y le asigna automáticamente una categoría (ej. "TECNOLOGÍA", "SALUD"), ayudando a los inversores a encontrarte.
+        2. Para Estudiantes: El Camino del Creador
+        2.1. Registro y Creación de Proyectos
+        Regístrate con el rol de "Estudiante". Al crear un proyecto, proporcionarás detalles clave como título, descripción, meta de financiación en USD y fechas. 
+        Al guardar, nuestro sistema de Inteligencia Artificial analiza tu descripción y le asigna automáticamente una categoría (ej. "TECNOLOGÍA", "SALUD"), ayudando a los inversores a encontrarte.
 
-            2.2. Negociación y Firma de Contratos (Flujo Detallado)
-            Cuando un inversor se interesa, inicia una negociación. Este es un proceso de firma en dos etapas:
-            - **Recepción del Borrador:** Recibirás un contrato en estado DRAFT (Borrador). Ambas partes pueden editar los términos.
-            - **Primera Firma (Bloqueo):** Una de las partes realiza la primera firma. El contrato se bloquea, pasa a PARTIALLY_SIGNED y no puede modificarse más.
-            - **Segunda Firma (Confirmación):** La otra parte revisa y firma. Cuando ambas partes firman, el contrato pasa a SIGNED.
-            Este cambio de estado genera automáticamente la Inversión asociada y notifica al inversor para enviar los fondos.
+        2.2. Negociación y Firma de Contratos (Flujo Detallado)
+        Cuando un inversor se interesa, inicia una negociación. Este es un proceso de firma en dos etapas:
+        - **Recepción del Borrador:** Recibirás un contrato en estado DRAFT (Borrador). Ambas partes pueden editar los términos.
+        - **Primera Firma (Bloqueo):** Una de las partes realiza la primera firma. El contrato se bloquea, pasa a PARTIALLY_SIGNED y no puede modificarse más.
+        - **Segunda Firma (Confirmación):** La otra parte revisa y firma. Cuando ambas partes firman, el contrato pasa a SIGNED.
+        Este cambio de estado genera automáticamente la Inversión asociada y notifica al inversor para enviar los fondos.
 
-            2.3. Confirmación de Inversiones y Finalización del Proyecto
-            Luego de recibir los fondos, el estudiante debe confirmarlo en la plataforma. Cuando todas las inversiones están cerradas, el proyecto puede marcarse como COMPLETED.
+        2.3. Confirmación de Inversiones y Finalización del Proyecto
+        Luego de recibir los fondos, el estudiante debe confirmarlo en la plataforma. Cuando todas las inversiones están cerradas, el proyecto puede marcarse como COMPLETED.
 
-            3. Para Inversores: El Camino del Impulsor
-            3.1. Registro y Exploración
-            Regístrate como "Inversor" para explorar el catálogo de proyectos disponibles.
+        3. Para Inversores: El Camino del Impulsor
+        3.1. Registro y Exploración
+        Regístrate como "Inversor" para explorar el catálogo de proyectos disponibles.
 
-            3.2. Análisis de Riesgo con IA
-            Antes de invertir, puedes usar la herramienta de análisis de riesgo. 
-            Introduce un monto y la IA te dará una evaluación (Bajo, Medio, Alto). Un solo factor negativo puede elevar el riesgo a “Alto”.
+        3.2. Análisis de Riesgo con IA
+        Antes de invertir, puedes usar la herramienta de análisis de riesgo. 
+        Introduce un monto y la IA te dará una evaluación (Bajo, Medio, Alto). Un solo factor negativo puede elevar el riesgo a “Alto”.
 
-            3.3. Creación y Negociación de Contratos
-            - Creas un contrato en estado DRAFT con tus términos.
-            - Negocias con el estudiante hasta acordar condiciones.
-            - Realizas la primera firma (bloqueo): el contrato pasa a PARTIALLY_SIGNED.
-            - El estudiante realiza la segunda firma: el contrato pasa a SIGNED y se notifica para enviar fondos.
+        3.3. Creación y Negociación de Contratos
+        - Creas un contrato en estado DRAFT con tus términos.
+        - Negocias con el estudiante hasta acordar condiciones.
+        - Realizas la primera firma (bloqueo): el contrato pasa a PARTIALLY_SIGNED.
+        - El estudiante realiza la segunda firma: el contrato pasa a SIGNED y se notifica para enviar fondos.
 
-            4. Flujo de un Contrato e Inversión
-            Etapa 1: Negociación y Firma
-            - Inversor crea un contrato (DRAFT)
-            - Ambas partes negocian.
-            - Una parte firma (PARTIALLY_SIGNED)
-            - La otra firma (SIGNED)
-            - Se crea automáticamente la inversión (IN_PROGRESS)
+        4. Flujo de un Contrato e Inversión
+        Etapa 1: Negociación y Firma
+        - Inversor crea un contrato (DRAFT)
+        - Ambas partes negocian.
+        - Una parte firma (PARTIALLY_SIGNED)
+        - La otra firma (SIGNED)
+        - Se crea automáticamente la inversión (IN_PROGRESS)
 
-            Etapa 2: Financiación
-            5. Inversor envía el dinero y pulsa "Confirmar Envío" → Estado: PENDING_CONFIRMATION.
-            6. Estudiante confirma recepción → Estado: RECEIVED. Se actualiza el progreso del proyecto.
-            7. Si el estudiante no recibe el dinero → Estado: NOT_RECEIVED y el contrato se cancela.
+        Etapa 2: Financiación
+        5. Inversor envía el dinero y pulsa "Confirmar Envío" → Estado: PENDING_CONFIRMATION.
+        6. Estudiante confirma recepción → Estado: RECEIVED. Se actualiza el progreso del proyecto.
+        7. Si el estudiante no recibe el dinero → Estado: NOT_RECEIVED y el contrato se cancela.
 
-            5. Flujo de una Ganancia (Earning)
-            - Disparador: Cuando el estudiante marca un contrato como CLOSED.
-            - El sistema genera una ganancia (Earning) con estado IN_PROGRESS.
-            - Se notifica al inversor con el detalle de su ganancia.
-            - Estudiante envía el dinero y pulsa "Confirmar Envío de Ganancia" → Estado: PENDING_CONFIRMATION.
-            - Inversor confirma recepción → Estado: PAID. Ciclo finalizado.
+        5. Flujo de una Ganancia (Earning)
+        - Disparador: Cuando el estudiante marca un contrato como CLOSED.
+        - El sistema genera una ganancia (Earning) con estado IN_PROGRESS.
+        - Se notifica al inversor con el detalle de su ganancia.
+        - Estudiante envía el dinero y pulsa "Confirmar Envío de Ganancia" → Estado: PENDING_CONFIRMATION.
+        - Inversor confirma recepción → Estado: PAID. Ciclo finalizado.
 
-            6. Flujo de Devoluciones (Cancelación o Financiación Fallida)
-            Si un proyecto se cancela o no alcanza su meta:
-            - **Estudiante:** Envía el dinero al inversor y pulsa "Iniciar Devolución" → Estado: PENDING_RETURN.
-            - **Inversor:** Confirma recepción → Estado: RETURNED.
-            El sistema ajusta automáticamente el presupuesto del proyecto.
+        6. Flujo de Devoluciones (Cancelación o Financiación Fallida)
+        Si un proyecto se cancela o no alcanza su meta:
+        - **Estudiante:** Envía el dinero al inversor y pulsa "Iniciar Devolución" → Estado: PENDING_RETURN.
+        - **Inversor:** Confirma recepción → Estado: RETURNED.
+        El sistema ajusta automáticamente el presupuesto del proyecto.
 
-            7. Rol del Administrador
-            El administrador puede revertir estados (por ejemplo, de RECEIVED a PENDING_CONFIRMATION) para corregir errores humanos.
-            Al hacerlo, el sistema ajusta automáticamente los montos y mantiene la integridad de los datos.
+        7. Rol del Administrador
+        El administrador puede revertir estados (por ejemplo, de RECEIVED a PENDING_CONFIRMATION) para corregir errores humanos.
+        Al hacerlo, el sistema ajusta automáticamente los montos y mantiene la integridad de los datos.
 
-            --------------------------------------------------------------------------
-            INFORMACIÓN DE SOPORTE ADICIONAL (Basada en la Documentación de Soporte Interna)
+        --------------------------------------------------------------------------
+        INFORMACIÓN DE SOPORTE ADICIONAL (Basada en la Documentación de Soporte Interna)
 
-            VISIÓN DE LA PLATAFORMA:
-            Proy+ es el nexo entre proyectos estudiantiles innovadores y el capital de inversores.
+        VISIÓN DE LA PLATAFORMA:
+        Proy+ es el nexo entre proyectos estudiantiles innovadores y el capital de inversores.
 
-            ROLES Y VISTAS PRINCIPALES:
-            | Rol | Secciones Autorizadas |
-            | :--- | :--- |
-            | **Estudiante** | Inicio, Crear Proyecto, Mis Proyectos |
-            | **Inversor** | Inicio, Noticias, Marquesinas |
-            | **Admin** | Acceso total al sistema |
+        ROLES Y VISTAS PRINCIPALES:
+        | Rol | Secciones Autorizadas |
+        | :--- | :--- |
+        | **Estudiante** | Inicio, Crear Proyecto, Mis Proyectos |
+        | **Inversor** | Inicio, Noticias, Marquesinas |
+        | **Admin** | Acceso total al sistema |
 
-            CREACIÓN DE PROYECTOS (Validaciones):
-            | Campo | Requisito | Regla |
-            | :--- | :--- | :--- |
-            | Nombre | Obligatorio | 4–100 caracteres |
-            | Descripción | Obligatorio | 20–500 caracteres |
-            | Meta Presupuesto | Obligatorio | Numérico ≥ 0, máx. 12 enteros + 2 decimales |
-            | Estado | Obligatorio | Ciclo de vida válido |
-            | Fecha Inicio | Obligatorio | Fecha válida |
-            | Fecha Fin | Obligatorio | Fecha actual o futura |
-            | Propietario | Obligatorio | ID del creador |
+        CREACIÓN DE PROYECTOS (Validaciones):
+        | Campo | Requisito | Regla |
+        | :--- | :--- | :--- |
+        | Nombre | Obligatorio | 4–100 caracteres |
+        | Descripción | Obligatorio | 20–500 caracteres |
+        | Meta Presupuesto | Obligatorio | Numérico ≥ 0, máx. 12 enteros + 2 decimales |
+        | Estado | Obligatorio | Ciclo de vida válido |
+        | Fecha Inicio | Obligatorio | Fecha válida |
+        | Fecha Fin | Obligatorio | Fecha actual o futura |
+        | Propietario | Obligatorio | ID del creador |
 
-            ANÁLISIS DE RIESGO PARA INVERSORES:
-            Clasificación automática de riesgo (Bajo, Medio, Alto) según:
-            - Viabilidad técnica y financiera
-            - Historial de actualizaciones del proyecto
-            - Coherencia entre descripción y categoría asignada por IA
+        ANÁLISIS DE RIESGO PARA INVERSORES:
+        Clasificación automática de riesgo (Bajo, Medio, Alto) según:
+        - Viabilidad técnica y financiera
+        - Historial de actualizaciones del proyecto
+        - Coherencia entre descripción y categoría asignada por IA
 
-            ASIGNACIÓN DE ETIQUETAS (TAGS):
-            - La IA asigna automáticamente una etiqueta de área (ej. TECNOLOGÍA, SALUD).
-            - Los usuarios no pueden modificar esta etiqueta.
-            """;
+        ASIGNACIÓN DE ETIQUETAS (TAGS):
+        - La IA asigna automáticamente una etiqueta de área (ej. TECNOLOGÍA, SALUD).
+        - Los usuarios no pueden modificar esta etiqueta.
+
+        --------------------------------------------------------------------------
+        EXPERIENCIA DE USUARIO DEL INVERSOR (Flujos, Menús y Acciones Clave)
+
+        8. Camino del Inversor: Exploración y Negociación (Detalle de IU)
+        
+        8.1. Exploración de Proyectos
+        * **Selección Inicial:** El inversor comienza eligiendo el **área de interés**.
+        * **Filtro de Proyectos:** Luego selecciona un proyecto que tenga la etiqueta de estado **"Pendiente de Financiación"**.
+        * **Vista Detallada:** Al seleccionar un proyecto, se muestran todos sus datos (documentos, integrantes, etc.) y se ofrecen tres botones de acción clave: **Contactar**, **Analizar Riesgo** e **Iniciar Contrato**.
+
+        8.2. Acciones Clave en la Vista del Proyecto
+        * **Botón 'Contactar':** Envía un correo electrónico al líder del proyecto para iniciar la comunicación.
+        * **Botón 'Analizar Riesgo'**: Activa la funcionalidad de análisis de riesgo de la aplicación.
+            * **Campos Requeridos:** Para el cálculo, se solicitan: Monto de Inversión, Moneda y Ganancias Esperadas (en % para 1, 2 y 3 años).
+            * **Resultado:** El sistema calcula y muestra el nivel de riesgo al inversionista (Bajo, Medio, Alto).
+        * **Botón 'Iniciar Contrato'**: Permite crear un contrato con los términos iniciales de la inversión.
+            * **Campos Requeridos:** Título, Monto, Moneda, Porcentajes de Ganancias (para 1, 2 y 3 años), Cláusulas y Detalles.
+            * **Opcional:** Se puede seleccionar una plantilla de contrato.
+            * **Guardado:** Al guardar, el contrato se crea en estado **DRAFT (Borrador)**.
+
+        8.3. Gestión del Contrato en Estado DRAFT
+        * **Acciones Permitidas:** El inversionista puede **editar** los términos del contrato o **cancelar** el contrato si aún se encuentra en estado **DRAFT**.
+        * **Bloqueo del Contrato:** Para avanzar, el inversionista debe **aceptar y bloquear** el contrato (realizar la primera firma).
+            * **Resultado:** El contrato pasa a estado **PARTIALLY_SIGNED** y el inversionista debe esperar la firma del estudiante.
+
+        9. Flujo de la Inversión (UI/UX)
+        
+        9.1. Envío de Fondos
+        * **Visualización Clave:** Una vez que el estudiante realiza la segunda firma y el contrato pasa a estado **SIGNED**, el inversor verá un nuevo botón: **'Gestionar Inversión'**.
+        * **Acción de Envío:** Dentro de la gestión de la inversión, hay un botón para **notificar que se ha enviado la inversión** al estudiante (el envío del dinero es por fuera de la app).
+            * **Resultado:** El estudiante es notificado para que confirme la recepción.
+
+        9.2. Seguimiento de Inversiones
+        * **Visibilidad:** Una vez que el estudiante confirma la recepción de los fondos, el inversor puede visualizar sus inversiones en dos lugares:
+            * **Menú Principal -> "Mis Inversiones":** Permite ver todas las inversiones agrupadas.
+            * **Menú Principal -> "Mis Proyectos Invertidos":** Muestra los proyectos en los que ha invertido; debe entrar al proyecto para ver las inversiones específicas asociadas.
+
+        10. Proceso de Ganancias (Earning) y Notificación
+        
+        * **Cálculo de Ganancia:** La ganancia que percibe el inversor se basa en el **tiempo en el que terminó el proyecto** (1, 2 o 3 años) y el porcentaje especificado en el contrato.
+        * **Responsabilidad del Estudiante:** El estudiante es el encargado de enviar las ganancias al inversor (por un medio externo) y de **notificar al inversor** dentro de ProyPlus cuando haya realizado el envío.
+        * **Notificación de Problemas:** En caso de que el inversor no reciba la ganancia, tiene una acción para **notificar dicha situación** en la plataforma, iniciando un proceso de soporte.
+        """;
     }
 }
