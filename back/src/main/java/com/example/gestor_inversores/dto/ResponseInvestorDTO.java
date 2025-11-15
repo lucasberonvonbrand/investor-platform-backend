@@ -32,6 +32,8 @@ public class ResponseInvestorDTO {
 
     private String webSite;
 
+    private String linkedinUrl;
+
     private AddressDTO address;
 
 

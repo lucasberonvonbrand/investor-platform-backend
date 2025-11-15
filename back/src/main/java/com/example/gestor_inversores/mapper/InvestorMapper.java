@@ -33,6 +33,7 @@ public class InvestorMapper {
         investor.setContactPerson(dto.getContactPerson());
         investor.setPhone(dto.getPhone());
         investor.setWebSite(dto.getWebSite());
+        investor.setLinkedinUrl(dto.getLinkedinUrl());
 
         // ----- Address -----
         if (dto.getAddress() != null) {
@@ -69,6 +70,7 @@ public class InvestorMapper {
         dto.setContactPerson(investor.getContactPerson());
         dto.setPhone(investor.getPhone());
         dto.setWebSite(investor.getWebSite());
+        dto.setLinkedinUrl(investor.getLinkedinUrl());
 
         // ----- Address -----
         if (investor.getAddress() != null) {
@@ -96,6 +98,7 @@ public class InvestorMapper {
         investor.setContactPerson(dto.getContactPerson());
         investor.setPhone(dto.getPhone());
         investor.setWebSite(dto.getWebSite());
+        investor.setLinkedinUrl(dto.getLinkedinUrl());
 
         // Address (asume una actualización completa de la dirección)
         investor.setAddress(dto.getAddress());
@@ -116,6 +119,12 @@ public class InvestorMapper {
         }
         if (dto.getWebSite() != null) {
             investor.setWebSite(dto.getWebSite());
+        }
+        if (dto.getContactPerson() != null && !dto.getContactPerson().isBlank()) {
+            investor.setContactPerson(dto.getContactPerson());
+        }
+        if (dto.getLinkedinUrl() != null) {
+            investor.setLinkedinUrl(dto.getLinkedinUrl());
         }
         // Dirección
         if (dto.getAddress() != null) {
