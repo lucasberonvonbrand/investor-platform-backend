@@ -126,9 +126,12 @@ export class ProyectosComponent implements OnInit {
   // Dropdowns
   showAllStudents(): void {
     this.studentsLoading = true;
+    const currentUserId = this.authSvc.getSession()?.id;
     this.fetchNames('', (arr) => {
-      this.suggestionsStudents = arr.slice(0, 50);
-      this.allStudents = arr;
+      // Filtramos al usuario actual de la lista de sugerencias
+      const filteredArr = arr.filter(student => student.id !== currentUserId);
+      this.suggestionsStudents = filteredArr.slice(0, 50);
+      this.allStudents = filteredArr;
       this.studentsLoading = false;
     });
   }
@@ -136,9 +139,11 @@ export class ProyectosComponent implements OnInit {
   // Autocomplete typing
   completeStudents(e: { query: string }): void {
     this.studentsLoading = true;
+    const currentUserId = this.authSvc.getSession()?.id;
     const q = (e?.query ?? '').trim();
     this.fetchNames(q, (arr) => {
-      this.suggestionsStudents = arr;
+      // Filtramos al usuario actual de la lista de sugerencias
+      this.suggestionsStudents = arr.filter(student => student.id !== currentUserId);
       this.studentsLoading = false;
     });
   }
