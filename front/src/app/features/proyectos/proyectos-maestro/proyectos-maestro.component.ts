@@ -316,9 +316,21 @@ export class ProyectosMaestroComponent implements OnInit {
   }
 
   private loadContracts(): void {
-    this.svc.getContracts(this.projectId())
-      .pipe(switchMap(contracts => this.enrichContractsWithInvestorNames(contracts)))
-      .subscribe({ next: (enrichedContracts) => this.contracts.set(enrichedContracts) });
+    this.svc.getContracts(this.projectId()).pipe(
+      map(todosLosContratos => {
+        const currentUser = this.auth.getSession();
+        // Si el usuario es un inversor, filtramos para mostrar solo sus contratos.
+        if (currentUser && currentUser.roles.includes('ROLE_INVESTOR')) {
+          return todosLosContratos.filter(
+            (c) => c.createdByInvestorId === currentUser.id
+          );
+        }
+        // Si es admin, dueño del proyecto o cualquier otro rol, puede ver todos los contratos.
+        return todosLosContratos;
+      }),
+      // Después de filtrar, enriquecemos los contratos restantes con los nombres de los inversores.
+      switchMap(contracts => this.enrichContractsWithInvestorNames(contracts))
+    ).subscribe({ next: (enrichedContracts) => this.contracts.set(enrichedContracts) });
   }
 
   /**
