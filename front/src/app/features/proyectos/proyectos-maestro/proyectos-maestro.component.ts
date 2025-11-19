@@ -4,7 +4,7 @@ import { Subscription, of, timer, forkJoin, Observable } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-
+import { FileUpload } from 'primeng/fileupload';
 import { ToolbarModule } from 'primeng/toolbar';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -74,6 +74,7 @@ export class ProyectosMaestroComponent implements OnInit {
   private router = inject(Router);
 
   @ViewChild('contractContent') contractContentRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('fileUploader') fileUploader!: FileUpload;
 
 
   projectId = signal<number>(0);
@@ -374,7 +375,26 @@ loadDocuments() {
 
   // --- Métodos para Documentos ---
 
-  onUpload(event: { files: File[] }): void {
+  /**
+   * Se dispara ANTES de que se abra el explorador de archivos.
+   * Muestra un diálogo de advertencia y cancela la apertura si el usuario no acepta.
+   */
+  showUploadWarning(): void {
+    this.confirmSvc.confirm({
+      header: 'Antes de Subir tu Documento',
+      message: 'Recuerda que solo puedes subir archivos relacionados con el proyecto. El tamaño máximo por archivo es de 10 MB. Podrás subir más documentos después, de uno en uno.',
+      icon: 'pi pi-info-circle',
+      acceptLabel: 'De acuerdo, continuar',
+      rejectLabel: 'Cancelar', // Si el usuario rechaza, no se hace nada y el explorador no se abre.
+      accept: () => {
+        // Si el usuario acepta, simulamos un clic en el botón de "choose" del componente oculto.
+        // El método .choose() es la forma programática de abrir el diálogo de selección de archivos.
+        this.fileUploader.choose();
+      }
+    });
+  }
+
+  onFileSelect(event: { originalEvent: Event, files: File[] }): void {
     const file = event.files?.[0] as File;
     const projectId = this.projectId();
 
@@ -383,6 +403,9 @@ loadDocuments() {
       return;
     }
 
+    // Limpiamos el componente de inmediato para que no muestre el archivo en su lista interna.
+    this.fileUploader.clear();
+
     this.docSvc.uploadDocument(file, projectId).subscribe({
       next: (newDoc) => {
         this.toast.add({ 
@@ -390,7 +413,7 @@ loadDocuments() {
           summary: 'Documentos', 
           detail: `Documento '${newDoc.fileName}' subido con éxito.` 
         });
-        this.loadDocuments(); 
+        this.documents.update(docs => [...docs, newDoc]); // Actualiza la lista al instante
       },
       error: (error) => {
         const detail = error.error?.message || 'Error desconocido al intentar subir el archivo.';
@@ -399,15 +422,19 @@ loadDocuments() {
           summary: 'Error de Subida', 
           detail: detail 
         });
-        console.error('Error al subir documento:', error);
-
       }
     });
   }
 
   onUploadError(event: any): void {
-    const detail = event.error?.message || 'Ocurrió un error al subir el archivo.';
-    this.toast.add({ severity: 'error', summary: 'Error de Subida', detail });
+    // PrimeNG emite un error con un mensaje específico cuando se excede maxFileSize.
+    // Lo buscamos para dar una respuesta clara al usuario.
+    const errorMessage = event.error?.message || '';
+    if (errorMessage.includes('Invalid file size')) {
+      this.toast.add({ severity: 'error', summary: 'Archivo Demasiado Grande', detail: 'El archivo seleccionado no puede superar los 10 MB.' });
+    } else {
+      this.toast.add({ severity: 'error', summary: 'Error de Subida', detail: 'Ocurrió un error inesperado al subir el archivo.' });
+    }
   }
 
   downloadDocument(doc: IProjectDocument): void {
