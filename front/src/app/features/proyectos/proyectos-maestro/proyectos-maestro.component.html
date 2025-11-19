@@ -115,20 +115,25 @@
           <span>Documentación del proyecto</span>
           <span class="text-sm font-normal opacity-60">{{ documents().length }} documento(s)</span>
         </div>
-        <!-- Zona de subida de archivos (solo para el dueño) -->
-        <p-fileUpload *ngIf="isOwner() && project()?.status !== 'CANCELLED'"
-                  #fileUploader              name="file"
-                  [multiple]="true"
+        <!-- 1. Botón visible que imita el estilo de p-fileUpload -->
+        <button *ngIf="isOwner() && project()?.status !== 'CANCELLED'"
+                type="button"
+                (click)="showUploadWarning()"
+                class="p-button p-component p-fileupload-choose">
+          <span class="p-button-icon p-button-icon-left pi pi-upload"></span>
+          <span class="p-button-label">Subir Documento</span>
+        </button>
+
+        <!-- 2. Componente p-fileUpload real, pero completamente oculto -->
+        <p-fileUpload #fileUploader
+                  class="hidden"
+                  name="file"
+                  [multiple]="false"
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.png,"
                   [maxFileSize]="10000000"
-                  (onSelect)="onUpload($event)"    (onError)="onUploadError($event)"
-                  [customUpload]="true" 
-                  chooseLabel="Subir Documentos"
-                  [showCancelButton]="false"
-                  [showUploadButton]="false">
-          <ng-template pTemplate="content">
-            <!-- Se puede dejar vacío para que la subida sea automática -->
-          </ng-template>
+                  (onSelect)="onFileSelect($event)"
+                  (onError)="onUploadError($event)"
+                  [customUpload]="true">
         </p-fileUpload>
 
         <!-- Lista de documentos -->
