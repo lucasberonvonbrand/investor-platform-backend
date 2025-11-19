@@ -21,8 +21,8 @@
               { "glob": "**/*", "input": "public", "output": "/" }
             ],
             "styles": [
-              "primeflex/primeflex.css",
-              "primeicons/primeicons.css",
+              "./node_modules/primeflex/primeflex.css",
+              "./node_modules/primeicons/primeicons.css",
               "src/styles.scss"
             ],
             "scripts": []
