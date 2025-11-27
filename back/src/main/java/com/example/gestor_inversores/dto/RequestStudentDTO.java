@@ -4,7 +4,7 @@ import com.example.gestor_inversores.model.enums.DegreeStatus;
 import com.example.gestor_inversores.model.enums.University;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-        import lombok.AllArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,7 +15,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class RequestStudentDTO {
 
-    // ----- Campos de UserSec -----
     @NotBlank(message = "El username es obligatorio")
     @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
     private String username;
@@ -30,7 +29,6 @@ public class RequestStudentDTO {
 
     private String photoUrl;
 
-    // ----- Campos de Student -----
     @NotBlank(message = "El nombre es obligatorio")
     @Size(max = 100, message = "El nombre no puede superar 100 caracteres")
     private String firstName;

@@ -11,7 +11,6 @@ public interface IStudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByDni(String dni);
 
-    // IStudentRepository
     Optional<Student> findByUsername(String username);
 
 }

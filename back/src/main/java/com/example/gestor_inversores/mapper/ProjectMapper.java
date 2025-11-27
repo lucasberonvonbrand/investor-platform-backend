@@ -9,7 +9,8 @@ import com.example.gestor_inversores.model.Student;
 
 public class ProjectMapper {
 
-    private ProjectMapper() {}
+    private ProjectMapper() {
+    }
 
     public static Project requestProjectToProject(RequestProjectDTO dto, Student owner) {
         return Project.builder()
@@ -18,7 +19,7 @@ public class ProjectMapper {
                 .budgetGoal(dto.getBudgetGoal())
                 .startDate(dto.getStartDate())
                 .estimatedEndDate(dto.getEstimatedEndDate())
-                .owner(owner) // <--- owner agregado
+                .owner(owner)
                 .build();
     }
 

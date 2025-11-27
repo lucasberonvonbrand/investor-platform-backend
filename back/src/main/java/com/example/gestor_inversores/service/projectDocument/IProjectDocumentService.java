@@ -11,11 +11,14 @@ import java.util.List;
 public interface IProjectDocumentService {
 
     ResponseProjectDocumentDTO saveFile(MultipartFile file, Long projectId);
-    List<ResponseProjectDocumentDTO> getAllByProject(Long projectId);
-    void delete(Long id);
-    ResponseProjectDocumentDTO findById(Long id);
-    ResponseFile downloadFile(Long id);
 
+    List<ResponseProjectDocumentDTO> getAllByProject(Long projectId);
+
+    void delete(Long id);
+
+    ResponseProjectDocumentDTO findById(Long id);
+
+    ResponseFile downloadFile(Long id);
 
 
 }

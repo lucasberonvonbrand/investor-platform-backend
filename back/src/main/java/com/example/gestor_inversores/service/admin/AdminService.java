@@ -43,11 +43,10 @@ public class AdminService implements IAdminService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectNotFoundException("Proyecto no encontrado con ID: " + projectId));
 
-        // VALIDACIÓN: Si se intenta completar el proyecto, asegurar que la meta de financiación se haya alcanzado.
         if (dto.getStatus() == ProjectStatus.COMPLETED && project.getCurrentGoal().compareTo(project.getBudgetGoal()) < 0) {
             throw new BusinessException(String.format(
-                "No se puede marcar el proyecto como 'COMPLETADO' porque no ha alcanzado su meta de financiación (Recaudado: %.2f, Meta: %.2f).",
-                project.getCurrentGoal(), project.getBudgetGoal()
+                    "No se puede marcar el proyecto como 'COMPLETADO' porque no ha alcanzado su meta de financiación (Recaudado: %.2f, Meta: %.2f).",
+                    project.getCurrentGoal(), project.getBudgetGoal()
             ));
         }
 
@@ -65,20 +64,19 @@ public class AdminService implements IAdminService {
     public ResponseContractDTO adminUpdateContract(Long contractId, RequestAdminContractUpdateDTO dto) {
         Contract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado con ID: " + contractId));
- 
+
         ContractStatus oldStatus = contract.getStatus();
 
-        ContractStatus newStatus = dto.getStatus(); // Leemos el estado DESPUÉS de la posible modificación.
+        ContractStatus newStatus = dto.getStatus();
 
-        // --- Lógica de Negocio para Cambios de Estado ---
         if (newStatus != null && oldStatus != newStatus) {
-            // REGLA: Si un contrato firmado o cerrado se revierte a un estado anterior (borrador o cancelado)...
+
             if ((oldStatus == ContractStatus.SIGNED || oldStatus == ContractStatus.CLOSED) &&
-                (newStatus == ContractStatus.DRAFT || newStatus == ContractStatus.CANCELLED)) {
+                    (newStatus == ContractStatus.DRAFT || newStatus == ContractStatus.CANCELLED)) {
 
                 Investment investment = contract.getInvestment();
                 if (investment != null) {
-                    // ...y la inversión ya había sido recibida, debemos revertir los fondos del proyecto.
+
                     if (investment.getStatus() == InvestmentStatus.RECEIVED) {
                         Project project = investment.getProject();
                         BigDecimal amountInUSD = investment.getAmount();
@@ -92,16 +90,16 @@ public class AdminService implements IAdminService {
                         project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO));
                         projectRepository.save(project);
                         System.out.println(String.format(
-                            "Acción de Administrador: Reversión de fondos por cambio de contrato. Se descontaron %.2f USD del proyecto %d.",
-                            amountInUSD, project.getIdProject()));
+                                "Acción de Administrador: Reversión de fondos por cambio de contrato. Se descontaron %.2f USD del proyecto %d.",
+                                amountInUSD, project.getIdProject()));
                     }
-                    // ...y en cualquier caso, la inversión asociada se cancela.
+
                     investment.setStatus(InvestmentStatus.CANCELLED);
                     investmentRepository.save(investment);
                 }
-            // REGLA: Si un contrato pasa a estar FIRMADO por acción del admin...
+
             } else if (newStatus == ContractStatus.SIGNED && oldStatus != ContractStatus.SIGNED) {
-                // ...y no tiene una inversión asociada, debemos crearla.
+
                 if (contract.getInvestment() == null) {
                     Investment newInvestment = new Investment();
                     newInvestment.setProject(contract.getProject());
@@ -109,33 +107,32 @@ public class AdminService implements IAdminService {
                     newInvestment.setContract(contract);
                     newInvestment.setAmount(contract.getAmount());
                     newInvestment.setCurrency(contract.getCurrency());
-                    newInvestment.setStatus(InvestmentStatus.IN_PROGRESS); // Estado inicial de una inversión
+                    newInvestment.setStatus(InvestmentStatus.IN_PROGRESS);
                     newInvestment.setCreatedAt(LocalDate.now());
                     investmentRepository.save(newInvestment);
-                    contract.setInvestment(newInvestment); // Asociamos la nueva inversión al contrato
+                    contract.setInvestment(newInvestment);
                     System.out.println(String.format(
-                        "Acción de Administrador: Creación de inversión %d para contrato %d forzado a SIGNED.",
-                        newInvestment.getIdInvestment(), contract.getIdContract()));
+                            "Acción de Administrador: Creación de inversión %d para contrato %d forzado a SIGNED.",
+                            newInvestment.getIdInvestment(), contract.getIdContract()));
                 }
-            // REGLA: Si un contrato pasa a estar CERRADO por acción del admin...
+
             } else if (newStatus == ContractStatus.CLOSED && oldStatus != ContractStatus.CLOSED) {
-                // ...y tiene una inversión asociada, debemos generar las ganancias.
+
                 Investment investment = contract.getInvestment();
                 if (investment != null) {
                     earningService.createFromContract(contract, contract.getProject().getOwner());
                     System.out.println(String.format(
-                        "Acción de Administrador: Generación de ganancias para contrato %d forzado a CLOSED.",
-                        contract.getIdContract()));
+                            "Acción de Administrador: Generación de ganancias para contrato %d forzado a CLOSED.",
+                            contract.getIdContract()));
 
-                    // LÓGICA AÑADIDA: Si la inversión fue recibida, se marca como completada.
                     if (investment.getStatus() == InvestmentStatus.RECEIVED) {
                         investment.setStatus(InvestmentStatus.COMPLETED);
                         investmentRepository.save(investment);
                     }
                 }
-            // REGLA: Si un contrato pasa a estar REEMBOLSADO por acción del admin...
+
             } else if (newStatus == ContractStatus.REFUNDED && oldStatus != ContractStatus.REFUNDED) {
-                // ...y tiene una inversión asociada, debemos iniciar el proceso de devolución.
+
                 if (contract.getInvestment() != null) {
                     contract.getInvestment().setStatus(InvestmentStatus.PENDING_RETURN);
                     investmentRepository.save(contract.getInvestment());
@@ -157,9 +154,9 @@ public class AdminService implements IAdminService {
         InvestmentStatus oldStatus = investment.getStatus();
         InvestmentStatus newStatus = dto.getStatus();
 
-        // Lógica de ajuste financiero solo si el estado cambia.
+
         if (newStatus != null && oldStatus != newStatus) {
-            // Caso 1: Se revierte una inversión que estaba como RECIBIDA.
+
             if (oldStatus == InvestmentStatus.RECEIVED) {
                 Project project = investment.getProject();
                 BigDecimal amountInUSD = investment.getAmount();
@@ -173,9 +170,9 @@ public class AdminService implements IAdminService {
                 project.setCurrentGoal(newCurrentGoal.max(BigDecimal.ZERO));
                 projectRepository.save(project);
                 System.out.println(String.format(
-                    "Acción de Administrador: Reversión de fondos. Se descontaron %.2f USD del proyecto %d.",
-                    amountInUSD, project.getIdProject()));
-            // Caso 2: Se marca como RECIBIDA una inversión que no lo estaba.
+                        "Acción de Administrador: Reversión de fondos. Se descontaron %.2f USD del proyecto %d.",
+                        amountInUSD, project.getIdProject()));
+
             } else if (newStatus == InvestmentStatus.RECEIVED) {
                 Project project = investment.getProject();
                 BigDecimal amountInUSD = investment.getAmount();
@@ -188,30 +185,28 @@ public class AdminService implements IAdminService {
                 BigDecimal potentialNewGoal = project.getCurrentGoal().add(amountInUSD);
                 if (potentialNewGoal.compareTo(project.getBudgetGoal()) > 0) {
                     throw new BusinessException(String.format(
-                        "La acción no se puede completar. El monto de la inversión (%.2f USD) haría que el proyecto supere su meta de financiación (%.2f USD).",
-                        amountInUSD, project.getBudgetGoal()));
+                            "La acción no se puede completar. El monto de la inversión (%.2f USD) haría que el proyecto supere su meta de financiación (%.2f USD).",
+                            amountInUSD, project.getBudgetGoal()));
                 }
                 project.setCurrentGoal(potentialNewGoal);
                 projectRepository.save(project);
                 System.out.println(String.format(
-                    "Acción de Administrador: Aporte de fondos. Se sumaron %.2f USD al proyecto %d.",
-                    amountInUSD, project.getIdProject()));
-            } 
+                        "Acción de Administrador: Aporte de fondos. Se sumaron %.2f USD al proyecto %d.",
+                        amountInUSD, project.getIdProject()));
+            }
         }
 
-        // Se actualiza el estado y la fecha de confirmación directamente en el servicio.
         if (newStatus != null) {
             investment.setStatus(newStatus);
             if (newStatus == InvestmentStatus.RECEIVED) {
                 investment.setConfirmedAt(LocalDate.now());
             } else {
-                // Si el nuevo estado no es RECEIVED, nos aseguramos de anular la fecha de confirmación.
                 investment.setConfirmedAt(null);
             }
         }
 
         Investment updatedInvestment = investmentRepository.save(investment);
-        return investmentMapper.toResponse(updatedInvestment); // Asegúrate que tu InvestmentMapper se llame 'toResponse'
+        return investmentMapper.toResponse(updatedInvestment);
     }
 
     @Override
@@ -221,15 +216,14 @@ public class AdminService implements IAdminService {
                 .orElseThrow(() -> new EarningNotFoundException("Ganancia no encontrada con ID: " + earningId));
 
         System.out.println(String.format(
-            "Acción de Administrador: Cambiando estado de ganancia %d de %s a %s.",
-            earningId,
-            earning.getStatus(), // old status
-            dto.getStatus() // new status from DTO
+                "Acción de Administrador: Cambiando estado de ganancia %d de %s a %s.",
+                earningId,
+                earning.getStatus(),
+                dto.getStatus()
         ));
 
         earning.setStatus(dto.getStatus());
 
-        // Lógica adicional: si el estado es RECEIVED, se confirma la fecha. Si no, se anula.
         if (dto.getStatus() == EarningStatus.RECEIVED) {
             earning.setConfirmedAt(LocalDate.now());
         } else {

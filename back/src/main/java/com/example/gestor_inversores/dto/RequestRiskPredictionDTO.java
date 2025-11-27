@@ -7,8 +7,10 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class RequestRiskPredictionDTO {
 

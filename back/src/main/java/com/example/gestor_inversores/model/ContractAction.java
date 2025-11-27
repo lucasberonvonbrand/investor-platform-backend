@@ -29,7 +29,7 @@ public class ContractAction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ContractStatus status; // SIGNED, CLOSED, CANCELLED, REFUNDED
+    private ContractStatus status;
 
     @Column(nullable = false)
     private LocalDate actionDate;

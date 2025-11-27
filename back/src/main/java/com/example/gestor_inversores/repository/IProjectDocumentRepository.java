@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface IProjectDocumentRepository extends JpaRepository<ProjectDocument, Long> {
+
     List<ProjectDocument> findByProject_IdProject(Long projectId);
 }

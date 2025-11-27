@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,28 +25,30 @@ public class StudentController {
     private final IUserRepository userRepository;
     private final IStudentRepository studentRepository;
 
-    // GET ALL
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ResponseStudentDTO>> getAllStudents() {
         return ResponseEntity.ok(studentService.findAll());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<ResponseStudentDTO> getStudentById(@PathVariable Long id) {
         return ResponseEntity.ok(studentService.findById(id));
     }
 
     @GetMapping("/projects/{id}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<List<ResponseProjectByStudentDTO>> getProjectsByStudent(
             @PathVariable Long id,
-            @RequestParam(defaultValue = "true") boolean active) { // true = activos, false = inactivos
+            @RequestParam(defaultValue = "true") boolean active) {
 
         List<ResponseProjectByStudentDTO> projects = studentService.getProjectsByStudentId(id, active);
         return ResponseEntity.ok(projects);
     }
 
-    //Para poder mostrar la lista de alumnos cuando alguien crea un proyecto
     @GetMapping("/names")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<ResponseStudentNameDTO>> getAllStudentNames() {
         List<ResponseStudentNameDTO> students = studentService.findAllStudentNames();
         return ResponseEntity.ok(students);
@@ -58,6 +61,7 @@ public class StudentController {
     }
 
     @PutMapping("/update-by-admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseStudentDTO> updateByAdmin(
             @PathVariable Long id,
             @Valid @RequestBody RequestStudentUpdateByAdminDTO dto) {
@@ -66,6 +70,7 @@ public class StudentController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ResponseStudentDTO> patchStudent(
             @PathVariable Long id,
             @RequestBody RequestStudentUpdateDTO patchDto) {
@@ -76,22 +81,23 @@ public class StudentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // DAR DE ALTA (enable)
     @PatchMapping("/activate/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseStudentDTO> activateStudent(@PathVariable Long id) {
         Student student = studentService.activateStudent(id);
         return ResponseEntity.ok(studentMapper.studentToResponseStudentDTO(student));
     }
 
-    // DAR DE BAJA (disable)
     @PatchMapping("/desactivate/{id}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<ResponseStudentDTO> desactivateStudent(@PathVariable Long id) {
         Student student = studentService.desactivateStudent(id);
         return ResponseEntity.ok(studentMapper.studentToResponseStudentDTO(student));
     }
 
- 
+
     @GetMapping("/by-username")
+    @PreAuthorize("hasAnyRole('STUDENT', 'INVESTOR', 'ADMIN')")
     public ResponseEntity<ResponseStudentDTO> getStudentByUsername(
             @RequestParam("username") String username) {
 
@@ -100,19 +106,16 @@ public class StudentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ✅ Endpoint para validar si el username ya existe
     @GetMapping("/check-username/{username}")
     public ResponseEntity<Boolean> checkUsernameExists(@PathVariable String username) {
         return ResponseEntity.ok(userRepository.findUserEntityByUsername(username).isPresent());
     }
 
-    // ✅ Endpoint para validar si el email ya existe
     @GetMapping("/check-email/{email}")
     public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
         return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());
     }
 
-    // ✅ Endpoint para validar si el dni ya existe
     @GetMapping("/check-dni/{dni}")
     public ResponseEntity<Boolean> checkDniExists(@PathVariable String dni) {
         return ResponseEntity.ok(studentRepository.findByDni(dni).isPresent());

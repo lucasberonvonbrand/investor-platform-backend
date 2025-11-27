@@ -36,7 +36,7 @@ public class ProjectDocumentService implements IProjectDocumentService {
     @Override
     public ResponseProjectDocumentDTO saveFile(MultipartFile file, Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new RuntimeException("Proyecto no encontrado"));
 
         try {
 
@@ -65,7 +65,7 @@ public class ProjectDocumentService implements IProjectDocumentService {
                     .build();
 
         } catch (IOException | IllegalStateException e) {
-            throw new DocumentFileException("Could not store file: " + e.getMessage());
+            throw new DocumentFileException("No se pudo guardar el archivo: " + e.getMessage());
         }
     }
 
@@ -84,7 +84,7 @@ public class ProjectDocumentService implements IProjectDocumentService {
     @Override
     public ResponseProjectDocumentDTO findById(Long id) {
         ProjectDocument doc = documentRepository.findById(id)
-                .orElseThrow(() -> new DocumentFileNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentFileNotFoundException("Documento no encontrado"));
 
         return ResponseProjectDocumentDTO.builder()
                 .idProjectDocument(doc.getIdProjectDocument())
@@ -99,17 +99,17 @@ public class ProjectDocumentService implements IProjectDocumentService {
     @Override
     public void delete(Long id) {
         ProjectDocument doc = documentRepository.findById(id)
-                .orElseThrow(() -> new DocumentFileNotFoundException("Document not found"));
+                .orElseThrow(() -> new DocumentFileNotFoundException("Documento no encontrado"));
 
         Path filePath = Paths.get(doc.getFilePath());
         try {
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
             } else {
-                throw new DocumentFileNotFoundException("The file is not found on the server ");
+                throw new DocumentFileNotFoundException("El archivo no se encuentra en el servidor");
             }
         } catch (IOException e) {
-            throw new DocumentFileException("Could not delete file: " + e.getMessage());
+            throw new DocumentFileException("No se pudo eliminar el archivo: " + e.getMessage());
         }
 
         Project project = doc.getProject();
@@ -127,13 +127,13 @@ public class ProjectDocumentService implements IProjectDocumentService {
         Path filePath = Paths.get(dto.getFilePath());
 
         if (!Files.exists(filePath)) {
-            throw new DocumentFileNotFoundException("The file with ID " + id + " was not found.");
+            throw new DocumentFileNotFoundException("El archivo con ID " + id + " no fue encontrado.");
         }
 
         Resource resource = new FileSystemResource(filePath.toFile());
 
         if (!resource.isReadable()) {
-            throw new DocumentFileException("The file could not be read.");
+            throw new DocumentFileException("El archivo no pudo ser leído.");
         }
 
         String fileName = resource.getFilename();

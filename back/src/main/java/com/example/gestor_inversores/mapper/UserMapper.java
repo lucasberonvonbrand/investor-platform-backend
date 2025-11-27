@@ -25,9 +25,8 @@ public class UserMapper {
 
         User user = new User();
 
-        // Campos de UserSec
         user.setUsername(dto.getUsername());
-        user.setPassword(dto.getPassword()); // 🔹 Se encripta en el Service
+        user.setPassword(dto.getPassword());
         user.setEmail(dto.getEmail());
         user.setPhotoUrl(dto.getPhotoUrl());
 
@@ -70,21 +69,16 @@ public class UserMapper {
         return dto;
     }
 
-    // Método para actualizar un User con PatchUserDTO
     public void patchUserFromDto(RequestUserUpdateDTO dto, User user) {
 
-        // Campos básicos
         if (dto.getUsername() != null) user.setUsername(dto.getUsername());
         if (dto.getEmail() != null) user.setEmail(dto.getEmail());
         if (dto.getPhotoUrl() != null) user.setPhotoUrl(dto.getPhotoUrl());
-
-        // Campos de seguridad opcionales
         if (dto.getEnabled() != null) user.setEnabled(dto.getEnabled());
         if (dto.getAccountNotExpired() != null) user.setAccountNotExpired(dto.getAccountNotExpired());
         if (dto.getAccountNotLocked() != null) user.setAccountNotLocked(dto.getAccountNotLocked());
         if (dto.getCredentialNotExpired() != null) user.setCredentialNotExpired(dto.getCredentialNotExpired());
 
-        // Roles
         if (dto.getRolesIds() != null && !dto.getRolesIds().isEmpty()) {
             Set<Role> rolesValidados = new HashSet<>();
             for (Long roleId : dto.getRolesIds()) {

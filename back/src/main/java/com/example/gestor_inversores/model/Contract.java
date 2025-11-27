@@ -60,9 +60,6 @@ public class Contract {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    /**
-     * Porcentajes de ganancia según duración del proyecto
-     */
     @DecimalMin(value = "0.00", message = "El porcentaje de ganancias debe ser mayor o igual a 0")
     private BigDecimal profit1Year;
 
@@ -72,9 +69,6 @@ public class Contract {
     @DecimalMin(value = "0.00", message = "El porcentaje de ganancias debe ser mayor o igual a 0")
     private BigDecimal profit3Years;
 
-    /**
-     * Campos para gestionar las firmas individuales del contrato
-     */
     @Column(nullable = false)
     private boolean investorSigned = false;
 
@@ -85,15 +79,9 @@ public class Contract {
 
     private LocalDate studentSignedDate;
 
-    /**
-     * Relación con ContractAction para registrar todas las acciones de los estudiantes
-     */
     @OneToMany(mappedBy = "contract", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContractAction> actions = new ArrayList<>();
 
-    /**
-     * Relación con la inversión asociada al contrato
-     */
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "investment_id")
     private Investment investment;

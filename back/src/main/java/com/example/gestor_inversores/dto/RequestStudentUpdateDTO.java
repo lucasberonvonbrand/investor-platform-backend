@@ -13,9 +13,6 @@ import java.time.LocalDate;
 @Setter
 public class RequestStudentUpdateDTO {
 
-    // Para PATCH, los campos son opcionales, por lo que se quita @NotBlank/@NotNull
-    // pero se mantienen las validaciones de formato si el campo es proporcionado.
-
     @Size(min = 3, max = 50, message = "Si se proporciona, el username debe tener entre 3 y 50 caracteres")
     private String username;
 
@@ -51,7 +48,7 @@ public class RequestStudentUpdateDTO {
     @Size(max = 500, message = "La descripción puede tener hasta 500 caracteres")
     private String description;
 
-    @Valid // Si se proporciona una dirección, debe ser validada en cascada
+    @Valid
     private AddressDTO address;
 
 }

@@ -3,7 +3,7 @@ package com.example.gestor_inversores.model.enums;
 public enum Province {
 
     BUENOS_AIRES,
-    CABA,               // Ciudad Autónoma de Buenos Aires
+    CABA,
     CATAMARCA,
     CHACO,
     CHUBUT,
@@ -26,4 +26,5 @@ public enum Province {
     SANTIAGO_DEL_ESTERO,
     TIERRA_DEL_FUEGO,
     TUCUMAN
+
 }

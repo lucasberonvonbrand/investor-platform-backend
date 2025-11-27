@@ -25,17 +25,9 @@ public interface IInvestmentRepository extends JpaRepository<Investment, Long> {
 
     List<Investment> findByProject_IdProject(Long projectId);
 
-    /**
-     * Busca todas las inversiones activas (no eliminadas) generadas por un inversor específico.
-     */
     List<Investment> findByGeneratedBy_IdAndDeletedFalse(Long investorId);
 
-    /**
-     * Busca todas las inversiones activas (no eliminadas) generadas por un inversor específico
-     * Y que además coincidan con un estado de inversión particular.
-     */
     List<Investment> findByGeneratedBy_IdAndDeletedFalseAndStatus(Long investorId, InvestmentStatus status);
-
 
     @Query("SELECT DISTINCT i.project FROM Investment i WHERE i.generatedBy.id = :investorId AND i.deleted = false")
     Optional<Set<Project>> findDistinctProjectsByInvestorId(@Param("investorId") Long investorId);

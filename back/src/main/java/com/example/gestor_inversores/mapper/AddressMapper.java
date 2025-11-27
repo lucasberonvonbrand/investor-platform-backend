@@ -20,7 +20,6 @@ public class AddressMapper {
             try {
                 address.setProvince(Province.valueOf(dto.getProvince().toUpperCase()));
             } catch (IllegalArgumentException e) {
-                // Manejar el caso donde el string no es una provincia válida, si es necesario
                 address.setProvince(null);
             }
         }

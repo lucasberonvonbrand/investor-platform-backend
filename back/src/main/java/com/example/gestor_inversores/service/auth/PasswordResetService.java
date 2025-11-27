@@ -34,10 +34,8 @@ public class PasswordResetService implements IPasswordResetService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EmailNotFoundException("No se encontró un usuario con ese correo."));
 
-        // Eliminar tokens anteriores del usuario
         tokenRepository.deleteByUserId(user.getId());
 
-        // Token súper único: userId + timestamp + UUID
         String token = Base64.getUrlEncoder().encodeToString(
                 (user.getId() + "-" + System.currentTimeMillis() + "-" + UUID.randomUUID()).getBytes()
         );
@@ -47,14 +45,12 @@ public class PasswordResetService implements IPasswordResetService {
         resetToken.setUser(user);
         resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(15));
 
-        // Guardar token en DB
         try {
             tokenRepository.save(resetToken);
         } catch (Exception ex) {
             throw new InvalidTokenException("Error generando token único, intenta de nuevo.");
         }
 
-        // Enviar correo solo si el token se guardó correctamente
         try {
             sendPasswordResetEmail(user, resetToken.getToken());
         } catch (Exception ex) {
@@ -85,7 +81,7 @@ public class PasswordResetService implements IPasswordResetService {
         email.setTo(user.getEmail());
         email.setSubject("Restablecer Contraseña");
         email.setText("Para restablecer tu contraseña, haz clic en el siguiente enlace: \n"
-                + "http://72.60.11.35:4200/auth/reset-password?token=" + token); // reemplazar por URL de frontend
+                + "http://localhost:8080/api/auth/reset-password?token=" + token);
         mailSender.send(email);
     }
 }

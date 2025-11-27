@@ -48,23 +48,23 @@ public class UserService implements IUserService {
     @Override
     public User save(User user) {
 
-        // Validar duplicados
         userRepository.findUserEntityByUsername(user.getUsername())
-                .ifPresent(u -> { throw new UsernameAlreadyExistsException("El username ya existe."); });
+                .ifPresent(u -> {
+                    throw new UsernameAlreadyExistsException("El username ya existe.");
+                });
 
         userRepository.findByEmail(user.getEmail())
-                .ifPresent(u -> { throw new EmailAlreadyExistsException("El email ya existe."); });
+                .ifPresent(u -> {
+                    throw new EmailAlreadyExistsException("El email ya existe.");
+                });
 
-        // Encriptar password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Setear valores por defecto
         user.setEnabled(true);
         user.setAccountNotExpired(true);
         user.setAccountNotLocked(true);
         user.setCredentialNotExpired(true);
 
-        // Validar roles existentes
         Set<Role> rolesValidados = new HashSet<>();
         if (user.getRolesList() != null && !user.getRolesList().isEmpty()) {
             for (Role r : user.getRolesList()) {
@@ -96,7 +96,7 @@ public class UserService implements IUserService {
         return userRepository.findById(id).map(user -> {
             userMapper.patchUserFromDto(patchDto, user);
             try {
-                return userRepository.save(user); // JPA detecta que es update por tener id
+                return userRepository.save(user);
             } catch (DataIntegrityViolationException | JpaSystemException ex) {
                 throw new UpdateException("No se pudo actualizar el usuario");
             }

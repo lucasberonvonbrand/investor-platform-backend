@@ -26,7 +26,7 @@ public class RequestContractUpdateByInvestorDTO {
     @Digits(integer = 13, fraction = 2, message = "El formato del monto no es válido")
     private BigDecimal amount;
 
-    private Currency currency; // La validación del enum es automática
+    private Currency currency;
 
     @DecimalMin(value = "0.00", message = "El profit 1 año debe ser >= 0")
     private BigDecimal profit1Year;

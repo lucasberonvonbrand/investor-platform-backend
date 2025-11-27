@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CurrencyConversionDTO {
-    private String fromCurrency; // Ej: "CNY"
-    private String toCurrency;   // Ej: "USD"
-    private BigDecimal rate;     // Valor de conversión del día
+    private String fromCurrency;
+    private String toCurrency;
+    private BigDecimal rate;
 }

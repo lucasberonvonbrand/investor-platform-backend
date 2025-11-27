@@ -63,17 +63,14 @@ public class ContractService implements IContractService {
 
         if (dto.getTextTitle() != null && !dto.getTextTitle().isEmpty()) {
             contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getCreatedByInvestorId(), dto.getTextTitle())
-                .ifPresent(existingContract -> {
-                    throw new BusinessException("Ya tienes un contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
-                });
+                    .ifPresent(existingContract -> {
+                        throw new BusinessException("Ya tienes un contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                    });
         }
 
         if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
             throw new BusinessException("Este proyecto ya no acepta nuevas ofertas de inversión porque ya está financiado o completado.");
         }
-
-        // Se elimina la validación estricta aquí para permitir ofertas que puedan sobrefinanciar.
-        // validateOfferAmount(project, dto.getAmount(), dto.getCurrency());
 
         BigDecimal profit1 = dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit1Year().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit1Year();
         BigDecimal profit2 = dto.getProfit2Years() != null && dto.getProfit2Years().compareTo(BigDecimal.ONE) > 0 ? dto.getProfit2Years().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : dto.getProfit2Years();
@@ -99,12 +96,12 @@ public class ContractService implements IContractService {
         String toStudent = project.getOwner().getEmail();
         String subjectToStudent = String.format("¡Nueva propuesta de contrato para tu proyecto '%s'!", project.getName());
         String bodyToStudent = String.format(
-            "Hola %s,\n\nEl inversor '%s' ha creado una propuesta de contrato para tu proyecto '%s'.\n\n" +
-            "Puedes revisar y editar los detalles del contrato desde la plataforma. Una vez que ambos estéis de acuerdo con los términos, podréis pasar a la fase de firma.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            project.getOwner().getFirstName(),
-            investor.getUsername(),
-            project.getName()
+                "Hola %s,\n\nEl inversor '%s' ha creado una propuesta de contrato para tu proyecto '%s'.\n\n" +
+                        "Puedes revisar y editar los detalles del contrato desde la plataforma. Una vez que ambos estéis de acuerdo con los términos, podréis pasar a la fase de firma.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                project.getOwner().getFirstName(),
+                investor.getUsername(),
+                project.getName()
         );
         mailService.sendEmail(toStudent, subjectToStudent, bodyToStudent);
 
@@ -123,18 +120,13 @@ public class ContractService implements IContractService {
         if (contract.getStatus() != ContractStatus.DRAFT)
             throw new ContractCannotBeModifiedException("Solo se pueden modificar contratos en estado de borrador (DRAFT).");
 
-        if (dto.getAmount() != null) {
-            // Se elimina la validación estricta para permitir la sobrefinanciación.
-            // validateOfferAmount(contract.getProject(), dto.getAmount(), dto.getCurrency() != null ? dto.getCurrency() : contract.getCurrency());
-        }
-
         if (dto.getTextTitle() != null && !dto.getTextTitle().equalsIgnoreCase(contract.getTextTitle())) {
             contractRepository.findByCreatedByInvestorIdAndTextTitleIgnoreCase(dto.getInvestorId(), dto.getTextTitle())
-                .ifPresent(existingContract -> {
-                    if (!existingContract.getIdContract().equals(contractId)) {
-                        throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
-                    }
-                });
+                    .ifPresent(existingContract -> {
+                        if (!existingContract.getIdContract().equals(contractId)) {
+                            throw new BusinessException("Ya tienes otro contrato con el título '" + dto.getTextTitle() + "'. Por favor, elige un título diferente.");
+                        }
+                    });
         }
 
         if (dto.getProfit1Year() != null && dto.getProfit1Year().compareTo(BigDecimal.ONE) > 0) {
@@ -154,12 +146,12 @@ public class ContractService implements IContractService {
         String toStudent = student.getEmail();
         String subject = String.format("El contrato para '%s' ha sido actualizado", savedContract.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl inversor '%s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
-            "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            student.getFirstName(),
-            savedContract.getCreatedByInvestor().getUsername(),
-            savedContract.getProject().getName()
+                "Hola %s,\n\nEl inversor '%s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
+                        "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                savedContract.getCreatedByInvestor().getUsername(),
+                savedContract.getProject().getName()
         );
         mailService.sendEmail(toStudent, subject, body);
 
@@ -199,13 +191,13 @@ public class ContractService implements IContractService {
         String toInvestor = investor.getEmail();
         String subject = String.format("El contrato para '%s' ha sido actualizado por el estudiante", savedContract.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl estudiante '%s %s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
-            "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            investor.getUsername(),
-            student.getFirstName(),
-            student.getLastName(),
-            savedContract.getProject().getName()
+                "Hola %s,\n\nEl estudiante '%s %s' ha realizado cambios en la propuesta de contrato para tu proyecto '%s'.\n\n" +
+                        "Por favor, revisa los nuevos términos en la plataforma.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                investor.getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                savedContract.getProject().getName()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -215,9 +207,9 @@ public class ContractService implements IContractService {
     @Override
     public ResponseContractDTO agreeByStudent(Long contractId, RequestContractActionByStudentDTO dto) {
         Contract contract = contractRepository.findById(contractId)
-            .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
         Student student = studentRepository.findById(dto.getStudentId())
-            .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
+                .orElseThrow(() -> new StudentNotFoundException("Estudiante no encontrado"));
 
         if (!contract.getProject().getOwner().getId().equals(student.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para realizar esta acción. Solo el dueño del proyecto puede hacerlo.");
@@ -229,9 +221,9 @@ public class ContractService implements IContractService {
     @Override
     public ResponseContractDTO agreeByInvestor(Long contractId, RequestContractActionByInvestorDTO dto) {
         Contract contract = contractRepository.findById(contractId)
-            .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
+                .orElseThrow(() -> new ContractNotFoundException("Contrato no encontrado"));
         Investor investor = investorRepository.findById(dto.getInvestorId())
-            .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
+                .orElseThrow(() -> new InvestorNotFoundException("Inversor no encontrado"));
 
         if (!contract.getCreatedByInvestor().getId().equals(investor.getId())) {
             throw new UnauthorizedOperationException("No tienes permiso para realizar esta acción. Solo el creador del contrato puede hacerlo.");
@@ -249,7 +241,7 @@ public class ContractService implements IContractService {
 
         ContractAction action = ContractAction.builder()
                 .contract(contract)
-                .student(contract.getProject().getOwner()) 
+                .student(contract.getProject().getOwner())
                 .status(ContractStatus.PARTIALLY_SIGNED)
                 .actionDate(LocalDate.now())
                 .build();
@@ -259,12 +251,12 @@ public class ContractService implements IContractService {
 
         String subject = String.format("Acuerdo alcanzado para el contrato del proyecto '%s'", contract.getProject().getName());
         String body = String.format(
-            "Hola,\n\nSe ha alcanzado un acuerdo sobre los términos del contrato para el proyecto '%s'.\n\n" +
-            "La propuesta ha sido aceptada por %s y el contrato ha sido bloqueado para su edición.\n\n" +
-            "El siguiente paso es que ambas partes firmen el contrato para formalizar la inversión.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            contract.getProject().getName(),
-            actorName
+                "Hola,\n\nSe ha alcanzado un acuerdo sobre los términos del contrato para el proyecto '%s'.\n\n" +
+                        "La propuesta ha sido aceptada por %s y el contrato ha sido bloqueado para su edición.\n\n" +
+                        "El siguiente paso es que ambas partes firmen el contrato para formalizar la inversión.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                contract.getProject().getName(),
+                actorName
         );
         mailService.sendEmail(notificationEmail, subject, body);
 
@@ -300,13 +292,13 @@ public class ContractService implements IContractService {
             String toInvestor = contract.getCreatedByInvestor().getEmail();
             String subject = String.format("El estudiante ha firmado el contrato para '%s'", contract.getProject().getName());
             String body = String.format(
-                "Hola %s,\n\nEl estudiante %s %s ha firmado el contrato para el proyecto '%s'.\n\n" +
-                "Ahora solo falta tu firma para activar la inversión.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                contract.getCreatedByInvestor().getUsername(),
-                student.getFirstName(),
-                student.getLastName(),
-                contract.getProject().getName()
+                    "Hola %s,\n\nEl estudiante %s %s ha firmado el contrato para el proyecto '%s'.\n\n" +
+                            "Ahora solo falta tu firma para activar la inversión.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    contract.getCreatedByInvestor().getUsername(),
+                    student.getFirstName(),
+                    student.getLastName(),
+                    contract.getProject().getName()
             );
             mailService.sendEmail(toInvestor, subject, body);
         }
@@ -344,12 +336,12 @@ public class ContractService implements IContractService {
             String toStudent = student.getEmail();
             String subject = String.format("El inversor ha firmado el contrato para '%s'", contract.getProject().getName());
             String body = String.format(
-                "Hola %s,\n\nEl inversor %s ha firmado el contrato para tu proyecto '%s'.\n\n" +
-                "Ahora solo falta tu firma para activar la inversión.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                student.getFirstName(),
-                investor.getUsername(),
-                contract.getProject().getName()
+                    "Hola %s,\n\nEl inversor %s ha firmado el contrato para tu proyecto '%s'.\n\n" +
+                            "Ahora solo falta tu firma para activar la inversión.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    student.getFirstName(),
+                    investor.getUsername(),
+                    contract.getProject().getName()
             );
             mailService.sendEmail(toStudent, subject, body);
         }
@@ -388,11 +380,11 @@ public class ContractService implements IContractService {
         String toInvestor = contract.getCreatedByInvestor().getEmail();
         String subjectToInvestor = String.format("¡Contrato para '%s' activado!", contract.getProject().getName());
         String bodyToInvestor = String.format(
-            "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para el proyecto '%s'.\n\n" +
-            "La inversión ha sido creada y está esperando a que realices la transferencia.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            contract.getCreatedByInvestor().getUsername(),
-            contract.getProject().getName()
+                "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para el proyecto '%s'.\n\n" +
+                        "La inversión ha sido creada y está esperando a que realices la transferencia.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                contract.getCreatedByInvestor().getUsername(),
+                contract.getProject().getName()
         );
         mailService.sendEmail(toInvestor, subjectToInvestor, bodyToInvestor);
 
@@ -400,12 +392,12 @@ public class ContractService implements IContractService {
         String toStudent = student.getEmail();
         String subjectToStudent = String.format("¡Contrato para '%s' activado!", contract.getProject().getName());
         String bodyToStudent = String.format(
-            "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para tu proyecto '%s'.\n\n" +
-            "La inversión del inversor %s ha sido registrada y está pendiente de transferencia.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            student.getFirstName(),
-            contract.getCreatedByInvestor().getUsername(),
-            contract.getProject().getName()
+                "Hola %s,\n\n¡Buenas noticias! Ambas partes han firmado el contrato para tu proyecto '%s'.\n\n" +
+                        "La inversión del inversor %s ha sido registrada y está pendiente de transferencia.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                contract.getCreatedByInvestor().getUsername(),
+                contract.getProject().getName()
         );
         mailService.sendEmail(toStudent, subjectToStudent, bodyToStudent);
 
@@ -460,7 +452,7 @@ public class ContractService implements IContractService {
                 }
                 Project project = contract.getProject();
                 if (project.getStatus() != ProjectStatus.CANCELLED &&
-                    project.getStatus() != ProjectStatus.NOT_FUNDED) {
+                        project.getStatus() != ProjectStatus.NOT_FUNDED) {
                     throw new BusinessException("Solo se pueden reembolsar contratos de proyectos cancelados o no financiados.");
                 }
             }
@@ -493,12 +485,13 @@ public class ContractService implements IContractService {
                     contractRepository.save(contract);
                     earningService.createFromContract(contract, student);
 
-                    if (inv.getStatus() == InvestmentStatus.RECEIVED) { 
+                    if (inv.getStatus() == InvestmentStatus.RECEIVED) {
                         inv.setStatus(InvestmentStatus.COMPLETED);
                         investmentRepo.save(inv);
                     }
                 }
-                default -> {}
+                default -> {
+                }
             }
         }
 
@@ -508,27 +501,27 @@ public class ContractService implements IContractService {
             String toInvestor = contract.getCreatedByInvestor().getEmail();
             String subject = String.format("Alerta: Contrato para el proyecto '%s' cancelado", contract.getProject().getName());
             String body = String.format(
-                "Hola %s,\n\nTe informamos que el contrato para el proyecto '%s' ha sido cancelado por el estudiante %s %s.\n\n" +
-                "Si no esperabas esta acción, te recomendamos ponerte en contacto con el estudiante para aclarar la situación.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                contract.getCreatedByInvestor().getUsername(),
-                contract.getProject().getName(),
-                student.getFirstName(),
-                student.getLastName()
+                    "Hola %s,\n\nTe informamos que el contrato para el proyecto '%s' ha sido cancelado por el estudiante %s %s.\n\n" +
+                            "Si no esperabas esta acción, te recomendamos ponerte en contacto con el estudiante para aclarar la situación.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    contract.getCreatedByInvestor().getUsername(),
+                    contract.getProject().getName(),
+                    student.getFirstName(),
+                    student.getLastName()
             );
             mailService.sendEmail(toInvestor, subject, body);
         } else if (actionStatus == ContractStatus.PENDING_REFUND) {
             String toStudent = student.getEmail();
             String subject = String.format("Has iniciado la devolución para el proyecto '%s'", contract.getProject().getName());
             String body = String.format(
-                "Hola %s,\n\nHas iniciado el proceso de devolución de la inversión de %.2f %s para el proyecto '%s'.\n\n" +
-                "El estado del contrato ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
-                "Acción Requerida: El siguiente paso es realizar la transferencia de los fondos al inversor. Una vez que lo hayas hecho, por favor, ingresa a la plataforma y confirma que has enviado la devolución para notificar al inversor.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                student.getFirstName(),
-                contract.getAmount(),
-                contract.getCurrency(),
-                contract.getProject().getName()
+                    "Hola %s,\n\nHas iniciado el proceso de devolución de la inversión de %.2f %s para el proyecto '%s'.\n\n" +
+                            "El estado del contrato ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
+                            "Acción Requerida: El siguiente paso es realizar la transferencia de los fondos al inversor. Una vez que lo hayas hecho, por favor, ingresa a la plataforma y confirma que has enviado la devolución para notificar al inversor.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    student.getFirstName(),
+                    contract.getAmount(),
+                    contract.getCurrency(),
+                    contract.getProject().getName()
             );
             mailService.sendEmail(toStudent, subject, body);
         }
@@ -561,12 +554,12 @@ public class ContractService implements IContractService {
         String toStudent = student.getEmail();
         String subject = String.format("Una oferta para tu proyecto '%s' ha sido retirada", project.getName());
         String body = String.format(
-            "Hola %s,\n\nTe informamos que el inversor '%s' ha retirado su oferta de contrato para tu proyecto '%s'.\n\n" +
-            "Esta oferta ya no está disponible para ser firmada.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            student.getFirstName(),
-            investor.getUsername(),
-            project.getName()
+                "Hola %s,\n\nTe informamos que el inversor '%s' ha retirado su oferta de contrato para tu proyecto '%s'.\n\n" +
+                        "Esta oferta ya no está disponible para ser firmada.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                investor.getUsername(),
+                project.getName()
         );
         mailService.sendEmail(toStudent, subject, body);
 
@@ -614,7 +607,7 @@ public class ContractService implements IContractService {
     @Override
     public List<ResponseContractDTO> getContractsByInvestorAndProject(Long investorId, Long projectId) {
         List<Contract> contracts = contractRepository.findByCreatedByInvestorIdAndProject_IdProject(investorId, projectId)
-                .orElseThrow(() -> new ContractNotFoundException("No contracts for that project were found for that investor."));
+                .orElseThrow(() -> new ContractNotFoundException("No se encontraron contratos de ese proyecto para ese inversor."));
         return contracts.stream()
                 .map(contractMapper::toResponseDTO)
                 .toList();
@@ -630,25 +623,4 @@ public class ContractService implements IContractService {
         contractRepository.save(contract);
     }
 
-    // El método validateOfferAmount ya no es necesario en este servicio, se puede eliminar o dejar comentado.
-    /*
-     private void validateOfferAmount(Project project, BigDecimal amount, Currency currency) {
-         BigDecimal remainingBudget = project.getBudgetGoal().subtract(project.getCurrentGoal());
-         BigDecimal offerAmountInUSD = amount;
- 
-         if (currency != Currency.USD) {
-             if (currencyConversionService == null) {
-                 throw new IllegalStateException("El servicio de conversión de moneda no está disponible.");
-             }
-             offerAmountInUSD = currencyConversionService.getConversionRate(currency.name(), "USD")
-                     .getRate().multiply(amount);
-         }
- 
-         if (offerAmountInUSD.compareTo(remainingBudget) > 0) {
-             throw new BusinessException(String.format(
-                     "El monto de la oferta (%.2f USD) supera el capital restante para financiar el proyecto (%.2f USD).",
-                     offerAmountInUSD, remainingBudget));
-         }
-     }
-    */
 }

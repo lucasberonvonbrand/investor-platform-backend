@@ -18,7 +18,7 @@ public class ResponseContractDTO {
     private Long idContract;
     private Long projectId;
     private Long createdByInvestorId;
-    private ResponseInvestmentDTO investment; // Cambiado de Long a InvestmentDTO
+    private ResponseInvestmentDTO investment;
 
     private String textTitle;
 
@@ -30,7 +30,6 @@ public class ResponseContractDTO {
 
     private LocalDate createdAt;
 
-    // Campos de firma
     private boolean investorSigned;
     private LocalDate investorSignedDate;
     private boolean studentSigned;
@@ -40,5 +39,5 @@ public class ResponseContractDTO {
     private BigDecimal profit2Years;
     private BigDecimal profit3Years;
 
-    private List<ContractActionDTO> actions; // historial de acciones del estudiante
+    private List<ContractActionDTO> actions;
 }

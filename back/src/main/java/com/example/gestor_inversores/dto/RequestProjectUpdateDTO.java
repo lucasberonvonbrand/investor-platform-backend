@@ -15,26 +15,33 @@ import java.util.Set;
 @NoArgsConstructor
 public class RequestProjectUpdateDTO {
 
-    @NotBlank(message = "Must contain a value")
+    @NotBlank(message = "Debe contener un valor")
     @Size(min = 4, max = 100)
     private String name;
-    @NotBlank(message = "Must contain a value")
+
+    @NotBlank(message = "Debe contener un valor")
     @Size(min = 20, max = 500)
     private String description;
-    @NotNull(message = "It cannot be null")
-    @PositiveOrZero(message = "The amount must be greater than or equal to zero")
-    @Digits(integer = 12, fraction = 2, message = "The amount must have up to 12 whole digits and 2 decimal places")
+
+    @NotNull(message = "No puede ser nulo")
+    @PositiveOrZero(message = "El monto debe ser mayor o igual a cero")
+    @Digits(integer = 12, fraction = 2, message = "El monto debe tener hasta 12 dígitos enteros y 2 decimales")
     private BigDecimal budgetGoal;
-    @NotNull(message = "Must contain a value")
+
+    @NotNull(message = "Debe contener un valor")
     private ProjectStatus status;
-    @NotNull(message = "It cannot be null")
+
+    @NotNull(message = "No puede ser nulo")
     private LocalDate startDate;
-    @NotNull(message = "It cannot be null")
-    @FutureOrPresent(message = "The date must be current or future")
+
+    @NotNull(message = "No puede ser nulo")
+    @FutureOrPresent(message = "La fecha debe ser actual o futura")
     private LocalDate estimatedEndDate;
+
     @NotNull(message = "El monto es obligatorio")
-    @PositiveOrZero(message = "The amount must be greater than or equal to zero")
-    @Digits(integer = 12, fraction = 2, message = "The amount must have up to 12 whole digits and 2 decimal places")
+    @PositiveOrZero(message = "El monto debe ser mayor o igual a cero")
+    @Digits(integer = 12, fraction = 2, message = "El monto debe tener hasta 12 dígitos enteros y 2 decimales")
     private BigDecimal currentGoal;
+
     private Set<Long> studentIds;
 }

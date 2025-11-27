@@ -18,9 +18,6 @@ public class CurrencyController {
 
     private final CurrencyConversionService conversionService;
 
-    /**
-     * DTO for the full conversion result including the calculated amount.
-     */
     @Data
     @AllArgsConstructor
     public static class ConversionResultDTO {
@@ -30,22 +27,12 @@ public class CurrencyController {
         private BigDecimal convertedAmount;
     }
 
-    /**
-     * Gets only the conversion rate between two currencies.
-     * Kept for backward compatibility or other uses.
-     * Triggered when 'amount' param is NOT present.
-     */
-    @GetMapping(value = "/api/currency/convert", params = { "from", "to", "!amount" })
+    @GetMapping(value = "/api/currency/convert", params = {"from", "to", "!amount"})
     public CurrencyConversionDTO getRate(@RequestParam String from, @RequestParam String to) {
         return conversionService.getConversionRate(from, to);
     }
 
-    /**
-     * Converts an amount from one currency to another.
-     * This is the new endpoint for the frontend to use.
-     * Triggered when 'amount' param IS present.
-     */
-    @GetMapping(value = "/api/currency/convert", params = { "from", "to", "amount" })
+    @GetMapping(value = "/api/currency/convert", params = {"from", "to", "amount"})
     public ConversionResultDTO convert(
             @RequestParam String from,
             @RequestParam String to,

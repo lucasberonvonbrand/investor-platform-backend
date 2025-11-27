@@ -43,10 +43,9 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
             DniAlreadyExistsException.class, CuitAlreadyExistsException.class,
             ExistingProjectException.class, ContractAlreadySignedException.class,
             ContractCannotBeModifiedException.class, InvalidContractOperationException.class,
-            RoleAlreadyExistsException.class, // Añadida
-            PermissionAlreadyExistsException.class, // Añadida
-            StudentDesactivationException.class, // Añadida
-            InvestorDesactivationException.class // Añadida
+            RoleAlreadyExistsException.class,
+            PermissionAlreadyExistsException.class,
+            StudentDesactivationException.class,
     })
     public ResponseEntity<ApiError> handleConflictExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("Conflicto: " + ex.getMessage(), HttpStatus.CONFLICT, LocalDateTime.now());
@@ -67,7 +66,7 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     // --- 401 UNAUTHORIZED ---
     @ExceptionHandler({
             BadCredentialsException.class, InvalidTokenException.class,
-            ExpiredTokenException.class, DisabledException.class // Añadida
+            ExpiredTokenException.class, DisabledException.class
     })
     public ResponseEntity<ApiError> handleUnauthorizedExceptions(RuntimeException ex) {
         ApiError apiError = new ApiError("No autorizado: " + ex.getMessage(), HttpStatus.UNAUTHORIZED, LocalDateTime.now());
@@ -84,14 +83,13 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     // --- 500 INTERNAL SERVER ERROR ---
     @ExceptionHandler({
             EmailSendException.class, CurrencyConversionException.class,
-            DocumentFileException.class, Exception.class // Genérico como último recurso
+            DocumentFileException.class, Exception.class
     })
     public ResponseEntity<ApiError> handleInternalServerExceptions(Exception ex) {
         ApiError apiError = new ApiError("Error interno del servidor: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, LocalDateTime.now());
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    // --- MANEJADOR DE VALIDACIONES (SOBREESCRITO) ---
     @Override
     public ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {

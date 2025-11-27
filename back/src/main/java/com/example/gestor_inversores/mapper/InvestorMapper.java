@@ -22,28 +22,19 @@ public class InvestorMapper {
 
         Investor investor = new Investor();
 
-        // ----- Campos de User -----
         investor.setUsername(dto.getUsername());
-        investor.setPassword(dto.getPassword()); // se encripta en el Service
+        investor.setPassword(dto.getPassword());
         investor.setEmail(dto.getEmail());
         investor.setPhotoUrl(dto.getPhotoUrl());
-
-        // ----- Campos de Investor -----
         investor.setCuit(dto.getCuit());
         investor.setContactPerson(dto.getContactPerson());
         investor.setPhone(dto.getPhone());
         investor.setWebSite(dto.getWebSite());
         investor.setLinkedinUrl(dto.getLinkedinUrl());
 
-        // ----- Address -----
         if (dto.getAddress() != null) {
             investor.setAddress(addressMapper.toEntity(dto.getAddress()));
         }
-
-        /**
-         * Roles (se asignan en el Service, no aquí)
-         * investor.setRolesList(new HashSet<>());
-         */
 
         return investor;
     }
@@ -53,26 +44,20 @@ public class InvestorMapper {
 
         ResponseInvestorDTO dto = new ResponseInvestorDTO();
 
-        // ----- Campos de User -----
         dto.setId(investor.getId());
         dto.setUsername(investor.getUsername());
         dto.setEmail(investor.getEmail());
         dto.setPhotoUrl(investor.getPhotoUrl());
-
-        // ----- Campos de seguridad -----
         dto.setEnabled(investor.getEnabled());
         dto.setAccountNotExpired(investor.getAccountNotExpired());
         dto.setAccountNotLocked(investor.getAccountNotLocked());
         dto.setCredentialNotExpired(investor.getCredentialNotExpired());
-
-        // ----- Campos de Investor -----
         dto.setCuit(investor.getCuit());
         dto.setContactPerson(investor.getContactPerson());
         dto.setPhone(investor.getPhone());
         dto.setWebSite(investor.getWebSite());
         dto.setLinkedinUrl(investor.getLinkedinUrl());
 
-        // ----- Address -----
         if (investor.getAddress() != null) {
             dto.setAddress(addressMapper.fromEntity(investor.getAddress()));
         }
@@ -83,24 +68,17 @@ public class InvestorMapper {
     public void updateInvestorFromAdminDto(RequestInvestorUpdateByAdminDTO dto, Investor investor) {
         if (dto == null || investor == null) return;
 
-        // Campos de User
         investor.setUsername(dto.getUsername());
         investor.setEmail(dto.getEmail());
-
-        // Campos de estado de la cuenta
         investor.setEnabled(dto.getEnabled());
         investor.setAccountNotExpired(dto.getAccountNotExpired());
         investor.setAccountNotLocked(dto.getAccountNotLocked());
         investor.setCredentialNotExpired(dto.getCredentialNotExpired());
-
-        // Campos específicos de Investor
         investor.setCuit(dto.getCuit());
         investor.setContactPerson(dto.getContactPerson());
         investor.setPhone(dto.getPhone());
         investor.setWebSite(dto.getWebSite());
         investor.setLinkedinUrl(dto.getLinkedinUrl());
-
-        // Address (asume una actualización completa de la dirección)
         investor.setAddress(dto.getAddress());
     }
 
@@ -126,7 +104,6 @@ public class InvestorMapper {
         if (dto.getLinkedinUrl() != null) {
             investor.setLinkedinUrl(dto.getLinkedinUrl());
         }
-        // Dirección
         if (dto.getAddress() != null) {
             AddressDTO addressDTO = dto.getAddress();
             Address address = investor.getAddress();
@@ -135,7 +112,7 @@ public class InvestorMapper {
                 address = addressMapper.toEntity(addressDTO);
                 investor.setAddress(address);
             } else {
-                // NOTA: Esta lógica de parcheo manual podría moverse al AddressMapper en el futuro
+
                 if (addressDTO.getStreet() != null) address.setStreet(addressDTO.getStreet());
                 if (addressDTO.getNumber() > 0) address.setNumber(addressDTO.getNumber());
                 if (addressDTO.getCity() != null) address.setCity(addressDTO.getCity());
@@ -143,7 +120,7 @@ public class InvestorMapper {
                     try {
                         address.setProvince(Province.valueOf(addressDTO.getProvince().toUpperCase()));
                     } catch (IllegalArgumentException e) {
-                        // Ignorar provincia inválida en un parcheo
+
                     }
                 }
                 if (addressDTO.getPostalCode() > 0) address.setPostalCode(addressDTO.getPostalCode());

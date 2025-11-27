@@ -21,7 +21,6 @@ public class MailService implements IMailService {
     @Override
     @Async
     public void sendEmail(String to, String subject, String body) {
-        // Llama a la versión sobrecargada sin dirección de respuesta
         this.sendEmail(to, subject, body, null);
     }
 
@@ -39,7 +38,6 @@ public class MailService implements IMailService {
             message.setSubject(subject);
             message.setText(body);
 
-            // ¡LA MAGIA! Aquí se establece la dirección de respuesta
             if (replyTo != null && !replyTo.isBlank()) {
                 message.setReplyTo(replyTo);
             }

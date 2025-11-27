@@ -54,7 +54,7 @@ public class Investment {
 
     @ManyToOne
     @JoinColumn(name = "confirmed_by_student_id")
-    private Student confirmedBy; // puede ser null si aún no fue confirmada
+    private Student confirmedBy;
 
     private boolean deleted = false;
     private LocalDate deletedAt;
@@ -64,9 +64,7 @@ public class Investment {
 
     // Investment.java
     @OneToOne(mappedBy = "investment")
-    private Contract contract; // opcional, solo para navegación
-
-
+    private Contract contract;
 
 
 }

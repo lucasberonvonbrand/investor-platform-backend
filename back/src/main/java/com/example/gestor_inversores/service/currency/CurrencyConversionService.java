@@ -29,11 +29,7 @@ public class CurrencyConversionService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    /**
-     * Obtiene la tasa de conversión del día entre dos monedas.
-     * El resultado se guarda en caché para evitar llamadas repetidas a la API.
-     */
-    @Cacheable(value = "conversionRates", key = "#from + '-' + #to") // ¡MAGIA! El resultado de este método se cachea.
+    @Cacheable(value = "conversionRates", key = "#from + '-' + #to")
     public CurrencyConversionDTO getConversionRate(String from, String to) {
         log.info("CACHÉ MISS: Llamando a la API externa para obtener la tasa de {} a {}", from, to);
         String url = String.format(API_URL, apiKey, from);

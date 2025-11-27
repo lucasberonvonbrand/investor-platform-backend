@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-//@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/chatbot")
 @RequiredArgsConstructor
 public class ChatBotController {
@@ -15,7 +14,7 @@ public class ChatBotController {
     private final IGeminiService geminiService;
 
     @PostMapping
-    public ResponseEntity<String> askChatBot(@RequestBody  String prompt) {
+    public ResponseEntity<String> askChatBot(@RequestBody String prompt) {
         return ResponseEntity.status(HttpStatus.OK).body(geminiService.askSupportBot(prompt));
     }
 }

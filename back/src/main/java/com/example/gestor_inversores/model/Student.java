@@ -60,7 +60,7 @@ public class Student extends User {
     private String description;
 
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "address_id",referencedColumnName = "idAddress")
+    @JoinColumn(name = "address_id", referencedColumnName = "idAddress")
     private Address address;
 
     @ManyToMany(fetch = FetchType.EAGER)

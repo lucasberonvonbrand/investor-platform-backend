@@ -13,12 +13,11 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-//@JsonInclude(JsonInclude.Include.NON_NULL) // No incluirá campos nulos en el JSON
 public class ResponseEarningDTO {
 
     private Long idEarning;
-    private BigDecimal amount; // monto de la ganancia
-    private BigDecimal profitRate; // porcentaje aplicado, ej 0.06
+    private BigDecimal amount;
+    private BigDecimal profitRate;
     private Currency currency;
     private EarningStatus status;
     private LocalDate createdAt;
@@ -27,8 +26,8 @@ public class ResponseEarningDTO {
     private Long projectId;
     private Long generatedById;
     private Long confirmedById;
-    private BigDecimal baseAmount;   // inversión inicial
-    private BigDecimal profitAmount; // ganancia calculada
-    private Integer retriesLeft; // Reintentos restantes
+    private BigDecimal baseAmount;
+    private BigDecimal profitAmount;
+    private Integer retriesLeft;
 
 }

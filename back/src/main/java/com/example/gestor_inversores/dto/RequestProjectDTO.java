@@ -26,7 +26,7 @@ public class RequestProjectDTO {
     @PositiveOrZero(message = "El presupuesto objetivo debe ser mayor o igual a cero")
     @Digits(integer = 12, fraction = 2, message = "El formato del presupuesto no es válido")
     private BigDecimal budgetGoal;
-    
+
     @NotNull(message = "La fecha de inicio es obligatoria")
     private LocalDate startDate;
 
@@ -37,7 +37,6 @@ public class RequestProjectDTO {
     @NotNull(message = "El propietario del proyecto es obligatorio")
     private Long ownerId;
 
-    // IDs de los estudiantes adicionales que participan en el proyecto
     private Set<Long> studentIds;
 
 }

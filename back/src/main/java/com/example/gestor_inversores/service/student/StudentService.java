@@ -47,31 +47,32 @@ public class StudentService implements IStudentService {
     @Override
     public Student save(RequestStudentDTO dto) {
 
-        // Validar duplicados
         userRepository.findUserEntityByUsername(dto.getUsername())
-                .ifPresent(u -> { throw new UsernameAlreadyExistsException("Username ya existe"); });
+                .ifPresent(u -> {
+                    throw new UsernameAlreadyExistsException("Username ya existe");
+                });
 
         userRepository.findByEmail(dto.getEmail())
-                .ifPresent(u -> { throw new EmailAlreadyExistsException("Email ya existe"); });
+                .ifPresent(u -> {
+                    throw new EmailAlreadyExistsException("Email ya existe");
+                });
 
         studentRepository.findByDni(dto.getDni())
-                .ifPresent(s -> { throw new DniAlreadyExistsException("El dni ya existe."); });
+                .ifPresent(s -> {
+                    throw new DniAlreadyExistsException("El dni ya existe.");
+                });
 
-        // Convertir DTO a entidad
         Student student = mapper.requestStudentDTOToStudent(dto);
 
-        // Valores por defecto
         student.setEnabled(true);
         student.setAccountNotExpired(true);
         student.setAccountNotLocked(true);
         student.setCredentialNotExpired(true);
 
-        // Asignar rol STUDENT por nombre
         Role studentRole = roleService.findByRole("STUDENT")
                 .orElseThrow(() -> new RoleNotFoundException("Rol STUDENT no encontrado. Asegúrese de que esté creado en la base de datos."));
         student.setRolesList(Set.of(studentRole));
 
-        // Encriptar contraseña
         if (student.getPassword() != null && !student.getPassword().isBlank()) {
             student.setPassword(passwordEncoder.encode(student.getPassword()));
         }
@@ -143,19 +144,16 @@ public class StudentService implements IStudentService {
 
         String errorMessage = "El estudiante tiene proyectos o contratos activos y no puede ser eliminado.";
 
-        // ✅ Validación: Comprobar si el estudiante tiene proyectos activos como propietario
         List<Project> ownedProjects = projectRepository.findByOwnerIdAndDeletedFalse(id);
         if (!ownedProjects.isEmpty()) {
             throw new StudentDesactivationException(errorMessage);
         }
 
-        // ✅ Validación: Comprobar si el estudiante participa en proyectos activos
         List<Project> participatingProjects = projectRepository.findByStudents_IdAndDeletedFalse(id);
         if (!participatingProjects.isEmpty()) {
             throw new StudentDesactivationException(errorMessage);
         }
 
-        // ✅ Validación: Comprobar si el estudiante (como dueño de proyecto) tiene contratos
         List<Contract> contracts = contractRepository.findByProjectOwnerId(id);
         if (!contracts.isEmpty()) {
             throw new StudentDesactivationException(errorMessage);
@@ -195,7 +193,7 @@ public class StudentService implements IStudentService {
                 .toList();
     }
 
-     public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
+    public List<ResponseProjectByStudentDTO> getProjectsByStudentId(Long studentId, boolean active) {
         studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException("Estudiante con id " + studentId + " no existe"));
 
@@ -206,7 +204,7 @@ public class StudentService implements IStudentService {
         return StudentMapper.mapProjectsToResponseProjectDTO(new HashSet<>(projects), active);
     }
 
-     @Override
+    @Override
     public Optional<ResponseStudentDTO> findByUsername(String username) {
         return studentRepository.findByUsername(username)
                 .map(mapper::studentToResponseStudentDTO)
@@ -214,6 +212,6 @@ public class StudentService implements IStudentService {
                     throw new StudentNotFoundException(
                             "Estudiante con username '" + username + "' no existe");
                 });
-    } 
+    }
 
 }

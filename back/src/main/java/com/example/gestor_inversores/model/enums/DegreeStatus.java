@@ -6,4 +6,5 @@ public enum DegreeStatus {
     COMPLETED,
     SUSPENDED,
     ABANDONED
+
 }

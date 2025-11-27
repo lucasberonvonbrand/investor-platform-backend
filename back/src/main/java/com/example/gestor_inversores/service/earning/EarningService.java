@@ -45,7 +45,6 @@ public class EarningService implements IEarningService {
         Project project = contract.getProject();
         if (project == null) throw new IllegalStateException("Contract has no project");
 
-        // Determinar duración del proyecto en años
         LocalDate start = project.getStartDate();
         LocalDate end = project.getEndDate() != null ? project.getEndDate() : project.getEstimatedEndDate();
         if (start == null || end == null) {
@@ -55,7 +54,6 @@ public class EarningService implements IEarningService {
         long days = ChronoUnit.DAYS.between(start, end);
         double years = days / 365.0;
 
-        // Seleccionar profitRate según duración
         BigDecimal profitRate = contract.getProfit1Year() != null ? contract.getProfit1Year() : BigDecimal.ZERO;
         if (years <= 1.0) profitRate = contract.getProfit1Year();
         else if (years <= 2.0) profitRate = contract.getProfit2Years();
@@ -63,12 +61,10 @@ public class EarningService implements IEarningService {
 
         if (profitRate == null) profitRate = BigDecimal.ZERO;
 
-        // 🔹 Convertir porcentaje a fracción si es mayor a 1
         if (profitRate.compareTo(BigDecimal.ONE) > 0) {
             profitRate = profitRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
         }
 
-        // 🔹 Limitar a 4 decimales
         profitRate = profitRate.setScale(4, RoundingMode.HALF_UP);
 
         BigDecimal baseAmount = contract.getAmount();
@@ -89,32 +85,31 @@ public class EarningService implements IEarningService {
 
         Earning savedEarning = earningRepository.save(e);
 
-        // Notificación al inversor - Ajustada para el nuevo flujo
         Investor investor = contract.getCreatedByInvestor();
         String toInvestor = investor.getEmail();
         String subject = String.format("¡El ciclo del proyecto '%s' ha finalizado!", project.getName());
         String body = String.format(
-            "Hola %s,\n\n¡Buenas noticias! El proyecto '%s' en el que invertiste ha finalizado y se han calculado tus ganancias.\n\n" +
-            "Aquí tienes el desglose de tu retorno:\n" +
-            "------------------------------------\n" +
-            "Inversión Original:   %.2f %s\n" +
-            "Tasa de Ganancia:     %.2f%%\n" +
-            "Monto de la Ganancia: %.2f %s\n" +
-            "------------------------------------\n" +
-            "**Monto Total a Recibir: %.2f %s**\n\n" +
-            "El estudiante %s %s, responsable del proyecto, iniciará el proceso de pago de esta ganancia. Por favor, mantente atento a una nueva notificación de su parte para confirmar el envío de los fondos.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            investor.getUsername(),
-            project.getName(),
-            savedEarning.getBaseAmount(),
-            savedEarning.getCurrency(),
-            savedEarning.getProfitRate().multiply(BigDecimal.valueOf(100)),
-            savedEarning.getProfitAmount(),
-            savedEarning.getCurrency(),
-            savedEarning.getAmount(),
-            savedEarning.getCurrency(),
-            project.getOwner().getFirstName(),
-            project.getOwner().getLastName()
+                "Hola %s,\n\n¡Buenas noticias! El proyecto '%s' en el que invertiste ha finalizado y se han calculado tus ganancias.\n\n" +
+                        "Aquí tienes el desglose de tu retorno:\n" +
+                        "------------------------------------\n" +
+                        "Inversión Original:   %.2f %s\n" +
+                        "Tasa de Ganancia:     %.2f%%\n" +
+                        "Monto de la Ganancia: %.2f %s\n" +
+                        "------------------------------------\n" +
+                        "**Monto Total a Recibir: %.2f %s**\n\n" +
+                        "El estudiante %s %s, responsable del proyecto, iniciará el proceso de pago de esta ganancia. Por favor, mantente atento a una nueva notificación de su parte para confirmar el envío de los fondos.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                investor.getUsername(),
+                project.getName(),
+                savedEarning.getBaseAmount(),
+                savedEarning.getCurrency(),
+                savedEarning.getProfitRate().multiply(BigDecimal.valueOf(100)),
+                savedEarning.getProfitAmount(),
+                savedEarning.getCurrency(),
+                savedEarning.getAmount(),
+                savedEarning.getCurrency(),
+                project.getOwner().getFirstName(),
+                project.getOwner().getLastName()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -154,15 +149,15 @@ public class EarningService implements IEarningService {
         String toInvestor = investor.getEmail();
         String subject = String.format("¡Pago de ganancia enviado para tu proyecto '%s'!", savedEarning.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl estudiante %s %s ha confirmado que ha enviado el pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
-            "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la ganancia en la plataforma.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            investor.getUsername(),
-            student.getFirstName(),
-            student.getLastName(),
-            savedEarning.getAmount(),
-            savedEarning.getCurrency(),
-            savedEarning.getProject().getName()
+                "Hola %s,\n\nEl estudiante %s %s ha confirmado que ha enviado el pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
+                        "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la ganancia en la plataforma.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                investor.getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                savedEarning.getAmount(),
+                savedEarning.getCurrency(),
+                savedEarning.getProject().getName()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -195,14 +190,14 @@ public class EarningService implements IEarningService {
         String toStudent = savedEarning.getProject().getOwner().getEmail();
         String subject = String.format("¡Pago de ganancia confirmado para tu proyecto '%s'!", savedEarning.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl inversor '%s' ha confirmado la recepción del pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
-            "¡Felicidades por completar el ciclo de inversión!\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            savedEarning.getProject().getOwner().getFirstName(),
-            investor.getUsername(),
-            savedEarning.getAmount(),
-            savedEarning.getCurrency(),
-            savedEarning.getProject().getName()
+                "Hola %s,\n\nEl inversor '%s' ha confirmado la recepción del pago de la ganancia de %.2f %s para el proyecto '%s'.\n\n" +
+                        "¡Felicidades por completar el ciclo de inversión!\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                savedEarning.getProject().getOwner().getFirstName(),
+                investor.getUsername(),
+                savedEarning.getAmount(),
+                savedEarning.getCurrency(),
+                savedEarning.getProject().getName()
         );
         mailService.sendEmail(toStudent, subject, body);
 

@@ -3,7 +3,7 @@ package com.example.gestor_inversores.service.analysis;
 import com.example.gestor_inversores.dto.RequestRiskPredictionDTO;
 import com.example.gestor_inversores.dto.ResponseRiskAnalysisDTO;
 
-public interface IRiskAnalysisService {
+public interface IRiskPredictionService {
 
     ResponseRiskAnalysisDTO analyzeRisk(RequestRiskPredictionDTO dto);
 

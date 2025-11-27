@@ -107,12 +107,10 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        // VALIDACIÓN: Solo permitir la modificación si el proyecto está pendiente de financiación.
         if (searchedProject.getStatus() != ProjectStatus.PENDING_FUNDING) {
             throw new BusinessException("El proyecto solo puede ser modificado si su estado es 'Pendiente de Financiación' (PENDING_FUNDING).");
         }
 
-        // VALIDACIÓN: No permitir la modificación si el proyecto ya ha recibido fondos.
         if (searchedProject.getCurrentGoal().compareTo(BigDecimal.ZERO) > 0) {
             throw new BusinessException("El proyecto no puede ser modificado porque ya ha comenzado a recibir inversiones.");
         }
@@ -126,7 +124,6 @@ public class ProjectService implements IProjectService {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
-        // Si la descripción cambia, se vuelve a evaluar la etiqueta con la IA
         if (!projectDTO.getDescription().equals(searchedProject.getDescription())) {
             String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(projectDTO.getDescription())).toUpperCase();
             String cleanedTag = selectedTag.trim();
@@ -180,13 +177,11 @@ public class ProjectService implements IProjectService {
         Project searchedProject = projectRepository.findById(id)
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
-        // VALIDACIÓN: No permitir la eliminación si el proyecto ya tiene contratos asociados.
         List<Contract> contracts = contractRepository.findByProject_IdProject(id);
         if (!contracts.isEmpty()) {
             throw new BusinessException("El proyecto no puede ser eliminado porque ya tiene contratos asociados.");
         }
 
-        // VALIDACIÓN: No permitir la eliminación si el proyecto ya ha recibido fondos.
         if (searchedProject.getCurrentGoal().compareTo(BigDecimal.ZERO) > 0) {
             throw new BusinessException("El proyecto no puede ser eliminado porque ya ha recibido inversiones.");
         }
@@ -296,8 +291,8 @@ public class ProjectService implements IProjectService {
         List<Contract> contracts = contractRepository.findByProject_IdProject(projectId);
         boolean allContractsFinalized = contracts.stream().allMatch(contract ->
                 contract.getStatus() == ContractStatus.CLOSED ||
-                contract.getStatus() == ContractStatus.CANCELLED ||
-                contract.getStatus() == ContractStatus.REFUNDED
+                        contract.getStatus() == ContractStatus.CANCELLED ||
+                        contract.getStatus() == ContractStatus.REFUNDED
         );
 
         if (!allContractsFinalized) {
@@ -314,11 +309,11 @@ public class ProjectService implements IProjectService {
         String toOwner = owner.getEmail();
         String ownerSubject = String.format("¡Tu proyecto '%s' ha sido completado!", savedProject.getName());
         String ownerBody = String.format(
-            "Hola %s,\n\n¡Felicidades! Has marcado tu proyecto '%s' como completado.\n\n" +
-            "Gracias por tu esfuerzo y dedicación. El ciclo de este proyecto en nuestra plataforma ha finalizado exitosamente.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            owner.getFirstName(),
-            savedProject.getName()
+                "Hola %s,\n\n¡Felicidades! Has marcado tu proyecto '%s' como completado.\n\n" +
+                        "Gracias por tu esfuerzo y dedicación. El ciclo de este proyecto en nuestra plataforma ha finalizado exitosamente.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                owner.getFirstName(),
+                savedProject.getName()
         );
         mailService.sendEmail(toOwner, ownerSubject, ownerBody);
 
@@ -354,14 +349,14 @@ public class ProjectService implements IProjectService {
             String to = investor.getEmail();
             String subject = String.format("Cancelación del Proyecto: '%s'", project.getName());
             String body = String.format(
-                "Hola %s,\n\nTe informamos que el proyecto '%s' ha sido cancelado por el estudiante responsable.\n\n" +
-                "El siguiente paso es la devolución de %s.\n\n" + // Usamos el string construido
-                "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante si tienes alguna duda.\n\n" +
-                "Lamentamos los inconvenientes.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                investor.getUsername(),
-                project.getName(),
-                investmentDetails
+                    "Hola %s,\n\nTe informamos que el proyecto '%s' ha sido cancelado por el estudiante responsable.\n\n" +
+                            "El siguiente paso es la devolución de %s.\n\n" + // Usamos el string construido
+                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante si tienes alguna duda.\n\n" +
+                            "Lamentamos los inconvenientes.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    investor.getUsername(),
+                    project.getName(),
+                    investmentDetails
             );
             mailService.sendEmail(to, subject, body);
         }
@@ -400,10 +395,10 @@ public class ProjectService implements IProjectService {
             String subject = String.format("Proyecto no financiado: '%s'", project.getName());
             String body = String.format(
                     "Hola %s,\n\nTe informamos que el proyecto '%s' no alcanzó su meta de financiación y ha sido marcado como no financiado.\n\n" +
-                    "El siguiente paso es la devolución de %s.\n\n" + // Usamos el string construido
-                    "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante para coordinar la devolución.\n\n" +
-                    "Lamentamos los inconvenientes.\n\n" +
-                    "Saludos,\nEl equipo de ProyPlus",
+                            "El siguiente paso es la devolución de %s.\n\n" +
+                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante para coordinar la devolución.\n\n" +
+                            "Lamentamos los inconvenientes.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
                     investor.getUsername(),
                     project.getName(),
                     investmentDetails
@@ -418,9 +413,9 @@ public class ProjectService implements IProjectService {
         String ownerSubject = String.format("Tu proyecto '%s' no ha alcanzado la financiación", savedProject.getName());
         String ownerBody = String.format(
                 "Hola %s,\n\nEl período de financiación para tu proyecto '%s' ha finalizado sin alcanzar el objetivo.\n\n" +
-                "Ahora debes iniciar el proceso de devolución de las inversiones a cada participante.\n\n" +
-                "Puedes gestionar la devolución desde la sección de contratos de tu proyecto.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
+                        "Ahora debes iniciar el proceso de devolución de las inversiones a cada participante.\n\n" +
+                        "Puedes gestionar la devolución desde la sección de contratos de tu proyecto.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
                 owner.getFirstName(),
                 savedProject.getName()
         );
@@ -439,19 +434,18 @@ public class ProjectService implements IProjectService {
 
         String subject = String.format("Mensaje sobre tu proyecto '%s': %s", project.getName(), contactOwnerDTO.getSubject());
         String body = String.format(
-            "Hola %s,\n\nHas recibido un mensaje de '%s' sobre tu proyecto '%s'.\n\n" +
-            "--------------------------------------------------\n" +
-            "Mensaje:\n%s\n" +
-            "--------------------------------------------------\n\n" +
-            "Para continuar la conversación, puedes responder directamente a este correo.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            owner.getFirstName(),
-            contactOwnerDTO.getFromName(),
-            project.getName(),
-            contactOwnerDTO.getMessage()
+                "Hola %s,\n\nHas recibido un mensaje de '%s' sobre tu proyecto '%s'.\n\n" +
+                        "--------------------------------------------------\n" +
+                        "Mensaje:\n%s\n" +
+                        "--------------------------------------------------\n\n" +
+                        "Para continuar la conversación, puedes responder directamente a este correo.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                owner.getFirstName(),
+                contactOwnerDTO.getFromName(),
+                project.getName(),
+                contactOwnerDTO.getMessage()
         );
 
-        // Usamos el nuevo método para establecer la dirección de respuesta
         mailService.sendEmail(ownerEmail, subject, body, contactOwnerDTO.getFromEmail());
     }
 
@@ -515,30 +509,30 @@ public class ProjectService implements IProjectService {
                 4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
                 
                 TECNOLOGÍA
-
+                
                 EDUCACIÓN
-
+                
                 SALUD Y BIENESTAR
-
+                
                 SOSTENIBILIDAD Y MEDIO AMBIENTE
-
+                
                 ARTE Y CULTURA
-
+                
                 FINANCIERO
-
+                
                 COMERCIO ELECTRÓNICO
-
+                
                 ALIMENTOS Y BEBIDAS
-
+                
                 SERVICIOS PROFESIONALES
-
+                
                 IMPACTO SOCIAL
-
+                
                 OTROS
                 
                 Descripción del proyecto:
                 """ + description + """
-
-Respuesta de la etiqueta única:""";
+                
+                Respuesta de la etiqueta única:""";
     }
 }

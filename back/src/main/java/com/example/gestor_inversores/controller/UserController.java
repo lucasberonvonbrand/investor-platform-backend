@@ -10,12 +10,14 @@ import com.example.gestor_inversores.service.user.IUserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/users")
 public class UserController {
 
@@ -28,7 +30,6 @@ public class UserController {
     @Autowired
     private IUserRepository userRepository;
 
-    // GET ALL
     @GetMapping
     public ResponseEntity<List<ResponseUserDTO>> getAllUsers() {
         List<User> users = userService.findAll();
@@ -40,7 +41,6 @@ public class UserController {
         return ResponseEntity.ok(dtoList);
     }
 
-    // GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseUserDTO> getUserById(@PathVariable Long id) {
         return userService.findById(id)
@@ -49,7 +49,6 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // CREATE
     @PostMapping
     public ResponseEntity<ResponseUserDTO> createUser(@Valid @RequestBody RequestUserDTO requestDto) {
         User user = userMapper.requestUserDTOToUser(requestDto);
@@ -70,27 +69,23 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // DAR DE ALTA (lógica)
     @PatchMapping("/activate/{id}")
     public ResponseEntity<ResponseUserDTO> activateUser(@PathVariable Long id) {
         User updatedUser = userService.activateUser(id);
         return ResponseEntity.ok(userMapper.userToResponseUserDTO(updatedUser));
     }
 
-    // DAR DE BAJA (lógica)
     @PatchMapping("/desactivate/{id}")
     public ResponseEntity<ResponseUserDTO> desactivateUser(@PathVariable Long id) {
         User updatedUser = userService.desactivateUser(id);
         return ResponseEntity.ok(userMapper.userToResponseUserDTO(updatedUser));
     }
 
-    // ✅ Endpoint para validar si el username ya existe
     @GetMapping("/check-username/{username}")
     public ResponseEntity<Boolean> checkUsernameExists(@PathVariable String username) {
         return ResponseEntity.ok(userRepository.findUserEntityByUsername(username).isPresent());
     }
 
-    // ✅ Endpoint para validar si el email ya existe
     @GetMapping("/check-email/{email}")
     public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
         return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());

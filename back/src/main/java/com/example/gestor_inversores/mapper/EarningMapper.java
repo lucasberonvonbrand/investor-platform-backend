@@ -25,14 +25,12 @@ public class EarningMapper {
         dto.setGeneratedById(e.getGeneratedBy().getId());
         dto.setConfirmedById(e.getConfirmedBy() != null ? e.getConfirmedBy().getId() : null);
 
-        // Calcular y establecer los reintentos restantes
         int retriesLeft = MAX_RETRIES - e.getRetryCount();
         dto.setRetriesLeft(retriesLeft);
 
         return dto;
     }
 
-    // Sobrecarga del método para mantener compatibilidad si se necesita
     public ResponseEarningDTO toDTO(Earning earning) {
         return toResponse(earning);
     }

@@ -18,12 +18,9 @@ public interface IEarningRepository extends JpaRepository<Earning, Long> {
 
     List<Earning> findByStatus(EarningStatus status);
 
-    // Nuevo método para buscar ganancias por el inversor que creó el contrato
     List<Earning> findByContract_CreatedByInvestor_Id(Long investorId);
 
-    // Nuevo método para buscar ganancias por inversor y estado
     List<Earning> findByContract_CreatedByInvestor_IdAndStatus(Long investorId, EarningStatus status);
 
-    // Nuevos métodos solicitados
     List<Earning> findByContract_IdContract(Long contractId);
 }

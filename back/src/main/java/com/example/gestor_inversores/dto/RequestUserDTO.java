@@ -28,11 +28,10 @@ public class RequestUserDTO {
     @Pattern(regexp = "^(https?://).*$", message = "Si se proporciona, debe ser una URL válida")
     private String photoUrl;
 
-    // Campos de seguridad opcionales
     private Boolean enabled;
     private Boolean accountNotExpired;
     private Boolean accountNotLocked;
     private Boolean credentialNotExpired;
 
-    private Set<Long> rolesIds; // 🔹 En vez de pasar Roles enteros, pasás solo los IDs
+    private Set<Long> rolesIds;
 }

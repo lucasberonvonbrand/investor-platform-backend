@@ -14,36 +14,28 @@ import java.util.List;
 @NoArgsConstructor
 public class ResponseRiskAnalysisDTO {
 
-    // --- El Resultado Principal ---
     private String riskCategory;
     private int confidenceScore;
 
-    // --- Datos de la Inversión Propuesta ---
     private BigDecimal investmentAmount;
     private Currency investmentCurrency;
 
-    // --- Datos de Financiación del Proyecto (siempre en USD) ---
     private BigDecimal budgetGoal;
     private BigDecimal currentGoal;
     private double fundingPercentage;
 
-    // --- Contexto Temporal del Proyecto ---
     private LocalDate fundingStartDate;
     private LocalDate fundingEndDate;
-    private LocalDate estimatedProjectEndDate; // <-- NUEVO CAMPO
+    private LocalDate estimatedProjectEndDate;
     private double timeElapsedPercentage;
     private double fundingPace;
 
-    // --- El Desglose del Riesgo ---
     private List<AnalysisFactor> analysisFactors;
 
-    // --- Proyección de Ganancias (en la moneda de la inversión) ---
     private List<ProfitProjection> profitProjections;
 
-    // --- Datos para el Gráfico ---
     private List<ChartData> riskChartData;
 
-    // --- Clase interna para describir cada factor de riesgo ---
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -51,11 +43,10 @@ public class ResponseRiskAnalysisDTO {
         private String factorName;
         private String factorValue;
         private String factorAssessment;
-        private double importancePercentage; // Porcentaje de importancia del factor
+        private double importancePercentage;
         private String factorDescription;
     }
 
-    // --- Clase interna para describir cada proyección de ganancia ---
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -67,7 +58,6 @@ public class ResponseRiskAnalysisDTO {
         private String apy;
     }
 
-    // --- Clase interna para los datos del gráfico ---
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

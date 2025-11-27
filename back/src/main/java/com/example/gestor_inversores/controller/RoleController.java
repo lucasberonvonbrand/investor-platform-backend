@@ -4,10 +4,13 @@ import com.example.gestor_inversores.model.Role;
 import com.example.gestor_inversores.service.role.IRoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
+@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/roles")
 public class RoleController {
 
@@ -37,7 +40,6 @@ public class RoleController {
             @PathVariable Long id,
             @RequestBody Role roleUpdate) {
 
-        // Aseguramos que roleUpdate tenga el id para que el service pueda actualizar
         roleUpdate.setId(id);
 
         Role updatedRole = roleService.update(roleUpdate);

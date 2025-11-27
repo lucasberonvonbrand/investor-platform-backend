@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableAsync(proxyTargetClass = true)
-@EnableCaching // <-- AÑADIDO PARA HABILITAR EL CACHÉ
+@EnableCaching
 @EnableScheduling
 public class GestorInversoresApplication {
 

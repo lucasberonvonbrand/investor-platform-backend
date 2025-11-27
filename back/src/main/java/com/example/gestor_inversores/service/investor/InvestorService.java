@@ -39,11 +39,17 @@ public class InvestorService implements IInvestorService {
     @Override
     public ResponseInvestorDTO save(RequestInvestorDTO dto) {
         userRepository.findUserEntityByUsername(dto.getUsername())
-                .ifPresent(u -> { throw new UsernameAlreadyExistsException("Username ya existe"); });
+                .ifPresent(u -> {
+                    throw new UsernameAlreadyExistsException("Username ya existe");
+                });
         userRepository.findByEmail(dto.getEmail())
-                .ifPresent(u -> { throw new EmailAlreadyExistsException("Email ya existe"); });
+                .ifPresent(u -> {
+                    throw new EmailAlreadyExistsException("Email ya existe");
+                });
         investorRepository.findByCuit(dto.getCuit())
-                .ifPresent(i -> { throw new CuitAlreadyExistsException("El cuit ya existe"); });
+                .ifPresent(i -> {
+                    throw new CuitAlreadyExistsException("El cuit ya existe");
+                });
 
         Investor investor = mapper.requestInvestorDTOtoInvestor(dto);
         investor.setEnabled(true);

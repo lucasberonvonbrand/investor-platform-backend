@@ -10,13 +10,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProjectTagService implements IProjectTagService {
 
-
     private final IProjectTagRepository projectTagRepository;
 
     @Override
     public ProjectTag getTagByName(String tag) {
 
         return projectTagRepository.findByName(tag.toUpperCase())
-                .orElseThrow(() -> new ProjectTagException("The tag does not exist"));
+                .orElseThrow(() -> new ProjectTagException("La etiqueta no existe"));
     }
 }

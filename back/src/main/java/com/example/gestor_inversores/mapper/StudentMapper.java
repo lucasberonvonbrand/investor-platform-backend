@@ -25,13 +25,10 @@ public class StudentMapper {
 
         Student student = new Student();
 
-        // Campos de UserSec
         student.setUsername(dto.getUsername());
-        student.setPassword(dto.getPassword()); // se encripta en el Service
+        student.setPassword(dto.getPassword());
         student.setEmail(dto.getEmail());
         student.setPhotoUrl(dto.getPhotoUrl());
-
-        // Campos específicos de Student
         student.setFirstName(dto.getFirstName());
         student.setLastName(dto.getLastName());
         student.setDni(dto.getDni());
@@ -42,8 +39,6 @@ public class StudentMapper {
         student.setDegreeStatus(dto.getDegreeStatus());
         student.setLinkedinUrl(dto.getLinkedinUrl());
         student.setDescription(dto.getDescription());
-
-        // Address
         if (dto.getAddress() != null) {
             student.setAddress(addressMapper.toEntity(dto.getAddress()));
         }
@@ -63,7 +58,6 @@ public class StudentMapper {
         dto.setAccountNotExpired(Boolean.TRUE.equals(student.getAccountNotExpired()));
         dto.setAccountNotLocked(Boolean.TRUE.equals(student.getAccountNotLocked()));
         dto.setCredentialNotExpired(Boolean.TRUE.equals(student.getCredentialNotExpired()));
-
         dto.setFirstName(student.getFirstName());
         dto.setLastName(student.getLastName());
         dto.setDni(student.getDni());
@@ -103,17 +97,12 @@ public class StudentMapper {
     public void updateStudentFromAdminDto(RequestStudentUpdateByAdminDTO dto, Student student) {
         if (dto == null || student == null) return;
 
-        // Campos de User
         student.setUsername(dto.getUsername());
         student.setEmail(dto.getEmail());
-
-        // Campos de estado de la cuenta
         student.setEnabled(dto.getEnabled());
         student.setAccountNotExpired(dto.getAccountNotExpired());
         student.setAccountNotLocked(dto.getAccountNotLocked());
         student.setCredentialNotExpired(dto.getCredentialNotExpired());
-
-        // Campos específicos de Student
         student.setFirstName(dto.getFirstName());
         student.setLastName(dto.getLastName());
         student.setDni(dto.getDni());
@@ -124,20 +113,15 @@ public class StudentMapper {
         student.setDegreeStatus(dto.getDegreeStatus());
         student.setLinkedinUrl(dto.getLinkedinUrl());
         student.setDescription(dto.getDescription());
-
-        // Address (asume una actualización completa de la dirección)
         student.setAddress(dto.getAddress());
     }
 
     public void patchStudentFromDto(RequestStudentUpdateDTO dto, Student student) {
         if (dto == null || student == null) return;
 
-        // Campos de User
         if (dto.getUsername() != null) student.setUsername(dto.getUsername());
         if (dto.getEmail() != null) student.setEmail(dto.getEmail());
         if (dto.getPhotoUrl() != null) student.setPhotoUrl(dto.getPhotoUrl());
-
-        // Campos específicos de Student
         if (dto.getFirstName() != null) student.setFirstName(dto.getFirstName());
         if (dto.getLastName() != null) student.setLastName(dto.getLastName());
         if (dto.getDni() != null) student.setDni(dto.getDni());
@@ -148,8 +132,6 @@ public class StudentMapper {
         if (dto.getCareer() != null) student.setCareer(dto.getCareer());
         if (dto.getLinkedinUrl() != null) student.setLinkedinUrl(dto.getLinkedinUrl());
         if (dto.getDescription() != null) student.setDescription(dto.getDescription());
-
-        // Dirección
         if (dto.getAddress() != null) {
             AddressDTO addressDTO = dto.getAddress();
             Address address = student.getAddress();
@@ -158,7 +140,6 @@ public class StudentMapper {
                 address = addressMapper.toEntity(addressDTO);
                 student.setAddress(address);
             } else {
-                // NOTA: Esta lógica de parcheo manual podría moverse al AddressMapper en el futuro
                 if (addressDTO.getStreet() != null) address.setStreet(addressDTO.getStreet());
                 if (addressDTO.getNumber() > 0) address.setNumber(addressDTO.getNumber());
                 if (addressDTO.getCity() != null) address.setCity(addressDTO.getCity());
@@ -166,7 +147,6 @@ public class StudentMapper {
                     try {
                         address.setProvince(Province.valueOf(addressDTO.getProvince().toUpperCase()));
                     } catch (IllegalArgumentException e) {
-                        // Ignorar provincia inválida en un parcheo
                     }
                 }
                 if (addressDTO.getPostalCode() > 0) address.setPostalCode(addressDTO.getPostalCode());

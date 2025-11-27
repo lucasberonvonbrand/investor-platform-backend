@@ -25,7 +25,7 @@ public class ProjectFundingScheduler {
         this.projectService = projectService;
     }
 
-    @Scheduled(cron = "0 0 1 * * ?") // Se ejecuta todos los días a la 1:00 AM
+    @Scheduled(cron = "0 0 1 * * ?")
     public void checkUnfundedProjects() {
         logger.info("Iniciando tarea programada: Verificación de proyectos no financiados...");
 

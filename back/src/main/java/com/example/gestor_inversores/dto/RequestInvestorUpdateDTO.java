@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RequestInvestorUpdateDTO {
 
-    // Para PATCH, los campos son opcionales, por lo que se quita @NotBlank
-    // pero se mantienen las validaciones de formato si el campo es proporcionado.
-
     @Size(min = 3, max = 50, message = "Si se proporciona, el username debe tener entre 3 y 50 caracteres")
     private String username;
 
@@ -38,6 +35,6 @@ public class RequestInvestorUpdateDTO {
     @Pattern(regexp = "^(https?://.*|linkedin\\.com/.*)?$", message = "Si se proporciona, debe ser una URL válida")
     private String linkedinUrl;
 
-    @Valid // Si se proporciona una dirección, debe ser validada en cascada
+    @Valid
     private AddressDTO address;
 }

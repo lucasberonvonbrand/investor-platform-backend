@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RequestInvestorDTO {
 
-    // ----- Campos de User -----
     @NotBlank(message = "El username es obligatorio")
     @Size(min = 3, max = 50, message = "El username debe tener entre 3 y 50 caracteres")
     private String username;
@@ -26,7 +25,6 @@ public class RequestInvestorDTO {
 
     private String photoUrl;
 
-    // ----- Campos de Investor -----
     @NotBlank(message = "CUIT es obligatorio")
     @Size(min = 11, max = 11, message = "CUIT debe tener 11 caracteres")
     private String cuit;

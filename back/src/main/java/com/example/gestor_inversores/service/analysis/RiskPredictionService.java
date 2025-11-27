@@ -32,7 +32,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class RiskPredictionService implements IRiskAnalysisService {
+public class RiskPredictionService implements IRiskPredictionService {
 
     private final IProjectRepository projectRepository;
     private final CurrencyConversionService currencyConversionService;
@@ -82,10 +82,9 @@ public class RiskPredictionService implements IRiskAnalysisService {
             throw new BusinessException("El período de financiación para este proyecto ha finalizado. No se puede realizar un nuevo análisis de riesgo.");
         }
 
-        // 1. Calcular todos los features para el modelo
         double progress = calculateProgress(project);
-        double impact = calculateImpact(project, dto); 
-        
+        double impact = calculateImpact(project, dto);
+
         BigDecimal p1 = normalizeProfit(dto.getProfit1Year());
         BigDecimal p2 = normalizeProfit(dto.getProfit2Years());
         BigDecimal p3 = normalizeProfit(dto.getProfit3Years());
@@ -93,7 +92,6 @@ public class RiskPredictionService implements IRiskAnalysisService {
         double profitabilityRatio = calculateProfitabilityRatio(p1, p2, p3);
         double fundingPace = calculateFundingPace(progress, timeElapsedPercentage);
 
-        // 2. Crear instancia de Weka con la misma estructura que el CSV
         DenseInstance instance = new DenseInstance(this.modelHeader.numAttributes());
         instance.setDataset(this.modelHeader);
         instance.setValue(0, progress);
@@ -106,18 +104,16 @@ public class RiskPredictionService implements IRiskAnalysisService {
         instance.setValue(7, fundingPace);
 
         try {
-            // 3. Obtener la predicción y la confianza
+
             double[] distribution = this.riskModel.distributionForInstance(instance);
             int predictedClassIndex = (int) this.riskModel.classifyInstance(instance);
             String predictedCategory = this.modelHeader.classAttribute().value(predictedClassIndex);
             int confidenceScore = (int) (distribution[predictedClassIndex] * 100);
 
-            // 4. Generar los datos para el informe completo
             List<ResponseRiskAnalysisDTO.AnalysisFactor> factors = generateAnalysisFactors(project, dto, progress, impact, profitabilityRatio, fundingPace);
             List<ResponseRiskAnalysisDTO.ProfitProjection> projections = generateProfitProjections(dto);
             List<ResponseRiskAnalysisDTO.ChartData> chartData = generateChartData(factors);
 
-            // 5. Devolver la respuesta completa
             ResponseRiskAnalysisDTO response = new ResponseRiskAnalysisDTO();
             response.setRiskCategory(predictedCategory);
             response.setConfidenceScore(confidenceScore);
@@ -142,7 +138,6 @@ public class RiskPredictionService implements IRiskAnalysisService {
         }
     }
 
-    // --- Métodos de cálculo de Features ---
     private BigDecimal normalizeProfit(BigDecimal profit) {
         return profit.compareTo(BigDecimal.ONE) > 0 ? profit.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP) : profit;
     }
@@ -180,8 +175,8 @@ public class RiskPredictionService implements IRiskAnalysisService {
         final BigDecimal BASELINE_PROFIT_RATE = new BigDecimal("0.08");
 
         BigDecimal weightedProfit = (p1.multiply(P1_WEIGHT))
-                                    .add(p2.multiply(P2_WEIGHT))
-                                    .add(p3.multiply(P3_WEIGHT));
+                .add(p2.multiply(P2_WEIGHT))
+                .add(p3.multiply(P3_WEIGHT));
 
         return weightedProfit.divide(BASELINE_PROFIT_RATE, 4, RoundingMode.HALF_UP).doubleValue();
     }
@@ -222,12 +217,11 @@ public class RiskPredictionService implements IRiskAnalysisService {
         }
     }
 
-    // --- Métodos de generación de datos para el Response DTO ---
     private static final double PACE_NEGATIVE_THRESHOLD = 0.8;
     private static final double PACE_POSITIVE_THRESHOLD = 1.2;
     private static final double PROGRESS_POSITIVE_THRESHOLD = 0.75;
-    private static final double IMPACT_NEGATIVE_THRESHOLD = 0.25; 
-    private static final double IMPACT_POSITIVE_THRESHOLD = 0.05; 
+    private static final double IMPACT_NEGATIVE_THRESHOLD = 0.25;
+    private static final double IMPACT_POSITIVE_THRESHOLD = 0.05;
     private static final double PROFITABILITY_NEGATIVE_THRESHOLD = 0.9;
     private static final double PROFITABILITY_POSITIVE_THRESHOLD = 1.5;
 
@@ -252,12 +246,12 @@ public class RiskPredictionService implements IRiskAnalysisService {
         ));
 
         double impactOnRemaining = calculateImpactOnRemaining(project, dto);
-        String impactValueText = (progress > 0.85) ? 
-            String.format("%.0f%% del capital restante", impactOnRemaining * 100) :
-            String.format("%.2f%% de la meta total", impact * 100);
+        String impactValueText = (progress > 0.85) ?
+                String.format("%.0f%% del capital restante", impactOnRemaining * 100) :
+                String.format("%.2f%% de la meta total", impact * 100);
         String impactDescription = (progress > 0.85) ?
-            "Tu inversión es decisiva para completar la financiación. Un % alto es normal en esta etapa." :
-            "Mide qué porcentaje de la meta total del proyecto representa tu inversión. Un valor bajo es positivo.";
+                "Tu inversión es decisiva para completar la financiación. Un % alto es normal en esta etapa." :
+                "Mide qué porcentaje de la meta total del proyecto representa tu inversión. Un valor bajo es positivo.";
 
         factors.add(new ResponseRiskAnalysisDTO.AnalysisFactor(
                 "Dependencia de tu Inversión",
@@ -268,10 +262,10 @@ public class RiskPredictionService implements IRiskAnalysisService {
         ));
 
         double profitabilityImportance = this.featureImportances.getOrDefault("p1", 0.0) +
-                                         this.featureImportances.getOrDefault("p2", 0.0) +
-                                         this.featureImportances.getOrDefault("p3", 0.0) +
-                                         this.featureImportances.getOrDefault("profitability_ratio", 0.0);
-        
+                this.featureImportances.getOrDefault("p2", 0.0) +
+                this.featureImportances.getOrDefault("p3", 0.0) +
+                this.featureImportances.getOrDefault("profitability_ratio", 0.0);
+
         if (profitabilityImportance < 1.0) {
             profitabilityImportance = 3.3; // Valor por defecto para la demo
         }
@@ -304,7 +298,7 @@ public class RiskPredictionService implements IRiskAnalysisService {
         if (profitabilityRatio < PROFITABILITY_NEGATIVE_THRESHOLD) return "Negativo";
         return "Neutral";
     }
-    
+
     private double calculateImpactOnRemaining(Project project, RequestRiskPredictionDTO dto) {
         BigDecimal needed = project.getBudgetGoal().subtract(project.getCurrentGoal());
         if (needed.compareTo(BigDecimal.ZERO) <= 0) {
@@ -334,11 +328,9 @@ public class RiskPredictionService implements IRiskAnalysisService {
         return String.format("%.2f%%", apy * 100);
     }
 
-    // ¡CAMBIO CLAVE! Ahora el gráfico se genera a partir de la misma fuente que el texto.
     private List<ResponseRiskAnalysisDTO.ChartData> generateChartData(List<ResponseRiskAnalysisDTO.AnalysisFactor> factors) {
         List<ResponseRiskAnalysisDTO.ChartData> chartData = new ArrayList<>();
         for (ResponseRiskAnalysisDTO.AnalysisFactor factor : factors) {
-            // Simplificamos el nombre para el gráfico
             String chartName = factor.getFactorName().replace(" de tu Inversión", "").replace(" del Proyecto", "");
             chartData.add(new ResponseRiskAnalysisDTO.ChartData(chartName, factor.getImportancePercentage()));
         }

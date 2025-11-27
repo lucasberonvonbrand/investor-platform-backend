@@ -34,19 +34,19 @@ public class Earning {
     @Column(nullable = false, precision = 15, scale = 2)
     @NotNull
     @DecimalMin("0.01")
-    private BigDecimal amount; // total: base + profit
+    private BigDecimal amount;
 
     @Column(nullable = false, precision = 15, scale = 2)
     @NotNull
-    private BigDecimal baseAmount; // inversión inicial del contrato
+    private BigDecimal baseAmount;
 
     @Column(nullable = false, precision = 5, scale = 4)
     @NotNull
-    private BigDecimal profitRate; // ej. 0.06
+    private BigDecimal profitRate;
 
     @Column(nullable = false, precision = 15, scale = 2)
     @NotNull
-    private BigDecimal profitAmount; // ganancia calculada
+    private BigDecimal profitAmount;
 
     @Enumerated(EnumType.STRING)
     @NotNull

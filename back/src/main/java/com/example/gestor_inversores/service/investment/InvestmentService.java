@@ -169,7 +169,6 @@ public class InvestmentService implements IInvestmentService {
             throw new UpdateException("Esta inversión no puede ser confirmada en su estado actual. Se espera el estado 'PENDING_CONFIRMATION'. Estado actual: " + inv.getStatus());
         }
 
-        // 1. Convertir el monto de la inversión a USD para una comparación consistente.
         BigDecimal amountInUSD = inv.getAmount();
         if (inv.getCurrency() != Currency.USD) {
             amountInUSD = currencyConversionService
@@ -178,8 +177,6 @@ public class InvestmentService implements IInvestmentService {
                     .multiply(inv.getAmount());
         }
 
-        // 2. Actualizar el estado de la inversión y los montos del proyecto.
-        // En este punto, aceptamos la inversión, incluso si sobrefinancia.
         inv.setStatus(InvestmentStatus.RECEIVED);
         inv.setConfirmedBy(student);
         inv.setConfirmedAt(LocalDate.now());
@@ -187,32 +184,29 @@ public class InvestmentService implements IInvestmentService {
         BigDecimal newCurrentGoal = project.getCurrentGoal().add(amountInUSD);
         project.setCurrentGoal(newCurrentGoal);
 
-        // 3. Comprobar si el proyecto se ha financiado con esta inversión.
         boolean justFunded = false;
         if (project.getStatus() == ProjectStatus.PENDING_FUNDING &&
-            newCurrentGoal.compareTo(project.getBudgetGoal()) >= 0) {
+                newCurrentGoal.compareTo(project.getBudgetGoal()) >= 0) {
             project.setStatus(ProjectStatus.IN_PROGRESS);
             justFunded = true;
         }
 
-        // 4. Guardar los cambios en la base de datos.
         projectRepo.save(project);
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        // 5. Enviar notificaciones por correo.
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("¡Tu inversión para el proyecto '%s' ha sido confirmada!", savedInvestment.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nTe confirmamos que el estudiante %s %s ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
-            "¡Gracias por tu contribución!\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            savedInvestment.getGeneratedBy().getUsername(),
-            student.getFirstName(),
-            student.getLastName(),
-            savedInvestment.getAmount(),
-            savedInvestment.getCurrency(),
-            savedInvestment.getProject().getName()
+                "Hola %s,\n\nTe confirmamos que el estudiante %s %s ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+                        "¡Gracias por tu contribución!\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                savedInvestment.getGeneratedBy().getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                savedInvestment.getAmount(),
+                savedInvestment.getCurrency(),
+                savedInvestment.getProject().getName()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -221,12 +215,12 @@ public class InvestmentService implements IInvestmentService {
             String toOwner = owner.getEmail();
             String ownerSubject = String.format("¡Felicidades! Tu proyecto '%s' ha sido financiado", project.getName());
             String ownerBody = String.format(
-                "Hola %s,\n\n¡Excelentes noticias! Tu proyecto '%s' ha alcanzado su meta de financiación de %.2f USD y su estado ahora es 'EN PROGRESO'.\n\n" +
-                "Es hora de empezar a trabajar para hacerlo realidad.\n\n" +
-                "¡Mucho éxito!,\nEl equipo de ProyPlus",
-                owner.getFirstName(),
-                project.getName(),
-                project.getBudgetGoal()
+                    "Hola %s,\n\n¡Excelentes noticias! Tu proyecto '%s' ha alcanzado su meta de financiación de %.2f USD y su estado ahora es 'EN PROGRESO'.\n\n" +
+                            "Es hora de empezar a trabajar para hacerlo realidad.\n\n" +
+                            "¡Mucho éxito!,\nEl equipo de ProyPlus",
+                    owner.getFirstName(),
+                    project.getName(),
+                    project.getBudgetGoal()
             );
             mailService.sendEmail(toOwner, ownerSubject, ownerBody);
         }
@@ -259,23 +253,22 @@ public class InvestmentService implements IInvestmentService {
         }
 
         inv.setStatus(InvestmentStatus.PENDING_CONFIRMATION);
-        inv.setConfirmedAt(LocalDate.now()); // Usamos confirmedAt para registrar la fecha de esta acción
+        inv.setConfirmedAt(LocalDate.now());
 
         Investment savedInvestment = investmentRepo.save(inv);
 
-        // Notificar al estudiante (dueño del proyecto)
         Student student = savedInvestment.getProject().getOwner();
         String toStudent = student.getEmail();
         String subject = String.format("¡Inversión enviada para tu proyecto '%s'!", savedInvestment.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl inversor '%s' ha confirmado que ha enviado su inversión de %.2f %s para tu proyecto '%s'.\n\n" +
-            "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la inversión en la plataforma.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            student.getFirstName(),
-            investor.getUsername(),
-            savedInvestment.getAmount(),
-            savedInvestment.getCurrency(),
-            savedInvestment.getProject().getName()
+                "Hola %s,\n\nEl inversor '%s' ha confirmado que ha enviado su inversión de %.2f %s para tu proyecto '%s'.\n\n" +
+                        "Por favor, verifica la recepción de los fondos en tu cuenta y confirma la inversión en la plataforma.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                investor.getUsername(),
+                savedInvestment.getAmount(),
+                savedInvestment.getCurrency(),
+                savedInvestment.getProject().getName()
         );
         mailService.sendEmail(toStudent, subject, body);
 
@@ -302,15 +295,15 @@ public class InvestmentService implements IInvestmentService {
         if (inv.getRetryCount() >= MAX_RETRIES) {
             inv.setStatus(InvestmentStatus.CANCELLED);
             autoCancelContractIfNeeded(inv);
-            // Notificar al inversor sobre la cancelación
+
             String toInvestor = inv.getGeneratedBy().getEmail();
             String subject = "Inversión cancelada por exceso de reintentos";
             String body = String.format(
-                "Hola %s,\n\nTu inversión para el proyecto '%s' ha sido cancelada automáticamente debido a que el estudiante ha reportado no recibir los fondos en múltiples ocasiones.\n\n" +
-                "El contrato asociado ha sido cancelado. Por favor, contacta a soporte para más detalles.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                inv.getGeneratedBy().getUsername(),
-                inv.getProject().getName()
+                    "Hola %s,\n\nTu inversión para el proyecto '%s' ha sido cancelada automáticamente debido a que el estudiante ha reportado no recibir los fondos en múltiples ocasiones.\n\n" +
+                            "El contrato asociado ha sido cancelado. Por favor, contacta a soporte para más detalles.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    inv.getGeneratedBy().getUsername(),
+                    inv.getProject().getName()
             );
             mailService.sendEmail(toInvestor, subject, body);
             return mapper.toResponse(investmentRepo.save(inv));
@@ -325,16 +318,16 @@ public class InvestmentService implements IInvestmentService {
         String toInvestor = savedInvestment.getGeneratedBy().getEmail();
         String subject = String.format("Alerta sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl estudiante %s %s ha reportado que NO ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
-            "Por favor, revisa el envío y vuelve a marcarlo como enviado en la plataforma. Tienes %d intento(s) más antes de que el contrato se cancele automáticamente.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            savedInvestment.getGeneratedBy().getUsername(),
-            student.getFirstName(),
-            student.getLastName(),
-            savedInvestment.getAmount(),
-            savedInvestment.getCurrency(),
-            savedInvestment.getProject().getName(),
-            MAX_RETRIES - savedInvestment.getRetryCount()
+                "Hola %s,\n\nEl estudiante %s %s ha reportado que NO ha recibido tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+                        "Por favor, revisa el envío y vuelve a marcarlo como enviado en la plataforma. Tienes %d intento(s) más antes de que el contrato se cancele automáticamente.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                savedInvestment.getGeneratedBy().getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                savedInvestment.getAmount(),
+                savedInvestment.getCurrency(),
+                savedInvestment.getProject().getName(),
+                MAX_RETRIES - savedInvestment.getRetryCount()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -370,9 +363,9 @@ public class InvestmentService implements IInvestmentService {
         String subject = String.format("Acción requerida sobre tu inversión para el proyecto '%s'", savedInvestment.getProject().getName());
         String body = String.format(
                 "Hola %s,\n\nTe informamos que tu inversión de %.2f %s para el proyecto '%s' no ha podido ser aceptada por el estudiante %s %s, debido a que el proyecto ya había alcanzado su meta de financiación.\n\n" +
-                "El contrato asociado ha sido cancelado automáticamente. Por favor, ponte en contacto con el estudiante para coordinar la devolución de los fondos que puedas haber enviado.\n\n" +
-                "Lamentamos los inconvenientes.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
+                        "El contrato asociado ha sido cancelado automáticamente. Por favor, ponte en contacto con el estudiante para coordinar la devolución de los fondos que puedas haber enviado.\n\n" +
+                        "Lamentamos los inconvenientes.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
                 savedInvestment.getGeneratedBy().getUsername(),
                 savedInvestment.getAmount(),
                 savedInvestment.getCurrency(),
@@ -389,7 +382,6 @@ public class InvestmentService implements IInvestmentService {
         Investment inv = investmentRepo.findByIdInvestmentAndDeletedFalse(investmentId)
                 .orElseThrow(() -> new InvestmentNotFoundException("Inversión no encontrada"));
 
-        // 🛡️ VALIDACIÓN DE SEGURIDAD
         ProjectStatus projectStatus = inv.getProject().getStatus();
         if (projectStatus != ProjectStatus.CANCELLED && projectStatus != ProjectStatus.NOT_FUNDED) {
             throw new BusinessException("Solo se puede iniciar la devolución de fondos para proyectos en estado CANCELLED o NOT_FUNDED.");
@@ -423,7 +415,6 @@ public class InvestmentService implements IInvestmentService {
         inv.setStatus(InvestmentStatus.RETURNED);
         inv.setConfirmedAt(LocalDate.now());
 
-        // Actualizar el contrato asociado
         Contract contract = inv.getContract();
         if (contract != null) {
             contract.setStatus(ContractStatus.REFUNDED);
@@ -449,14 +440,14 @@ public class InvestmentService implements IInvestmentService {
         String toStudent = student.getEmail();
         String subject = String.format("Devolución confirmada para tu proyecto '%s'", project.getName());
         String body = String.format(
-            "Hola %s,\n\nTe informamos que el inversor '%s' ha confirmado la recepción de la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
-            "El ciclo de inversión y devolución para este contrato ha sido completado exitosamente.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            student.getFirstName(),
-            investor.getUsername(),
-            savedInvestment.getAmount(),
-            savedInvestment.getCurrency(),
-            project.getName()
+                "Hola %s,\n\nTe informamos que el inversor '%s' ha confirmado la recepción de la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
+                        "El ciclo de inversión y devolución para este contrato ha sido completado exitosamente.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                student.getFirstName(),
+                investor.getUsername(),
+                savedInvestment.getAmount(),
+                savedInvestment.getCurrency(),
+                project.getName()
         );
         mailService.sendEmail(toStudent, subject, body);
 
@@ -493,16 +484,16 @@ public class InvestmentService implements IInvestmentService {
         String toInvestor = inv.getGeneratedBy().getEmail();
         String subject = String.format("Devolución enviada para el proyecto '%s'", inv.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nTe informamos que el estudiante %s %s ha confirmado el envío de la devolución de tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
-            "El estado de tu inversión ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
-            "Acción Requerida: Una vez que hayas verificado la recepción de los fondos en tu cuenta, por favor, ingresa a la plataforma y confirma la recepción de la devolución para cerrar el ciclo por completo.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            inv.getGeneratedBy().getUsername(),
-            student.getFirstName(),
-            student.getLastName(),
-            inv.getAmount(),
-            inv.getCurrency(),
-            inv.getProject().getName()
+                "Hola %s,\n\nTe informamos que el estudiante %s %s ha confirmado el envío de la devolución de tu inversión de %.2f %s para el proyecto '%s'.\n\n" +
+                        "El estado de tu inversión ahora es 'PENDIENTE DE DEVOLUCIÓN'.\n\n" +
+                        "Acción Requerida: Una vez que hayas verificado la recepción de los fondos en tu cuenta, por favor, ingresa a la plataforma y confirma la recepción de la devolución para cerrar el ciclo por completo.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                inv.getGeneratedBy().getUsername(),
+                student.getFirstName(),
+                student.getLastName(),
+                inv.getAmount(),
+                inv.getCurrency(),
+                inv.getProject().getName()
         );
         mailService.sendEmail(toInvestor, subject, body);
 
@@ -532,27 +523,27 @@ public class InvestmentService implements IInvestmentService {
                 contract.setStatus(ContractStatus.REFUND_FAILED);
                 contractService.saveContract(contract);
             }
-            // Notificar a ambas partes sobre el fallo definitivo
+
             String toInvestor = inv.getGeneratedBy().getEmail();
             String subjectInvestor = "Fallo en la devolución de tu inversión";
             String bodyInvestor = String.format(
-                "Hola %s,\n\nEl proceso de devolución para tu inversión en el proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
-                "Por favor, contacta a soporte para resolver esta situación.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                inv.getGeneratedBy().getUsername(),
-                inv.getProject().getName()
+                    "Hola %s,\n\nEl proceso de devolución para tu inversión en el proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
+                            "Por favor, contacta a soporte para resolver esta situación.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    inv.getGeneratedBy().getUsername(),
+                    inv.getProject().getName()
             );
             mailService.sendEmail(toInvestor, subjectInvestor, bodyInvestor);
 
             String toStudent = inv.getProject().getOwner().getEmail();
             String subjectStudent = "Fallo en la devolución de una inversión";
             String bodyStudent = String.format(
-                "Hola %s,\n\nEl proceso de devolución de la inversión de %s para tu proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
-                "Por favor, contacta a soporte para resolver esta situación.\n\n" +
-                "Saludos,\nEl equipo de ProyPlus",
-                inv.getProject().getOwner().getFirstName(),
-                inv.getGeneratedBy().getUsername(),
-                inv.getProject().getName()
+                    "Hola %s,\n\nEl proceso de devolución de la inversión de %s para tu proyecto '%s' ha fallado después de múltiples intentos.\n\n" +
+                            "Por favor, contacta a soporte para resolver esta situación.\n\n" +
+                            "Saludos,\nEl equipo de ProyPlus",
+                    inv.getProject().getOwner().getFirstName(),
+                    inv.getGeneratedBy().getUsername(),
+                    inv.getProject().getName()
             );
             mailService.sendEmail(toStudent, subjectStudent, bodyStudent);
 
@@ -565,15 +556,15 @@ public class InvestmentService implements IInvestmentService {
         String toStudent = inv.getProject().getOwner().getEmail();
         String subject = String.format("Alerta: Devolución no recibida para el proyecto '%s'", inv.getProject().getName());
         String body = String.format(
-            "Hola %s,\n\nEl inversor %s ha reportado que NO ha recibido la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
-            "Por favor, revisa la transferencia y vuelve a marcarla como enviada en la plataforma. Tienes %d intento(s) más antes de que el proceso falle permanentemente.\n\n" +
-            "Saludos,\nEl equipo de ProyPlus",
-            inv.getProject().getOwner().getFirstName(),
-            inv.getGeneratedBy().getUsername(),
-            inv.getAmount(),
-            inv.getCurrency(),
-            inv.getProject().getName(),
-            MAX_RETRIES - inv.getRetryCount()
+                "Hola %s,\n\nEl inversor %s ha reportado que NO ha recibido la devolución de %.2f %s para tu proyecto '%s'.\n\n" +
+                        "Por favor, revisa la transferencia y vuelve a marcarla como enviada en la plataforma. Tienes %d intento(s) más antes de que el proceso falle permanentemente.\n\n" +
+                        "Saludos,\nEl equipo de ProyPlus",
+                inv.getProject().getOwner().getFirstName(),
+                inv.getGeneratedBy().getUsername(),
+                inv.getAmount(),
+                inv.getCurrency(),
+                inv.getProject().getName(),
+                MAX_RETRIES - inv.getRetryCount()
         );
         mailService.sendEmail(toStudent, subject, body);
 
@@ -582,23 +573,19 @@ public class InvestmentService implements IInvestmentService {
 
     @Override
     public List<ResponseInvestmentDTO> getByInvestor(Long investorId, InvestmentStatus status) {
-        // 1. Validamos que el inversor exista
+
         if (!investorRepo.existsById(investorId)) {
             throw new InvestorNotFoundException("Inversor no encontrado con ID: " + investorId);
         }
 
         List<Investment> investments;
 
-        // 2. Lógica condicional para filtrar
         if (status == null) {
-            // Si no se especifica estado, traer todas las del inversor
             investments = investmentRepo.findByGeneratedBy_IdAndDeletedFalse(investorId);
         } else {
-            // Si se especifica un estado, filtrar por inversor Y estado
             investments = investmentRepo.findByGeneratedBy_IdAndDeletedFalseAndStatus(investorId, status);
         }
 
-        // 3. Mapear y devolver la lista de DTOs
         return investments.stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
@@ -615,7 +602,7 @@ public class InvestmentService implements IInvestmentService {
 
                 ContractAction action = ContractAction.builder()
                         .contract(contract)
-                        .student(inv.getConfirmedBy()) 
+                        .student(inv.getConfirmedBy())
                         .status(ContractStatus.CANCELLED)
                         .actionDate(LocalDate.now())
                         .build();

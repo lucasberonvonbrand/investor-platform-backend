@@ -5,7 +5,8 @@ import com.example.gestor_inversores.model.Student;
 
 public class ProjectStudentMapper {
 
-    private ProjectStudentMapper() {}
+    private ProjectStudentMapper() {
+    }
 
     public static ResponseProjectStudentDTO studentToResponseProjectStudentDTO(Student student) {
         return ResponseProjectStudentDTO.builder()
