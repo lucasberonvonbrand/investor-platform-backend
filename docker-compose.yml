@@ -1,36 +1,13 @@
 services:
-  gestor-usuarios:
+  backend:
     build:
-      context: ./back
+      context: ./backend
       dockerfile: Dockerfile
-    image: proyplus/gestor-usuarios:latest
-    container_name: gestor-usuarios
-    env_file:
-      - .env
+    image: investor-platform-backend:latest
+    container_name: investor-platform-backend
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-true}
     ports:
       - "${API_PORT:-8080}:8080"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    restart: unless-stopped
-    volumes:
-      - ./projects/documents:/projects
-
-  web-angular:
-    build:
-      context: ./front
-      dockerfile: Dockerfile
-    image: proyplus/web-angular:latest
-    container_name: web-angular
-    depends_on:
-      - gestor-usuarios
-    env_file:
-      - .env
-    # 👇 publica 4200 para que el proxy externo llegue
-    ports:
-      - "${WEB_PORT:-4200}:4200"
-    # (opcional) si corrés dev server, asegurate de escuchar en 0.0.0.0
-    # command: sh -c "ng serve --host 0.0.0.0 --port 4200"
     restart: unless-stopped

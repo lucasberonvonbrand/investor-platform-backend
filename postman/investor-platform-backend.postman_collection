@@ -1,0 +1,2783 @@
+{
+	"info": {
+		"_postman_id": "211db88a-c0d8-4246-8829-888f64a3827a",
+		"name": "gestor-inversores",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40022494"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"BancoSofia\",\r\n  \"password\": \"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/auth/login",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RoleAdmin",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"role\": \"ADMIN\",\r\n    \"permissionsList\": [\r\n        {\r\n            \"id\": 1 // ID del permiso READ\r\n        },\r\n        {\r\n            \"id\": 2 // ID del permiso UPDATE\r\n        },\r\n        {\r\n            \"id\": 3 // ID del permiso CREATE\r\n        },\r\n        {\r\n            \"id\": 4 // ID del permiso DELETE\r\n        }\r\n    ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/roles",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteRole",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/roles/5",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"roles",
+						"5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeletePermission",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/permissions/15",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"permissions",
+						"15"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ForgotPassword",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"lucasberonvonbrand@gmail.com\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/forgot-password",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"forgot-password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ResetPassword",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\":\"2febc221-996f-4b65-ac25-d11190dc44ff\",\r\n    \"password\": \"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/reset-password",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"reset-password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UserAdminCreate",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"lucasadmin\",\r\n  \"password\": \"123456\",\r\n  \"email\": \"lucasberonvonbrand2@gmail.com\",\r\n  \"photoUrl\": \"https://example.com/foto.jpg\",\r\n  \"rolesIds\": [1]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "proyplus.com/api/users",
+					"host": [
+						"proyplus",
+						"com"
+					],
+					"path": [
+						"api",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PermissionRead",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"permissionName\": \"READ\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/permissions",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PermissionUpdate",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"permissionName\": \"UPDATE\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/permissions",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PermissionCreate",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"permissionName\": \"CREATE\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/permissions",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PermissionDelete",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"permissionName\": \"DELETE\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/permissions",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"permissions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RoleStudent",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"role\": \"STUDENT\",\r\n    \"permissionsList\": [\r\n        {\r\n            \"id\": 1 // ID del permiso READ\r\n        },\r\n        {\r\n            \"id\": 2 // ID del permiso UPDATE\r\n        },\r\n        {\r\n            \"id\": 3 // ID del permiso CREATE\r\n        },\r\n        {\r\n            \"id\": 4 // ID del permiso DELETE\r\n        }\r\n    ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/roles",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RoleInvestor",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"role\": \"INVESTOR\",\r\n    \"permissionsList\": [\r\n        {\r\n            \"id\": 1 // ID del permiso READ\r\n        },\r\n        {\r\n            \"id\": 2 // ID del permiso UPDATE\r\n        },\r\n        {\r\n            \"id\": 3 // ID del permiso CREATE\r\n        },\r\n        {\r\n            \"id\": 4 // ID del permiso DELETE\r\n        }\r\n    ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/roles",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateInvestor",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"BancoCredicop\",\r\n  \"password\": \"123456\",\r\n  \"email\": \"bancocredicop@gmail.com\",\r\n  \"photoUrl\": \"https://example.com/logo_tecno.png\",\r\n  \"cuit\": \"30123456129\",\r\n  \"contactPerson\": \"Daniel Caceres\",\r\n  \"phone\": \"+5491155552222\",\r\n  \"webSite\": \"https://www.bancocredicop.com\",\r\n  \"address\": {\r\n    \"street\": \"Calle Falsa\",\r\n    \"number\": 123,\r\n    \"city\": \"Buenos Aires\",\r\n    \"province\": \"CABA\",\r\n    \"postalCode\": 1010\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investors",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateStudent",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"Francisco\",\r\n  \"password\": \"123456\",\r\n  \"email\": \"francisco@gmail.com\",\r\n  \"photoUrl\": \"https://example.com/foto_francisco.png\",\r\n  \"firstName\": \"Francisco\",\r\n  \"lastName\": \"Larralde\",\r\n  \"dni\": \"40869540\",\r\n  \"phone\": \"1127232324\",\r\n  \"dateOfBirth\": \"2001-08-20\",\r\n  \"university\": \"UNLZ\",\r\n  \"career\": \"Medicina\",\r\n  \"degreeStatus\": \"IN_PROGRESS\",\r\n  \"linkedinUrl\": \"https://www.linkedin.com/in/francisco-larralde\",\r\n  \"description\": \"Estudiante de medicina comprometido con la salud y la investigación.\",\r\n  \"address\": {\r\n    \"street\": \"Calle Falsa\",\r\n    \"number\": 123,\r\n    \"city\": \"Lanús\",\r\n    \"province\": \"BUENOS_AIRES\",\r\n    \"postalCode\": 1824\r\n  }\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/students",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateStudent",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"lorenzo.martinez\",\r\n  \"email\": \"lorenzo.martinez.med@email.com\",\r\n  \"photoUrl\": \"https://example.com/nueva_foto_lorenzo.jpg\",\r\n  \"firstName\": \"Lorenzo Anibal\",\r\n  \"lastName\": \"Martinez Russo\",\r\n  \"dni\": \"95123456\",\r\n  \"phone\": \"1198765432\",\r\n  \"dateOfBirth\": \"2001-08-21\",\r\n  \"university\": \"UBA\",\r\n  \"career\": \"Cirugía General\",\r\n  \"degreeStatus\": \"COMPLETED\",\r\n  \"linkedinUrl\": \"https://www.linkedin.com/in/lorenzomartinez\",\r\n  \"description\": \"Médico recién graduado. Buscando residencia en cirugía en CABA.\",\r\n  \"address\": {\r\n    \"street\": \"Avenida Corrientes\",\r\n    \"number\": 4567,\r\n    \"city\": \"CABA\",\r\n    \"province\": \"CABA\",\r\n    \"postalCode\": 1195\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/students/20",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"20"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestor",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"tecno_inversiones_sa\",\r\n  \"email\": \"info@tecnoinversiones.com\",\r\n  \"cuit\": \"30123456789\",\r\n  \"contactPerson\": \"Ana Martínez\",\r\n  \"phone\": \"+5491155558888\",\r\n  \"webSite\": \"https://www.tecnoinversiones.com\",\r\n  \"address\": {\r\n    \"street\": \"Avenida Corrientes\",\r\n    \"number\": 1500,\r\n    \"city\": \"Buenos Aires\",\r\n    \"province\": \"CABA\",\r\n    \"postalCode\": 1042\r\n  },\r\n  \"enabled\": true,\r\n  \"accountNotExpired\": true,\r\n  \"accountNotLocked\": false,\r\n  \"credentialNotExpired\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investors/24",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investors",
+						"24"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestorByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"tecno_inversiones_sa\",\r\n  \"email\": \"info@tecnoinversiones.com\",\r\n  \"cuit\": \"30123456789\",\r\n  \"contactPerson\": \"Ana Martínez\",\r\n  \"phone\": \"+5491155558888\",\r\n  \"webSite\": \"https://www.tecnoinversiones.com\",\r\n  \"address\": {\r\n    \"street\": \"Avenida Corrientes\",\r\n    \"number\": 1500,\r\n    \"city\": \"Buenos Aires\",\r\n    \"province\": \"CABA\",\r\n    \"postalCode\": 1042\r\n  },\r\n  \"enabled\": true,\r\n  \"accountNotExpired\": true,\r\n  \"accountNotLocked\": false,\r\n  \"credentialNotExpired\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investors/update-by-admin/24",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investors",
+						"update-by-admin",
+						"24"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateStudentByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"LauraG\",\r\n  \"email\": \"laura.gomez@email.com\",\r\n  \"firstName\": \"Laura\",\r\n  \"lastName\": \"Gómez\",\r\n  \"dni\": \"9345781\",\r\n  \"phone\": \"114567890\",\r\n  \"dateOfBirth\": \"1999-05-15\",\r\n  \"university\": \"UBA\",\r\n  \"career\": \"Arquitectura\",\r\n  \"degreeStatus\": \"IN_PROGRESS\",\r\n  \"linkedinUrl\": \"https://www.linkedin.com/in/laura-gomez\",\r\n  \"description\": \"Estudiante de arquitectura apasionada por el diseño sostenible y la planificación urbana.\",\r\n  \"address\": {\r\n    \"street\": \"Avenida Siempreviva\",\r\n    \"number\": 742,\r\n    \"city\": \"CABA\",\r\n    \"province\": \"CABA\",\r\n    \"postalCode\": 1425\r\n  },\r\n  \"enabled\": true,\r\n  \"accountNotExpired\": true,\r\n  \"accountNotLocked\": true,\r\n  \"credentialNotExpired\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/students/update-by-admin/23",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"update-by-admin",
+						"23"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetUsers",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJQUk9ZUExVUzIwMi1TRUMiLCJzdWIiOiJsdWNhcyIsImF1dGhvcml0aWVzIjoiQ1JFQVRFLFJFQUQsUk9MRV9BRE1JTixVUERBVEUiLCJpYXQiOjE3NjQ0MzUyNDAsImV4cCI6MTc2NDQzNzA0MCwianRpIjoiZGY2MTAxYTMtMjg3ZC00MmU5LWI1MTQtYWNjNzMyZTg0NTY4IiwibmJmIjoxNzY0NDM1MjQwfQ.wN0kp51NXamGCLAOgnqmm_7Nk68n44mZNRxQIHgk6c0",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/users",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetUser",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/users/3",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"users",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetStudents",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/students",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetStudent",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/students/9",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"9"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestors",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJQUk9ZUExVUzIwMi1TRUMiLCJzdWIiOiJMdWNhcyIsImF1dGhvcml0aWVzIjoiQ1JFQVRFLFJFQUQsUk9MRV9BRE1JTixVUERBVEUiLCJpYXQiOjE3NjQ0MzQ3MDMsImV4cCI6MTc2NDQzNjUwMywianRpIjoiMWRiN2Q5MzYtZTNkNC00ZWJjLTgyNTEtMjRmOWVkZmQ3NmY5IiwibmJmIjoxNzY0NDM0NzAzfQ.AM3YeJV__WzGV0XJgBPqrEzlovozLAfVv6yzMASksds",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/investors",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investors"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestor",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/investors/5",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investors",
+						"5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateProject",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"name\": \"Proyecto Ingeniería Mecánica y Sistemas Actualizado\",\r\n  \"description\": \"Desarrollo de soluciones mecánicas y sistemas inteligentes para optimizar procesos industriales y tecnológicos. Versión actualizada.\",\r\n  \"budgetGoal\": 800000.00,\r\n  \"currentGoal\": 10000.00,\r\n  \"status\": \"PENDING_FUNDING\",\r\n  \"startDate\": \"2025-09-24\",\r\n  \"estimatedEndDate\": \"2026-12-31\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjects",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProject",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects/6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteProject",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects/8",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"8"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateProject",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"EcoMarket: Mercado Sustentable\",\r\n    \"description\": \"Una aplicación móvil que conecta consumidores con productores locales de alimentos orgánicos y productos ecológicos, facilitando la logística de entrega y reduciendo la huella de carbono.\",\r\n    \"budgetGoal\": 150000.00,\r\n    \"startDate\": \"2026-03-01\",\r\n    \"estimatedEndDate\": \"2026-11-15\",\r\n    \"ownerId\": 9\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestmentDetails",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"amount\": 20000.00,\r\n  \"currency\": \"CNY\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/details/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"details",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestmentStatusRECEIVED",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"confirmedByStudentId\": 9,\r\n  \"status\": \"RECEIVED\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/confirm/23",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm",
+						"23"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestmentStatusNOT_RECEIVED",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"confirmedByStudentId\": 4,\r\n  \"status\": \"NOT_RECEIVED\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/confirm/7",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm",
+						"7"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetCurrency",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/currency/convert?from=USD&to=EUR",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"currency",
+						"convert"
+					],
+					"query": [
+						{
+							"key": "from",
+							"value": "USD"
+						},
+						{
+							"key": "to",
+							"value": "EUR"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestments",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestment",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/57",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"57"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteInvestment",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CancelInvestment",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/cancel/6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"cancel",
+						"6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsActives",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/actives",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"actives"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByProject",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/investments-by-project/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"investments-by-project",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetStudentsNames",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/students/names",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"names"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateContract",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"projectId\": 47,\r\n        \"createdByInvestorId\": 22,\r\n        \"textTitle\": \"Contrato de prueba 26/11\",\r\n        \"description\": \"<h1>Términos y Condiciones</h1><p>Esta es una <b>descripción detallada</b> del contrato. Incluye los siguientes puntos:</p><ul><li>Punto 1</li><li>Punto 2</li><li>Punto 3</li></ul>\",\r\n        \"amount\": 5000.00,\r\n        \"currency\": \"USD\",\r\n        \"profit1Year\": 15,\r\n        \"profit2Years\": 25,\r\n        \"profit3Years\": 35\r\n    }\r\n\r\n\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"studentId\": 9,\r\n    \"textTitle\": \"RE: PRUEBA DE NUEVO FLUJO DE CONTRATOS 2\",\r\n    \"description\": \"<h1>Términos y Condiciones Revisados</h1><p>He revisado la propuesta y estoy de acuerdo con la mayoría de los puntos, pero sugiero los siguientes ajustes en los retornos.</p>\",\r\n    \"amount\": 16000.00,\r\n    \"currency\": \"USD\",\r\n    \"profit1Year\": 7,\r\n    \"profit2Years\": 12,\r\n    \"profit3Years\": 15\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/update-by-student/62",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"update-by-student",
+						"62"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateContractByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"investorId\": 22,\r\n    \"textTitle\": \"OFERTA REVISADA: PRUEBA DE NUEVO FLUJO DE CONTRATOS 2\",\r\n    \"description\": \"<h1>Términos y Condiciones Actualizados por Inversor</h1><p>Hemos revisado la propuesta del estudiante y ajustado el monto de inversión y los porcentajes de ganancia para hacerla más atractiva.</p>\",\r\n    \"amount\": 18000.00,\r\n    \"currency\": \"USD\",\r\n    \"profit1Year\": 5,\r\n    \"profit2Years\": 9,\r\n    \"profit3Years\": 12\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/update-by-investor/62",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"update-by-investor",
+						"62"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AgreeContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/agree-by-student/92",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"agree-by-student",
+						"92"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AgreeContractByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"investorId\": 22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/agree-by-investor/62",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"agree-by-investor",
+						"62"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignContractByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"investorId\": 22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/sign-by-investor/92",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"sign-by-investor",
+						"92"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/sign-by-student/92",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"sign-by-student",
+						"92"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CompleteProject",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/projects/complete/15?ownerId=9",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"complete",
+						"15"
+					],
+					"query": [
+						{
+							"key": "ownerId",
+							"value": "9"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CancelProjectByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/projects/cancel/3?ownerId=9",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"cancel",
+						"3"
+					],
+					"query": [
+						{
+							"key": "ownerId",
+							"value": "9"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetContractsByProject",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/by-project/2",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"by-project",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetContractsByInvestor",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/by-investor/22",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"by-investor",
+						"22"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CloseContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/close/100",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"close",
+						"100"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CancelContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"studentId\": 9\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/cancel-by-student/47",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"cancel-by-student",
+						"47"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CancelContractByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"investorId\": 22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/cancel-by-investor/34",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"cancel-by-investor",
+						"34"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RefundContractByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/contracts/refund/86",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"refund",
+						"86"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RefundInvestmentByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investments/confirm-refund-sent/64",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm-refund-sent",
+						"64"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RefundInvestmentNotReceivedByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"investorId\": 22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investments/mark-refund-not-received/64",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"mark-refund-not-received",
+						"64"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetEarning",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "localhost:8080/api/earnings/investor/5",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"investor",
+						"5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsByOwner",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects/by-owner/9",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"by-owner",
+						"9"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetStudentByUsername",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/students/by-username?username=martina",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"by-username"
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "martina"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsInactivosByOwner",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects/by-owner/11?active=false",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"by-owner",
+						"11"
+					],
+					"query": [
+						{
+							"key": "active",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsActivosByOwner",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects/by-owner/11",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"by-owner",
+						"11"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsActivosByStudent",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/students/projects/11",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"projects",
+						"11"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsInactivosByStudent",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsActivos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsInactivos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects?active=false",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects"
+					],
+					"query": [
+						{
+							"key": "active",
+							"value": "false"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ActivateProject",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/projects/activate/8",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"activate",
+						"8"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmReceiptInvestment",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investments/confirm-receipt/70",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm-receipt",
+						"70"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmaPaymentInvestmentSentByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"investorId\": 22\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investments/confirm-payment-sent/70",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm-payment-sent",
+						"70"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MarkNotReceivedInvestment",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"studentId\": 39\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/investments/mark-not-received/54",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"mark-not-received",
+						"54"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmPaymentEarningSentByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"studentId\": 9\r\n    }\r\n    ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/earnings/confirm-payment-sent/17",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"confirm-payment-sent",
+						"17"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmReceiptEarning",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"investorId\": 22\r\n    }\r\n    ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/earnings/confirm-receipt/17",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"confirm-receipt",
+						"17"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MarkNotReceivedEarning",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"investorId\": 5\r\n    }\r\n    ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/earnings/mark-not-received/13",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"mark-not-received",
+						"13"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MarkNotReceivedEarning Copy",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/earnings/investor/22?status=IN_PROGRESS",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "IN_PROGRESS"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmRefundReceivedByInvestor",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"investorId\": 22\r\n    }\r\n    ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/confirm-refund/63",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"confirm-refund",
+						"63"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RejectInversionOverfundedByStudent",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "    {\r\n        \"studentId\": 9\r\n    }\r\n    ",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/investments/reject-overfunded/38",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"reject-overfunded",
+						"38"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetContractsByOwner",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/contracts/owner/9",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"contracts",
+						"owner",
+						"9"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestor",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusIN_PROGRESS",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=IN_PROGRESS",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "IN_PROGRESS"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusRECEIVED",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=RECEIVED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "RECEIVED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusNOT_RECEIVED",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=NOT_RECEIVED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "NOT_RECEIVED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusCANCELLED",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=CANCELLED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "CANCELLED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusPENDING_RETURN",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=CANCELLED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "CANCELLED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusRETURNED",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=RETURNED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "RETURNED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetInvestmentsByInvestorAndStatusCOMPLETED",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/investments/by-investor/22?status=COMPLETED",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"investments",
+						"by-investor",
+						"22"
+					],
+					"query": [
+						{
+							"key": "status",
+							"value": "COMPLETED"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsByTag",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects/tag/EDUCACIÓN",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"tag",
+						"EDUCACIÓN"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetProjectsByInvestment",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/projects/by-investment/22",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"projects",
+						"by-investment",
+						"22"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateProjectByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"Proyecto (Actualizado por Admin 2)\",\r\n    \"description\": \"Esta es una nueva descripción actualizada por el administrador para verificar la funcionalidad del endpoint.\",\r\n    \"status\": \"CANCELLED\",\r\n    \"endDate\": \"2024-11-15\",\r\n    \"deleted\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/admin/projects/19",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"projects",
+						"19"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateContractByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"textTitle\": \"Contrato 46 (Corregido por Admin)\",\r\n    \"description\": \"Cláusulas actualizadas por el administrador. Se revierte el estado de 'CLOSED' a 'SIGNED' y se corrigen las banderas de firma.\",\r\n    \"status\": \"SIGNED\",\r\n    \"profit1Year\": 0.11,\r\n    \"investorSigned\": true,\r\n    \"investorSignedDate\": \"2025-10-14\",\r\n    \"studentSigned\": true,\r\n    \"studentSignedDate\": \"2025-10-15\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/admin/contracts/46",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"contracts",
+						"46"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateInvestmentByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"status\": \"NOT_RECEIVED\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/admin/investments/13",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"investments",
+						"13"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEarningStatusByAdmin",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"status\": \"IN_PROGRESS\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api/admin/earnings/14/status",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"admin",
+						"earnings",
+						"14",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetEarningsByContract",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "GetEarningsByProjeect",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/earnings/by-project/8",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"earnings",
+						"by-project",
+						"8"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DesactivateStudent",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n"
+				},
+				"url": {
+					"raw": "localhost:8080/api/students/desactivate/15",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"desactivate",
+						"15"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DesactivateInvestor",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\r\n"
+				},
+				"url": {
+					"raw": "localhost:8080/api/students/desactivate/15",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"students",
+						"desactivate",
+						"15"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RiskPrediction",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJQUk9ZUExVUzIwMi1TRUMiLCJzdWIiOiJCYW5jb1NvZmlhIiwiYXV0aG9yaXRpZXMiOiJDUkVBVEUsUkVBRCxST0xFX0lOVkVTVE9SLFVQREFURSIsImlhdCI6MTc2NDQzNDgwOSwiZXhwIjoxNzY0NDM2NjA5LCJqdGkiOiIzNTMwYWRkNi0xMGVmLTRiMmQtYWJhOS1iZjdiY2MxYmFhZTAiLCJuYmYiOjE3NjQ0MzQ4MDl9.SuLzvUAmXSfdBPtKsI6ZIdAtE3jox0vPK3smml3gd94",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"projectId\": 45,\r\n  \"amount\": 1500.00,\r\n  \"currency\": \"USD\",\r\n  \"profit1Year\": 8.0,\r\n  \"profit2Years\": 12.0,\r\n  \"profit3Years\": 16.0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/analysis/risk",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"analysis",
+						"risk"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Chatbot",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "como hago una inversion?\r\n",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
