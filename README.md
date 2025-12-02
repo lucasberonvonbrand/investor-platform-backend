@@ -618,4 +618,4 @@ investor-platform-backend/
 - Maximiliano Ortiz
 - Lucas Beron Von Brand
 
-Este proyecto fue desarrollado como el **Trabajo Práctico Final** para la materia "Proyecto Final" de la **Licenciatura en Gestión de Tecnología de la Información** en la Universidad Nacional de La Matanza (UNLaM).
+Este proyecto fue desarrollado como el **Trabajo Práctico Final** para la materia "Proyecto Final" de la **Licenciatura en Gestión de Tecnología** en la Universidad Nacional de La Matanza (UNLaM).
