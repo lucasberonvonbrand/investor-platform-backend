@@ -55,6 +55,13 @@
             <version>8.0.33</version>
         </dependency>
 
+        <!-- H2 Database para Tests -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Utilidades -->
         <dependency>
             <groupId>org.projectlombok</groupId>

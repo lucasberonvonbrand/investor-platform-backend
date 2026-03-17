@@ -74,8 +74,12 @@ public class ControllerHandler extends ResponseEntityExceptionHandler {
     }
 
     // --- 403 FORBIDDEN ---
-    @ExceptionHandler(UnauthorizedOperationException.class)
-    public ResponseEntity<ApiError> handleForbiddenException(UnauthorizedOperationException ex) {
+    @ExceptionHandler({
+            UnauthorizedOperationException.class,
+            org.springframework.security.access.AccessDeniedException.class,
+            org.springframework.security.authorization.AuthorizationDeniedException.class
+    })
+    public ResponseEntity<ApiError> handleForbiddenException(Exception ex) {
         ApiError apiError = new ApiError("Acceso denegado: " + ex.getMessage(), HttpStatus.FORBIDDEN, LocalDateTime.now());
         return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
     }
