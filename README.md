@@ -27,6 +27,13 @@ Inicialmente, la aplicación no utilizaba DTOs, pero se adoptó este patrón par
 - **Desacoplamiento y Seguridad**: El uso de **Data Transfer Objects (DTOs)** y mappers (con MapStruct) crea una capa de abstracción entre la API y el modelo de datos interno. Esto evita exponer directamente las entidades JPA y previene problemas de seguridad y acoplamiento.
 - **Flexibilidad de la API**: Permitió crear múltiples "vistas" de un mismo modelo de datos, adaptadas a las necesidades específicas de cada endpoint. Como se puede observar en el paquete `dto`, existen numerosas variantes de DTOs que surgieron para satisfacer requisitos concretos, algo que habría sido inviable utilizando únicamente las entidades del dominio.
 
+#### ¿Por qué un Enfoque de Testing Mixto (Manual y Automatizado)?
+Para garantizar la calidad y robustez del código en diferentes etapas del desarrollo, se implementó una estrategia de testing exhaustiva:
+- **Testing Manual con Postman**: Durante todo el ciclo de desarrollo, se construyó y documentó una colección completa de Postman. Esto permitió realizar pruebas exploratorias rápidas, validar el diseño de los endpoints desde la perspectiva del cliente, y verificar escenarios de integración complejos "end-to-end" de forma interactiva.
+- **Tests Unitarios con Mockito**: Se introdujeron para aislar y validar la lógica de negocio más crítica y compleja dentro de los servicios (ej. `ProjectService`). Esto asegura que las reglas de negocio, el manejo de excepciones y los efectos secundarios (como el envío de correos) funcionen impecablemente, sin la interferencia de la base de datos.
+- **Tests de Integración con Spring Boot Test**: Se aplicaron para verificar los flujos completos desde la capa web (`@SpringBootTest` y `MockMvc`), validando la recepción de peticiones HTTP, validaciones de DTOs, y la correcta persistencia en una base de datos en memoria (H2). Esto confirma que todas las capas de la aplicación se comunican correctamente.
+- **Perfiles de Spring (`@ActiveProfiles("test")`)**: Se configuró un entorno de pruebas dedicado mediante perfiles de Spring, separando completamente la configuración de producción (MySQL, credenciales reales) de la configuración de test (H2, claves dummy), garantizando ejecuciones de prueba aisladas y seguras.
+
 ## 🛡️ Consideraciones de Seguridad
 
 La seguridad fue un pilar fundamental desde el inicio del desarrollo, implementando múltiples capas de protección:
@@ -73,10 +80,11 @@ El proyecto sigue una arquitectura multicapa clásica, lo que garantiza una clar
 - ✅ **Framework**: Spring Boot 3 (Java 17)
 - ✅ **Base de Datos**: MySQL
 - ✅ **Seguridad**: Spring Security, JWT
+- ✅ **Testing Automático**: JUnit 5, Mockito, Spring Boot Test, H2 Database
+- ✅ **Testing Manual y API Docs**: Postman
 - ✅ **Machine Learning**: Weka (RandomForest)
 - ✅ **IA Generativa**: Google Gemini
 - ✅ **Gestión de Dependencias**: Maven
-- ✅ **Documentación de API**: Postman
 
 ## ✨ Funcionalidades Destacadas con IA
 
@@ -205,6 +213,14 @@ mvn spring-boot:run
 ```
 
 La aplicación estará disponible en `http://localhost:8080`.
+
+### 🧪 Ejecutar los Tests
+
+El proyecto cuenta con una suite de tests unitarios y de integración (asegurando el correcto funcionamiento de las lógicas de negocio, la seguridad y la persistencia en H2). Para ejecutarlos, utiliza el siguiente comando desde el directorio `backend`:
+
+```bash
+mvn clean test
+```
 
 ## 🔐 Endpoints
 
