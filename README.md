@@ -2,6 +2,21 @@
 
 **ProyPlus** es una plataforma backend robusta diseñada para conectar a **estudiantes universitarios** con ideas innovadoras y a **inversores** que buscan potenciar el talento emergente. El sistema gestiona todo el ciclo de vida de un proyecto, desde su creación y financiación hasta la liquidación de ganancias, incorporando funcionalidades avanzadas de **Inteligencia Artificial** para el análisis de riesgos, la categorización de proyectos y el soporte al usuario.
 
+## 📋 Documentación Funcional
+
+Este proyecto incluye documentación funcional completa desarrollada 
+bajo metodología Scrum:
+
+- ✔️ Visual Story Mapping
+- ✔️ Product Backlog con más de 35 historias de usuario y estimación en Story Points
+- ✔️ Release Planning con sprints
+- ✔️ Criterios de aceptación en formato BDD (Dado/Cuando/Entonces) para las 9 épicas del sistema
+- ✔️ Plan de pruebas con más de 40 escenarios ejecutados
+- ✔️ Seguimiento y registro de fallas
+- ✔️ 4 Retrospectivas documentadas
+
+📄 [Ver documentación completa](https://drive.google.com/file/d/1bcMB-g117ibh29tEvLWR5scpI_qBaEl6/view?usp=sharing)
+
 ## 💡 Decisiones de Diseño y Justificaciones Técnicas
 
 Esta sección detalla las decisiones clave de arquitectura y tecnología tomadas durante el desarrollo, demostrando un enfoque pragmático y orientado a resultados.
