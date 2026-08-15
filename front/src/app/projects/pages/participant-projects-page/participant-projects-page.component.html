@@ -1,0 +1,118 @@
+<p-toast></p-toast>
+
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-white">Proyectos Participantes</h1>
+      <p class="text-slate-400 text-sm mt-1">Proyectos e iniciativas en las que colaboras como integrante</p>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="projects().length === 0 && !loading()" class="card bg-[#0d1527] border border-[#1e293b] shadow-xl text-center p-8 sm:p-12 rounded-3xl">
+    <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center text-4xl mb-4">
+      <i class="pi pi-users"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-white">No participas en ningún proyecto actualmente</h2>
+    <p class="text-slate-400 mt-2 max-w-md mx-auto">Cuando el líder de un proyecto te agregue como integrante del equipo, la iniciativa aparecerá listada aquí automáticamente.</p>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="projects().length > 0" class="space-y-6">
+
+    <!-- Stats Bar -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow-xl bg-[#0d1527] border border-[#1e293b] rounded-2xl w-full">
+      
+      <div class="stat">
+        <div class="stat-figure text-primary">
+          <i class="pi pi-briefcase text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Total Proyectos</div>
+        <div class="stat-value text-primary text-3xl font-black">{{ kpis().total }}</div>
+        <div class="stat-desc text-slate-400">Donde eres colaborador</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-warning">
+          <i class="pi pi-play-circle text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Activos</div>
+        <div class="stat-value text-warning text-3xl font-black">{{ kpis().activos }}</div>
+        <div class="stat-desc text-slate-400">En fase de desarrollo</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-success">
+          <i class="pi pi-calendar-plus text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Recientes</div>
+        <div class="stat-value text-success text-3xl font-black">{{ kpis().recientes }}</div>
+        <div class="stat-desc text-slate-400">Actualizados este mes</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-info">
+          <i class="pi pi-wallet text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Financiados</div>
+        <div class="stat-value text-info text-3xl font-black">{{ kpis().conFinanciacion }}</div>
+        <div class="stat-desc text-slate-400">Con metas aprobadas</div>
+      </div>
+
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let p of projects()" 
+           class="card bg-[#0d1527] shadow-xl hover:shadow-2xl hover:border-[#7c3aed]/50 border border-[#1e293b] transition-all duration-300 rounded-2xl overflow-hidden flex flex-col cursor-pointer group"
+           (click)="openDetail(p)">
+        
+        <!-- Decorative Top Bar -->
+        <div class="h-1.5 bg-gradient-to-r from-[#7c3aed] to-[#3b82f6]"></div>
+
+        <div class="card-body p-6 flex flex-col flex-1">
+          <!-- Category & Status -->
+          <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30 max-w-[50%] truncate">
+              {{ getCategoryLabel(p.category) }}
+            </span>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#121c33] text-slate-300 border border-[#1e293b] max-w-[48%] truncate">
+              {{ getProjectStatusLabel(p.status) }}
+            </span>
+          </div>
+
+          <!-- Title & Summary -->
+          <h3 class="card-title text-xl font-bold text-white group-hover:text-[#a78bfa] transition-colors leading-snug">
+            {{ p.title }}
+          </h3>
+          <p class="text-slate-400 text-sm line-clamp-3 my-2 flex-1 leading-relaxed">
+            {{ p.summary || 'Sin descripción disponible.' }}
+          </p>
+
+          <!-- University -->
+          <div *ngIf="p.university" class="flex items-center gap-2 text-xs text-slate-400 my-2">
+            <i class="pi pi-building text-[#a78bfa]"></i>
+            <span class="truncate">{{ p.university }}</span>
+          </div>
+
+          <!-- Action Button -->
+          <div class="card-actions justify-end mt-4 pt-3 border-t border-[#1e293b]">
+            <button type="button" 
+                    class="btn btn-ghost bg-[#121c33] border border-[#1e293b] hover:border-[#7c3aed] text-[#a78bfa] hover:text-white hover:bg-[#7c3aed] w-full rounded-xl gap-2 font-bold py-2.5 transition-all shadow-md" 
+                    (click)="$event.stopPropagation(); openDetail(p)">
+              <span>Ver Detalles</span>
+              <i class="pi pi-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+

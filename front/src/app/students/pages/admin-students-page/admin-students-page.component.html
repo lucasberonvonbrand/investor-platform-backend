@@ -1,0 +1,256 @@
+<p-toast></p-toast>
+<p-confirmDialog [style]="{ width: '400px' }"></p-confirmDialog>
+
+<div class="px-4 py-8 max-w-[1400px] mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Students Management</h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-1">Manage platform students, update their info or change status.</p>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <p-selectButton [options]="filterStatusOptions" 
+                      [(ngModel)]="currentFilter" 
+                      (onChange)="onFilterChange()" 
+                      optionLabel="label" 
+                      optionValue="value">
+      </p-selectButton>
+      <button pButton pRipple label="New Student" icon="pi pi-plus" class="p-button-success" (click)="openNew()"></button>
+    </div>
+  </div>
+
+  <p-card styleClass="shadow-sm border-0">
+    <p-table #dt 
+             [value]="filteredStudents()" 
+             [paginator]="true" 
+             [rows]="10" 
+             [loading]="loading()"
+             responsiveLayout="scroll" 
+             [rowHover]="true" 
+             styleClass="p-datatable-sm"
+             [globalFilterFields]="['username', 'email', 'firstName', 'lastName']">
+      
+      <ng-template pTemplate="caption">
+        <div class="flex justify-between items-center">
+          <h5 class="m-0 font-medium">Students List</h5>
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')" placeholder="Search student..." class="p-inputtext-sm w-64" />
+          </span>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="username">Username <p-sortIcon field="username"></p-sortIcon></th>
+          <th pSortableColumn="firstName">Name <p-sortIcon field="firstName"></p-sortIcon></th>
+          <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+          <th pSortableColumn="university">University <p-sortIcon field="university"></p-sortIcon></th>
+          <th pSortableColumn="enabled">Status <p-sortIcon field="enabled"></p-sortIcon></th>
+          <th class="w-32 text-center">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-student>
+        <tr>
+          <td class="font-medium">{{ student.username }}</td>
+          <td>{{ student.firstName }} {{ student.lastName }}</td>
+          <td>{{ student.email }}</td>
+          <td>{{ student.university }}</td>
+          <td>
+            <p-tag [severity]="student.enabled ? 'success' : 'danger'" 
+                   [value]="student.enabled ? 'Enabled' : 'Disabled'">
+            </p-tag>
+          </td>
+          <td class="text-center">
+            <div class="flex justify-center gap-2">
+              <button pButton pRipple icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text" 
+                      (click)="onView(student)" pTooltip="View Details"></button>
+              
+              <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-primary p-button-text" 
+                      (click)="edit(student)" pTooltip="Edit Student"></button>
+              
+              <button *ngIf="student.enabled" pButton pRipple icon="pi pi-ban" class="p-button-rounded p-button-danger p-button-text" 
+                      (click)="toggleActive(student, false)" pTooltip="Deactivate"></button>
+              <button *ngIf="!student.enabled" pButton pRipple icon="pi pi-check-circle" class="p-button-rounded p-button-success p-button-text" 
+                      (click)="toggleActive(student, true)" pTooltip="Activate"></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center p-8 text-slate-500">
+            No students found.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Add / Edit Modal -->
+<p-dialog [(visible)]="showDialog" 
+          [header]="isEdit() ? 'Edit Student' : 'New Student'" 
+          [modal]="true" 
+          [style]="{width: '650px'}" 
+          [maximizable]="true"
+          (onHide)="onDialogHide()">
+  
+  <form #studentForm="ngForm" class="mt-4" (ngSubmit)="save(studentForm)">
+    
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Credentials -->
+      <div class="col-span-2 text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Account</div>
+      
+      <div class="flex flex-col gap-1">
+        <label for="username" class="font-medium text-sm">Username *</label>
+        <input type="text" pInputText id="username" name="username" [(ngModel)]="formModel.username" required [disabled]="isEdit()" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="password" class="font-medium text-sm">Password <span *ngIf="!isEdit()">*</span></label>
+        <p-password id="password" name="password" [(ngModel)]="formModel.password" [toggleMask]="true" [feedback]="false" [required]="!isEdit()"></p-password>
+        <small class="text-slate-500" *ngIf="isEdit()">Leave empty to keep current password</small>
+      </div>
+
+      <div class="col-span-2 flex flex-col gap-1">
+        <label for="email" class="font-medium text-sm">Email *</label>
+        <input type="email" pInputText id="email" name="email" [(ngModel)]="formModel.email" required />
+      </div>
+
+      <p-divider class="col-span-2 my-2"></p-divider>
+
+      <!-- Personal Info -->
+      <div class="col-span-2 text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Personal Information</div>
+
+      <div class="flex flex-col gap-1">
+        <label for="firstName" class="font-medium text-sm">First Name *</label>
+        <input type="text" pInputText id="firstName" name="firstName" [(ngModel)]="formModel.firstName" required />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="lastName" class="font-medium text-sm">Last Name *</label>
+        <input type="text" pInputText id="lastName" name="lastName" [(ngModel)]="formModel.lastName" required />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="dni" class="font-medium text-sm">DNI *</label>
+        <input type="text" pInputText id="dni" name="dni" [(ngModel)]="formModel.dni" required [disabled]="isEdit()" />
+      </div>
+      
+      <div class="flex flex-col gap-1">
+        <label for="dateOfBirth" class="font-medium text-sm">Date of Birth *</label>
+        <input type="date" pInputText id="dateOfBirth" name="dateOfBirth" [(ngModel)]="formModel.dateOfBirth" required />
+      </div>
+
+      <div class="col-span-2 flex flex-col gap-1">
+        <label for="phone" class="font-medium text-sm">Phone *</label>
+        <input type="text" pInputText id="phone" name="phone" [(ngModel)]="formModel.phone" required />
+      </div>
+
+      <p-divider class="col-span-2 my-2"></p-divider>
+
+      <!-- Academic Info -->
+      <div class="col-span-2 text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Academic Information</div>
+
+      <div class="flex flex-col gap-1">
+        <label for="university" class="font-medium text-sm">University *</label>
+        <select id="university" name="university" [(ngModel)]="formModel.university" class="p-inputtext w-full" required>
+          <option *ngFor="let uni of universities" [value]="uni.value">{{ uni.label }}</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="career" class="font-medium text-sm">Career / Major *</label>
+        <input type="text" pInputText id="career" name="career" [(ngModel)]="formModel.career" required />
+      </div>
+
+      <div class="col-span-2 flex flex-col gap-1">
+        <label for="degreeStatus" class="font-medium text-sm">Degree Status *</label>
+        <select id="degreeStatus" name="degreeStatus" [(ngModel)]="formModel.degreeStatus" class="p-inputtext w-full" required>
+          <option *ngFor="let st of degreeStatuses" [value]="st.value">{{ st.label }}</option>
+        </select>
+      </div>
+
+      <p-divider class="col-span-2 my-2"></p-divider>
+
+      <!-- Flags -->
+      <div class="col-span-2 text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Security Flags</div>
+      
+      <div class="col-span-2 grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg">
+        <div class="flex items-center gap-2">
+          <p-checkbox name="enabled" [(ngModel)]="formModel.enabled" [binary]="true" inputId="enabled"></p-checkbox>
+          <label for="enabled" class="cursor-pointer">Enabled</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox name="accountNotLocked" [(ngModel)]="formModel.accountNotLocked" [binary]="true" inputId="notLocked"></p-checkbox>
+          <label for="notLocked" class="cursor-pointer">Account Not Locked</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox name="accountNotExpired" [(ngModel)]="formModel.accountNotExpired" [binary]="true" inputId="notExpired"></p-checkbox>
+          <label for="notExpired" class="cursor-pointer">Account Not Expired</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-checkbox name="credentialNotExpired" [(ngModel)]="formModel.credentialNotExpired" [binary]="true" inputId="credNotExpired"></p-checkbox>
+          <label for="credNotExpired" class="cursor-pointer">Cred. Not Expired</label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-end gap-3 mt-8">
+      <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-text text-slate-500" (click)="onDialogHide()"></button>
+      <button pButton pRipple type="submit" label="Save" icon="pi pi-check" class="p-button-primary" [disabled]="!studentForm.valid"></button>
+    </div>
+  </form>
+</p-dialog>
+
+<!-- View Details Modal -->
+<p-dialog [(visible)]="showDetail" 
+          [header]="'Student Details'" 
+          [modal]="true" 
+          [style]="{width: '500px'}">
+  <div *ngIf="selected()" class="flex flex-col gap-4 py-4">
+    <div class="flex items-center gap-4 mb-4">
+      <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-2xl font-bold">
+        {{ selected()!.firstName.charAt(0) }}{{ selected()!.lastName.charAt(0) }}
+      </div>
+      <div>
+        <h2 class="text-xl font-bold">{{ selected()!.firstName }} {{ selected()!.lastName }}</h2>
+        <p class="text-slate-500">{{ selected()!.email }}</p>
+        <p-tag [severity]="selected()!.enabled ? 'success' : 'danger'" 
+               [value]="selected()!.enabled ? 'Enabled' : 'Disabled'" class="mt-1 inline-block"></p-tag>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-y-4 text-sm bg-slate-50 dark:bg-slate-800 p-4 rounded-lg">
+      <div class="text-slate-500">Username</div>
+      <div class="font-medium text-right">{{ selected()!.username }}</div>
+      
+      <div class="text-slate-500">DNI</div>
+      <div class="font-medium text-right">{{ selected()!.dni }}</div>
+
+      <div class="text-slate-500">Phone</div>
+      <div class="font-medium text-right">{{ selected()!.phone }}</div>
+
+      <div class="text-slate-500">Date of Birth</div>
+      <div class="font-medium text-right">{{ selected()!.dateOfBirth }}</div>
+      
+      <p-divider class="col-span-2 my-1"></p-divider>
+
+      <div class="text-slate-500">University</div>
+      <div class="font-medium text-right">{{ selected()!.university }}</div>
+
+      <div class="text-slate-500">Career</div>
+      <div class="font-medium text-right">{{ selected()!.career }}</div>
+      
+      <div class="text-slate-500">Degree Status</div>
+      <div class="font-medium text-right">{{ selected()!.degreeStatus }}</div>
+    </div>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <button pButton pRipple icon="pi pi-times" label="Close" class="p-button-text" (click)="showDetail.set(false)"></button>
+  </ng-template>
+</p-dialog>

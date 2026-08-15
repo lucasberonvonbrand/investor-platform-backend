@@ -1,0 +1,185 @@
+<p-toast></p-toast>
+
+<div class="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+  
+  <div class="flex items-center justify-between mb-2">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 dark:text-white">Admin Dashboard</h1>
+      <p class="text-slate-500 dark:text-slate-400 mt-1">Platform overview and statistics</p>
+    </div>
+    
+    <div *ngIf="loading()" class="flex items-center text-slate-500">
+      <i class="pi pi-spin pi-spinner mr-2"></i> Loading data...
+    </div>
+  </div>
+
+  <!-- ===== KPIs ===== -->
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4" *ngIf="!loading()">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+        <i class="pi pi-users text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalUsers }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Total Users</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center mb-3">
+        <i class="pi pi-user text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalStudents }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Students</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
+        <i class="pi pi-briefcase text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalInvestors }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Investors</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center mb-3">
+        <i class="pi pi-folder-open text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().fundedProjects }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Funded Projects</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-3">
+        <i class="pi pi-dollar text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalInvested | number:'1.0-0' }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Invested (USD)</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3">
+        <i class="pi pi-dollar text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalInvestedARS | number:'1.0-0' }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Invested (ARS)</div>
+      </div>
+    </div>
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
+      <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center justify-center mb-3">
+        <i class="pi pi-dollar text-xl"></i>
+      </div>
+      <div>
+        <div class="text-2xl font-bold text-slate-800 dark:text-white">{{ kpis().totalInvestedCNY | number:'1.0-0' }}</div>
+        <div class="text-sm text-slate-500 dark:text-slate-400">Invested (CNY)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Charts (Row 1) ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" *ngIf="!loading()">
+    <!-- Students by Degree Status -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Students by Degree Status</h3>
+      <div class="h-64 relative flex-grow">
+        <p-chart *ngIf="studentsByDegreeData()" type="doughnut" [data]="studentsByDegreeData()" [options]="chartOptions"></p-chart>
+      </div>
+    </div>
+
+    <!-- Projects by Status -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Projects by Status</h3>
+      <div class="h-64 relative flex-grow">
+        <p-chart *ngIf="projectsByStatusData()" type="doughnut" [data]="projectsByStatusData()" [options]="chartOptions"></p-chart>
+      </div>
+    </div>
+
+    <!-- Users by Role -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Users by Role</h3>
+      <div class="h-64 relative flex-grow">
+        <p-chart *ngIf="usersByRoleData()" type="bar" [data]="usersByRoleData()" [options]="chartOptions"></p-chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Charts (Row 2 - Timelines) ===== -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" *ngIf="!loading()">
+    <!-- Projects Timeline -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Projects Updated per Month</h3>
+      <div class="h-80 relative flex-grow">
+        <p-chart *ngIf="projectsTimelineData()" type="line" [data]="projectsTimelineData()" [options]="projectsLineOptions"></p-chart>
+      </div>
+    </div>
+
+    <!-- Investments Timeline -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Amount Invested per Month</h3>
+      <div class="h-80 relative flex-grow">
+        <p-chart *ngIf="investmentsTimelineData()" type="line" [data]="investmentsTimelineData()" [options]="projectsLineOptions"></p-chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Charts (Row 3) ===== -->
+  <div class="grid grid-cols-1 gap-6" *ngIf="!loading()">
+    <!-- Students by University -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Students by University</h3>
+      <div class="h-80 relative flex-grow">
+        <p-chart *ngIf="universitiesData()" type="bar" [data]="universitiesData()" [options]="chartOptions"></p-chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Summary -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8" *ngIf="!loading()">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Student Activity</h3>
+      <div class="space-y-4">
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+          <span class="text-slate-700 dark:text-slate-300 font-medium">Active</span>
+          <p-tag [value]="kpis().activeStudents.toString()" severity="success"></p-tag>
+        </div>
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+          <span class="text-slate-700 dark:text-slate-300 font-medium">Inactive</span>
+          <p-tag [value]="kpis().inactiveStudents.toString()" severity="warn"></p-tag>
+        </div>
+        <div class="flex justify-between items-center p-3 font-semibold text-slate-800 dark:text-white">
+          <span>Total</span>
+          <span>{{ kpis().totalStudents }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <h3 class="text-lg font-semibold text-slate-800 dark:text-white mb-4">Investor Activity</h3>
+      <div class="space-y-4">
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+          <span class="text-slate-700 dark:text-slate-300 font-medium">Active</span>
+          <p-tag [value]="kpis().activeInvestors.toString()" severity="success"></p-tag>
+        </div>
+        <div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg">
+          <span class="text-slate-700 dark:text-slate-300 font-medium">Inactive</span>
+          <p-tag [value]="kpis().inactiveInvestors.toString()" severity="warn"></p-tag>
+        </div>
+        <div class="flex justify-between items-center p-3 font-semibold text-slate-800 dark:text-white">
+          <span>Total</span>
+          <span>{{ kpis().totalInvestors }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

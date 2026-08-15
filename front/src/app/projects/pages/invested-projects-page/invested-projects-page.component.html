@@ -1,0 +1,116 @@
+<p-toast></p-toast>
+
+<!-- Toolbar -->
+<p-toolbar styleClass="mb-4 border-none bg-white dark:bg-gray-800 shadow-sm rounded-xl">
+  <div class="p-toolbar-group-left">
+    <span class="p-input-icon-left">
+      <i class="pi pi-search text-gray-400"></i>
+      <input pInputText type="text" placeholder="Search my investments..."
+             [ngModel]="q()" (ngModelChange)="q.set($event); applyFilters()" 
+             class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-gray-900 dark:text-white" />
+    </span>
+  </div>
+
+  <div class="p-toolbar-group-right flex items-center gap-2">
+    <p-button icon="pi pi-th-large" label="Cards"
+            [outlined]="viewMode() !== 'cards'"
+            (click)="viewMode.set('cards')"></p-button>
+    <p-button icon="pi pi-table" label="Table"
+            [outlined]="viewMode() !== 'table'"
+            (click)="viewMode.set('table')"></p-button>
+
+    <p-button label="Refresh" icon="pi pi-refresh" severity="secondary" (click)="reload()" [disabled]="loading()"></p-button>
+  </div>
+</p-toolbar>
+
+<!-- KPIs -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+  <p-card styleClass="shadow-sm border-none bg-white dark:bg-gray-800">
+    <div class="flex items-center gap-3">
+      <span class="pi pi-briefcase text-2xl text-indigo-500"></span>
+      <div><div class="text-xs text-gray-500 dark:text-gray-400">Total Invested</div><div class="text-xl font-bold text-gray-900 dark:text-white">{{ kpis().total }}</div></div>
+    </div>
+  </p-card>
+  <p-card styleClass="shadow-sm border-none bg-white dark:bg-gray-800">
+    <div class="flex items-center gap-3">
+      <span class="pi pi-bolt text-2xl text-yellow-500"></span>
+      <div><div class="text-xs text-gray-500 dark:text-gray-400">Active</div><div class="text-xl font-bold text-gray-900 dark:text-white">{{ kpis().active }}</div></div>
+    </div>
+  </p-card>
+  <p-card styleClass="shadow-sm border-none bg-white dark:bg-gray-800">
+    <div class="flex items-center gap-3">
+      <span class="pi pi-clock text-2xl text-green-500"></span>
+      <div><div class="text-xs text-gray-500 dark:text-gray-400">Recent (30d)</div><div class="text-xl font-bold text-gray-900 dark:text-white">{{ kpis().recent }}</div></div>
+    </div>
+  </p-card>
+  <p-card styleClass="shadow-sm border-none bg-white dark:bg-gray-800">
+    <div class="flex items-center gap-3">
+      <span class="pi pi-dollar text-2xl text-blue-500"></span>
+      <div><div class="text-xs text-gray-500 dark:text-gray-400">Generating Revenue</div><div class="text-xl font-bold text-gray-900 dark:text-white">{{ kpis().funded }}</div></div>
+    </div>
+  </p-card>
+</div>
+
+<!-- Main View -->
+<p-card styleClass="shadow-sm border-none bg-white dark:bg-gray-800" header="My Invested Projects">
+  
+  <div *ngIf="loading()" class="flex justify-center p-8">
+    <i class="pi pi-spin pi-spinner text-3xl text-indigo-500"></i>
+  </div>
+
+  <div *ngIf="!loading() && filtered().length === 0" class="text-center p-8 text-gray-500 dark:text-gray-400">
+    <i class="pi pi-folder-open text-4xl mb-3 opacity-50"></i>
+    <p>You haven't invested in any projects yet.</p>
+  </div>
+
+  <!-- Cards -->
+  <div *ngIf="!loading() && viewMode() === 'cards'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div *ngFor="let row of filtered()" class="border border-gray-200 dark:border-gray-700 rounded-xl p-5 h-full flex flex-col bg-gray-50 dark:bg-gray-900 hover:shadow-md transition-shadow">
+      <div class="font-semibold text-lg leading-tight text-gray-900 dark:text-white">{{ row.title }}</div>
+      <div class="text-gray-600 dark:text-gray-400 text-sm mt-2 line-clamp-3">{{ row.summary || '—' }}</div>
+      
+      <div class="mt-4 flex gap-2 flex-wrap">
+        <p-tag [value]="getCategoryLabel(row.category)" [ngStyle]="tagStyle(row.category || '—', 0)"></p-tag>
+        <div class="flex items-center gap-1 text-sm">
+          <span class="font-semibold text-gray-700 dark:text-gray-300">Status:</span>
+          <p-tag [value]="getProjectStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        </div>
+      </div>
+      
+      <div class="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+        <p-button type="button" label="View Details" icon="pi pi-arrow-right" iconPos="right"
+                styleClass="w-full" severity="secondary" [outlined]="true" (click)="openDetail(row)"></p-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <p-table *ngIf="!loading() && viewMode() === 'table'"
+    [value]="filtered()" dataKey="id"
+    [rowHover]="true" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[5,10,25,50]"
+    styleClass="p-datatable-sm"
+    responsiveLayout="scroll">
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width:120px">Project #</th>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th style="width:160px; text-align:center">Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td class="text-center font-semibold text-gray-900 dark:text-white">#{{ row.id }}</td>
+        <td class="text-gray-900 dark:text-white">{{ row.title }}</td>
+        <td><p-tag [value]="getCategoryLabel(row.category)" [ngStyle]="tagStyle(row.category, 0)"></p-tag></td>
+        <td>
+          <p-tag [value]="getProjectStatusLabel(row.status)" [ngStyle]="tagStyle(row.status || '—', 1)"></p-tag>
+        </td>
+        <td class="text-center whitespace-nowrap">
+          <p-button type="button" pTooltip="View Details" icon="pi pi-eye" [text]="true" [rounded]="true" size="small" (click)="openDetail(row)"></p-button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>

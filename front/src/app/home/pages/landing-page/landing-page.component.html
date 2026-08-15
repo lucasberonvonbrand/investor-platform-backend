@@ -1,0 +1,302 @@
+<div class="min-h-screen bg-[#030712] text-white flex flex-col font-sans">
+  
+  <!-- 1. HEADER NAVBAR -->
+  <header class="border-b border-[#1e293b] bg-[#090f1d]/95 backdrop-blur-md px-6 lg:px-12 py-4 flex items-center justify-between sticky top-0 z-50">
+    <a routerLink="/landing" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+      <img src="assets/images/ProyplusTransparente.png" alt="Proy+" class="h-12 sm:h-14 w-auto invert object-contain" />
+    </a>
+
+    <!-- Action Buttons -->
+    <div class="flex items-center gap-3">
+      <a routerLink="/auth/login" class="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white transition-colors">
+        Iniciar Sesión
+      </a>
+      <a routerLink="/auth/register" class="px-5 py-2.5 rounded-xl text-sm font-bold bg-[#7c3aed] hover:bg-[#6d28d9] text-white shadow-lg shadow-purple-600/25 transition-all">
+        Registrarse
+      </a>
+    </div>
+  </header>
+
+  <!-- 2. SOBRE NOSOTROS, STATS & PROPUESTA DE VALOR (ARRIBA DE TODO - PHOTO 5) -->
+  <section class="py-16 md:py-20 px-6 lg:px-12 bg-[#090f1d] border-b border-[#1e293b]">
+    <div class="max-w-6xl mx-auto space-y-12">
+      
+      <!-- Sobre Nosotros Header Block -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-7 space-y-4 text-left">
+          <h1 class="text-3xl sm:text-5xl font-black text-[#a78bfa] tracking-tight">Sobre nosotros</h1>
+          <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+            Proy+ nació de la visión de crear un puente entre el talento universitario emergente y las oportunidades de financiación reales. Somos un equipo apasionado por la innovación y creemos que las grandes ideas no deberían quedarse en el aula. Nuestra plataforma utiliza tecnología de punta para facilitar conexiones significativas, permitiendo que los estudiantes den vida a sus proyectos y que los inversores descubran el próximo gran avance.
+          </p>
+        </div>
+
+        <div class="lg:col-span-5 flex justify-center">
+          <div class="bg-[#0d1527] border border-[#1e293b] p-8 sm:p-12 rounded-3xl shadow-2xl flex items-center justify-center w-full max-w-sm">
+            <span class="text-4xl sm:text-5xl font-black tracking-widest text-white">PROY<span class="text-[#7c3aed]">+</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Counters Bar -->
+      <div class="grid grid-cols-3 gap-6 py-6 border-y border-[#1e293b] text-center bg-[#0d1527]/50 rounded-2xl">
+        <div>
+          <p class="text-3xl sm:text-4xl font-black text-[#a78bfa] tracking-tight">36+</p>
+          <p class="text-xs sm:text-sm text-slate-400 font-semibold mt-1">Proyectos Publicados</p>
+        </div>
+        <div>
+          <p class="text-3xl sm:text-4xl font-black text-[#a78bfa] tracking-tight">9+</p>
+          <p class="text-xs sm:text-sm text-slate-400 font-semibold mt-1">Estudiantes Registrados</p>
+        </div>
+        <div>
+          <p class="text-3xl sm:text-4xl font-black text-[#a78bfa] tracking-tight">3+</p>
+          <p class="text-xs sm:text-sm text-slate-400 font-semibold mt-1">Inversores Activos</p>
+        </div>
+      </div>
+
+      <!-- Nuestra Propuesta de Valor -->
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <h3 class="text-2xl sm:text-3xl font-black text-white tracking-tight">Nuestra Propuesta de Valor</h3>
+        <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+          Proyplus es la plataforma de conexión inteligente que revoluciona cómo las ideas se convierten en empresas. No solo mostramos proyectos; usamos Inteligencia Artificial para crear oportunidades reales.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3. ¿CÓMO FUNCIONA? SECTION (PHOTO 1) -->
+  <section class="py-16 md:py-24 px-6 lg:px-12 bg-[#030712] border-b border-[#1e293b]">
+    <div class="max-w-6xl mx-auto space-y-16 text-center">
+      
+      <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">¿Cómo Funciona?</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        
+        <!-- Step 1 -->
+        <div class="flex flex-col items-center text-center space-y-4 p-8 rounded-3xl bg-[#0d1527] border border-[#1e293b] hover:border-[#7c3aed] transition-all group">
+          <div class="w-16 h-16 rounded-2xl bg-[#7c3aed]/15 border border-[#7c3aed]/30 flex items-center justify-center text-[#a78bfa] group-hover:scale-110 transition-transform">
+            <i class="pi pi-cloud-upload text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">1. Publica tu Proyecto</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xs">
+            Los estudiantes describen su idea, establecen una meta de financiación y suben su proyecto a la plataforma.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="flex flex-col items-center text-center space-y-4 p-8 rounded-3xl bg-[#0d1527] border border-[#1e293b] hover:border-[#7c3aed] transition-all group">
+          <div class="w-16 h-16 rounded-2xl bg-[#7c3aed]/15 border border-[#7c3aed]/30 flex items-center justify-center text-[#a78bfa] group-hover:scale-110 transition-transform">
+            <i class="pi pi-eye text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">2. Descubre y Analiza</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xs">
+            Los Inversores exploran los proyectos, utilizan el análisis de riesgo y contactan a los equipos para negociar.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="flex flex-col items-center text-center space-y-4 p-8 rounded-3xl bg-[#0d1527] border border-[#1e293b] hover:border-[#7c3aed] transition-all group">
+          <div class="w-16 h-16 rounded-2xl bg-[#7c3aed]/15 border border-[#7c3aed]/30 flex items-center justify-center text-[#a78bfa] group-hover:scale-110 transition-transform">
+            <i class="pi pi-check-circle text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-extrabold text-white">3. Financia el Futuro</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xs">
+            Se firman los contratos y se transfiere la inversión, convirtiendo las ideas innovadoras en realidad.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. IMPULSANDO CONEXIONES REALES - FIXED CAROUSEL SECTION (PHOTO 2) -->
+  <section class="py-16 md:py-24 px-6 lg:px-12 bg-[#090f1d] border-b border-[#1e293b]">
+    <div class="max-w-5xl mx-auto space-y-10 text-center">
+      
+      <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Impulsando Conexiones Reales</h2>
+
+      <!-- Fixed Carousel Container -->
+      <div class="relative max-w-4xl mx-auto">
+        
+        <!-- Image Box -->
+        <div class="relative h-[320px] sm:h-[420px] md:h-[480px] rounded-3xl overflow-hidden border border-[#1e293b] shadow-2xl bg-[#0d1527]">
+          <img [src]="carouselImages[carouselIndex()].url" 
+               [alt]="carouselImages[carouselIndex()].caption" 
+               class="w-full h-full object-cover transition-opacity duration-500" />
+          <div class="absolute inset-0 bg-gradient-to-t from-[#090f1d]/90 via-transparent to-transparent"></div>
+          
+          <!-- Caption Badge inside image bottom -->
+          <div class="absolute bottom-6 left-6 right-6 text-left z-10">
+            <span class="text-xs sm:text-sm text-white font-semibold bg-[#0d1527]/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-[#1e293b] inline-block shadow-lg">
+              {{ carouselImages[carouselIndex()].caption }}
+            </span>
+          </div>
+
+          <!-- Left Arrow Button (Div to prevent DaisyUI button expansion) -->
+          <div (click)="prevCarousel()" 
+               style="width: 44px; height: 44px; min-width: 44px; min-height: 44px;"
+               class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-[#090f1d]/90 hover:bg-[#7c3aed] border border-[#1e293b] text-white flex items-center justify-center transition-all shadow-xl z-20 cursor-pointer">
+            <i class="pi pi-chevron-left text-sm"></i>
+          </div>
+
+          <!-- Right Arrow Button (Div to prevent DaisyUI button expansion) -->
+          <div (click)="nextCarousel()" 
+               style="width: 44px; height: 44px; min-width: 44px; min-height: 44px;"
+               class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-[#090f1d]/90 hover:bg-[#7c3aed] border border-[#1e293b] text-white flex items-center justify-center transition-all shadow-xl z-20 cursor-pointer">
+            <i class="pi pi-chevron-right text-sm"></i>
+          </div>
+        </div>
+
+        <!-- Dot Indicators Below Image -->
+        <div class="flex justify-center items-center gap-2 mt-6">
+          <div *ngFor="let img of carouselImages; let i = index" 
+               (click)="setCarousel(i)" 
+               class="h-3 rounded-full transition-all duration-300 cursor-pointer"
+               [style.width]="carouselIndex() === i ? '32px' : '12px'"
+               [class.bg-[#7c3aed]]="carouselIndex() === i"
+               [class.bg-[#1e293b]]="carouselIndex() !== i"
+               [class.hover:bg-slate-500]="carouselIndex() !== i">
+          </div>
+        </div>
+
+      </div>
+
+      <p class="text-slate-400 text-sm max-w-2xl mx-auto leading-relaxed pt-2">
+        Más allá de la tecnología, Proy+ es un ecosistema de colaboración donde las ideas se encuentran con la oportunidad, y las visiones se transforman en proyectos tangibles.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- 5. TRUST & CONTRACTS SECTION (PHOTO 3 - TOP) -->
+  <section class="py-16 md:py-24 px-6 lg:px-12 bg-[#030712] border-b border-[#1e293b]">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      
+      <!-- Left Column: Trust text and features -->
+      <div class="lg:col-span-7 space-y-6 text-left">
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed bg-[#0d1527] p-6 rounded-2xl border border-[#1e293b]">
+          En Proy+, la confianza es nuestra prioridad. Por eso, hemos diseñado un sistema de contratos robusto y transparente que protege tanto a estudiantes como a inversores en cada etapa del proceso.
+        </p>
+
+        <div class="space-y-4 pt-2">
+          <!-- Bullet 1 -->
+          <div class="flex items-start gap-4 p-5 rounded-2xl bg-[#0d1527]/60 border border-[#1e293b]">
+            <div style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;" class="rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="pi pi-check text-xs font-bold"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-white text-base">Negociación Transparente</h4>
+              <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+                Todos los términos se discuten y aprueban por ambas partes en un borrador antes de la firma, asegurando un acuerdo claro y sin sorpresas.
+              </p>
+            </div>
+          </div>
+
+          <!-- Bullet 2 -->
+          <div class="flex items-start gap-4 p-5 rounded-2xl bg-[#0d1527]/60 border border-[#1e293b]">
+            <div style="width: 32px; height: 32px; min-width: 32px; min-height: 32px;" class="rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <i class="pi pi-check text-xs font-bold"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-white text-base">Flujos de Pago Guiados</h4>
+              <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+                La plataforma te guía paso a paso en los procesos de inversión y devolución, mostrando siempre el estado actual y las acciones requeridas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Contract Security Illustration Card -->
+      <div class="lg:col-span-5 flex justify-center">
+        <div class="bg-[#0d1527] border border-[#1e293b] p-8 sm:p-10 rounded-3xl shadow-2xl flex flex-col items-center text-center space-y-4 max-w-sm w-full relative overflow-hidden">
+          <div class="w-20 h-20 rounded-3xl bg-[#7c3aed]/20 border border-[#7c3aed]/30 flex items-center justify-center text-[#a78bfa]">
+            <i class="pi pi-lock text-4xl"></i>
+          </div>
+          <div class="space-y-1">
+            <h4 class="font-black text-white text-xl">Contratos Digitales</h4>
+            <p class="text-xs text-[#a78bfa] font-bold uppercase tracking-wider">Marco Legal Seguro</p>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Documentación generada automáticamente y vinculante para asegurar tu capital e iniciativas.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 6. VALUE PROPOSITION CARDS - 3 CARDS (PHOTO 4) -->
+  <section class="py-16 md:py-24 px-6 lg:px-12 bg-[#090f1d] border-b border-[#1e293b]">
+    <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+      
+      <!-- Card 1: Para Estudiantes -->
+      <div class="bg-[#0d1527] border border-[#1e293b] p-8 rounded-3xl shadow-xl space-y-4 hover:border-[#7c3aed]/80 transition-all flex flex-col justify-between group">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa] flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="pi pi-tag text-xl"></i>
+          </div>
+          <h3 class="text-xl font-extrabold text-white">Para Estudiantes</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            Maximizamos la visibilidad de tu proyecto. Nuestra IA analiza, clasifica y etiqueta tu idea para que llegue directamente a los Inversores correctos interesados en tu sector.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 2: Para Inversores -->
+      <div class="bg-[#0d1527] border border-[#1e293b] p-8 rounded-3xl shadow-xl space-y-4 hover:border-[#7c3aed]/80 transition-all flex flex-col justify-between group">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="pi pi-chart-bar text-xl"></i>
+          </div>
+          <h3 class="text-xl font-extrabold text-white">Para Inversores</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            Minimizamos el riesgo y maximizamos la oportunidad. Nuestra IA te proporciona un análisis de riesgo objetivo (Bajo, Medio, Alto) permitiéndote tomar decisiones de inversión informadas y seguras.
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 3: Soporte 24/7 con Chatbot IA -->
+      <div class="bg-[#0d1527] border border-[#1e293b] p-8 rounded-3xl shadow-xl space-y-4 hover:border-[#7c3aed]/80 transition-all flex flex-col justify-between group">
+        <div class="space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <i class="pi pi-comments text-xl"></i>
+          </div>
+          <h3 class="text-xl font-extrabold text-white">Soporte 24/7 con Chatbot IA</h3>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            ¿Tienes dudas? Nuestro asistente virtual te guía en cada paso, desde cómo subir tu proyecto hasta cómo realizar tu primera inversión, de forma instantánea.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 7. ¿LISTO PARA EMPEZAR? SECTION (ABAJO DE TODO - PHOTO 3 BOTTOM) -->
+  <section class="py-16 md:py-24 px-6 lg:px-12 bg-[#030712] border-b border-[#1e293b]">
+    <div class="max-w-4xl mx-auto space-y-6 text-center">
+      
+      <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tight">¿Listo para empezar?</h2>
+      
+      <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
+        Nuestra visión es ser el ecosistema de innovación líder en Latinoamérica, donde cada proyecto universitario con potencial es descubierto, financiado y escalado para generar un impacto tangible.
+      </p>
+
+      <div class="pt-4">
+        <a routerLink="/auth/register" 
+           class="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-extrabold text-white bg-[#7c3aed] hover:bg-[#6d28d9] shadow-xl shadow-purple-900/40 text-sm sm:text-base transition-all transform hover:-translate-y-0.5">
+          <span>Crear mi cuenta ahora</span>
+          <i class="pi pi-arrow-right text-xs"></i>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 8. FOOTER -->
+  <footer class="bg-[#090f1d] py-8 text-center border-t border-[#1e293b] text-xs text-slate-500">
+    <p>© Proy+. Todos los derechos reservados.</p>
+  </footer>
+
+</div>

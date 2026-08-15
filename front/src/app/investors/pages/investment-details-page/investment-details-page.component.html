@@ -1,0 +1,180 @@
+<p-toast></p-toast>
+
+<div class="max-w-6xl mx-auto py-8 px-4 space-y-8 min-h-screen text-white">
+  
+  <!-- Header Bar -->
+  <div class="flex items-center gap-4 border-b border-[#1e293b] pb-6">
+    <button (click)="goBack()" class="btn bg-[#0d1527] hover:bg-[#121c33] border border-[#1e293b] text-white p-3 rounded-xl shadow-md transition-colors" pTooltip="Volver a Mis Inversiones" tooltipPosition="bottom">
+      <i class="pi pi-arrow-left text-lg"></i>
+    </button>
+    <div>
+      <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Detalles de la Inversión</h1>
+      <p class="text-slate-400 text-sm mt-1">Revisión de contrato, estado de fondos y reporte de ganancias proyectadas.</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="py-20 flex flex-col items-center justify-center space-y-3">
+    <i class="pi pi-spin pi-spinner text-4xl text-[#a78bfa]"></i>
+    <p class="text-slate-400 text-sm font-semibold">Cargando detalles de la inversión...</p>
+  </div>
+
+  <ng-container *ngIf="!loading() && investment() as inv">
+    <div class="space-y-6">
+      
+      <!-- SECCIÓN 1: Ficha Principal del Proyecto y Estado de Inversión -->
+      <div class="bg-[#0d1527] rounded-2xl shadow-xl border border-[#1e293b] p-6 sm:p-8 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between border-b border-[#1e293b] pb-5 gap-4">
+          <div>
+            <span class="text-xs font-bold text-[#a78bfa] uppercase tracking-wider block mb-1" *ngIf="inv.project.university">
+              <i class="pi pi-building text-[10px] mr-1"></i>{{ inv.project.university }}
+            </span>
+            <h2 class="text-2xl font-black text-white leading-tight">{{ inv.project.title }}</h2>
+            <div class="flex items-center gap-2 mt-2">
+              <span class="px-2.5 py-1 bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa] rounded-md text-xs font-bold">{{ inv.project.category }}</span>
+            </div>
+          </div>
+          <a [routerLink]="['/projects/details', inv.project.id]" class="btn bg-[#7c3aed] hover:bg-[#6d28d9] text-white border-none rounded-xl text-xs font-bold px-4 py-2.5 flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 self-start">
+            <span>Ver Proyecto</span> <i class="pi pi-external-link text-xs"></i>
+          </a>
+        </div>
+
+        <p class="text-slate-300 text-sm leading-relaxed bg-[#090f1d] p-4 rounded-xl border border-[#1e293b]">
+          {{ inv.project.summary || 'Sin descripción provista.' }}
+        </p>
+        
+        <!-- Ficha de Datos Clave de Inversión -->
+        <div class="bg-[#121c33] rounded-xl p-5 border border-[#1e293b] grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tu Inversión</span>
+            <span class="text-xl font-black text-emerald-400">{{ inv.amount | currency:inv.currency:'symbol':'1.0-0' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Estado de Inversión</span>
+            <p-tag [value]="getInvestmentStatusLabel(inv.status)" [severity]="getInvestmentStatusSeverity(inv.status)"></p-tag>
+          </div>
+          <div>
+            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha Contrato</span>
+            <span class="text-sm font-extrabold text-white">{{ inv.createdAt | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div>
+            <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Meta del Proyecto</span>
+            <span class="text-sm font-extrabold text-white">{{ inv.project.fundingGoal | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <!-- Progreso Total de Financiación -->
+        <div class="space-y-2 pt-1" *ngIf="inv.project.fundingGoal">
+          <div class="flex justify-between items-center text-xs font-semibold">
+            <span class="text-slate-400">Progreso Total de Financiación del Proyecto</span>
+            <span class="text-[#a78bfa] font-extrabold text-sm">{{ fundingProgress() | number:'1.0-1' }}%</span>
+          </div>
+          <div class="w-full bg-[#121c33] rounded-full h-3 overflow-hidden border border-[#1e293b]">
+            <div class="bg-gradient-to-r from-[#7c3aed] to-[#3b82f6] h-full rounded-full transition-all duration-500" [style.width.%]="fundingProgress()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: Proyección de Ganancias -->
+      <div class="bg-[#0d1527] rounded-2xl shadow-xl border border-[#1e293b] p-6 sm:p-8 space-y-6">
+        <h2 class="text-xl font-extrabold text-white flex items-center gap-2 m-0 border-l-4 border-[#7c3aed] pl-3">
+          <i class="pi pi-chart-bar text-[#a78bfa]"></i> Proyección de Ganancias
+        </h2>
+
+        <div *ngIf="projectionChartData() as chartData; else noProjections" class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center pt-2">
+          <!-- Gráfico (2 columnas en escritorio) -->
+          <div class="lg:col-span-2 bg-[#121c33] p-5 rounded-2xl border border-[#1e293b]">
+            <p-chart type="line" [data]="chartData" [options]="projectionChartOptions()"></p-chart>
+          </div>
+          <!-- Fichas de Resumen (1 columna en escritorio) -->
+          <div class="lg:col-span-1 flex flex-col gap-3.5">
+            <div *ngFor="let item of chartData.projectionsList" class="flex justify-between items-center p-4 bg-[#121c33] rounded-xl border border-[#1e293b] shadow-sm">
+              <div>
+                <span class="font-bold text-white text-xs block">{{ item.label }}</span>
+                <span class="text-[#a78bfa] text-xs font-extrabold">Retorno +{{ item.rate | number:'1.0-0' }}%</span>
+              </div>
+              <span class="font-black text-emerald-400 text-base">+{{ item.profit | currency:inv.currency:'symbol':'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noProjections>
+          <div class="text-center py-8 bg-[#090f1d] rounded-xl border border-[#1e293b] space-y-2">
+            <div class="w-12 h-12 bg-[#0d1527] border border-[#1e293b] rounded-2xl flex items-center justify-center mx-auto text-slate-400 text-xl">
+              <i class="pi pi-info-circle"></i>
+            </div>
+            <p class="text-white font-bold text-sm">Sin proyecciones de ganancias disponibles</p>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">Las proyecciones se basan en los términos acordados en el contrato del proyecto.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- SECCIÓN 3: Monitor de Ganancias y Cronograma de Liquidaciones -->
+      <div class="bg-[#0d1527] rounded-2xl shadow-xl border border-[#1e293b] p-6 sm:p-8 space-y-6">
+        <h2 class="text-xl font-extrabold text-white flex items-center gap-2 m-0 border-l-4 border-emerald-500 pl-3">
+          <i class="pi pi-chart-line text-emerald-400"></i> Monitor de Ganancias y Cronograma
+        </h2>
+
+        <div *ngIf="inv.earnings && inv.earnings.length > 0; else scheduledEarningsBlock">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div *ngFor="let earning of inv.earnings" class="p-5 bg-[#121c33] border border-[#1e293b] rounded-2xl relative overflow-hidden space-y-3">
+              <div class="absolute top-0 left-0 w-1.5 h-full" 
+                   [ngClass]="{'bg-emerald-500': earning.status === 'RECEIVED', 'bg-amber-500': earning.status === 'PENDING_CONFIRMATION', 'bg-blue-500': earning.status === 'IN_PROGRESS', 'bg-red-500': earning.status === 'NOT_RECEIVED'}">
+              </div>
+              <div class="flex justify-between items-center pl-2">
+                <span class="text-xl font-black text-emerald-400">{{ earning.amount | currency:earning.currency:'symbol':'1.0-2' }}</span>
+                <p-tag [value]="getEarningStatusLabel(earning.status)" [severity]="getEarningStatusSeverity(earning.status)"></p-tag>
+              </div>
+              <div class="text-xs text-slate-400 pl-2 flex items-center gap-1 font-medium border-t border-[#1e293b] pt-2">
+                <i class="pi pi-calendar text-[10px]"></i> {{ $any(earning).paymentDate | date:'dd/MM/yyyy' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #scheduledEarningsBlock>
+          <div class="space-y-4">
+            <div class="p-3.5 bg-[#7c3aed]/10 border border-[#7c3aed]/30 rounded-xl text-xs text-slate-300 flex items-center gap-2.5">
+              <i class="pi pi-clock text-base text-[#a78bfa] shrink-0"></i>
+              <span class="font-medium">Cronograma de liquidaciones estimado según contrato de inversión:</span>
+            </div>
+            
+            <!-- Grid Horizontal de 3 Columnas (Equilibrado) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div *ngFor="let s of scheduledEarnings()" class="p-5 bg-[#121c33] border border-[#1e293b] rounded-2xl space-y-3 relative overflow-hidden shadow-md hover:border-[#7c3aed]/50 transition-colors">
+                <div class="absolute top-0 left-0 w-1.5 h-full bg-[#7c3aed]"></div>
+                
+                <div class="flex items-center justify-between pl-2">
+                  <span class="text-xs font-bold text-slate-300">Año {{ s.year }} <span class="text-[#a78bfa] font-extrabold ml-1">(+{{ s.rate }}%)</span></span>
+                  <span class="px-2.5 py-1 bg-[#7c3aed]/20 text-[#a78bfa] border border-[#7c3aed]/30 rounded-lg text-xs font-bold">Programado</span>
+                </div>
+
+                <div class="pt-1 pl-2 space-y-1">
+                  <div class="text-2xl font-black text-emerald-400">+{{ s.amount | currency:s.currency:'symbol':'1.0-0' }}</div>
+                  <div class="text-xs text-slate-400 font-medium flex items-center gap-1.5 pt-1">
+                    <i class="pi pi-calendar text-xs text-slate-400"></i>
+                    <span>Fecha estimada: <strong class="text-slate-200">{{ s.date | date:'dd/MM/yyyy' }}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!loading() && !investment()">
+    <div class="text-center py-20 bg-[#0d1527] rounded-2xl shadow-xl border border-[#1e293b] space-y-4">
+      <div class="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mx-auto text-red-400 text-2xl">
+        <i class="pi pi-exclamation-triangle"></i>
+      </div>
+      <h3 class="text-xl font-black text-white">Inversión No Encontrada</h3>
+      <p class="text-slate-400 text-sm max-w-md mx-auto">La inversión solicitada no existe o no dispones de permisos de acceso.</p>
+      <button (click)="goBack()" class="btn border-none bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-bold rounded-xl px-6 py-2.5 text-xs">
+        Volver a Mis Inversiones
+      </button>
+    </div>
+  </ng-container>
+</div>

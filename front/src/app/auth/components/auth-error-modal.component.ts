@@ -1,0 +1,90 @@
+import { CommonModule } from "@angular/common";
+import {
+  Component, HostListener, input, output, ChangeDetectionStrategy, viewChild, ElementRef, effect
+} from "@angular/core";
+
+@Component({
+  standalone: true,
+  selector: "app-auth-error-modal",
+  imports: [CommonModule],
+  template: `
+    <div *ngIf="isOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <!-- Backdrop -->
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+           (click)="close.emit()" aria-hidden="true"></div>
+
+      <!-- Dialog -->
+      <div
+        class="relative w-full max-w-md rounded-2xl bg-neutral-900 text-white shadow-2xl ring-1 ring-white/10"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-labelledby]="titleId"
+        [attr.aria-describedby]="descId"
+      >
+        <div class="p-6">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5">
+              <svg class="h-6 w-6 text-red-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M11 7h2v6h-2V7zm0 8h2v2h-2v-2z"/>
+                <path fill-rule="evenodd" d="M12 2a10 10 0 100 20 10 10 0 000-20zM0 12a12 12 0 1124 0A12 12 0 010 12z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+
+            <div class="flex-1">
+              <h3 class="text-lg font-semibold" [id]="titleId">{{ title() }}</h3>
+              <p class="mt-2 text-sm text-red-200 whitespace-pre-line" [id]="descId">
+                {{ message() }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="rounded-md p-1 text-white/70 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+              (click)="close.emit()"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="mt-6 flex justify-end">
+            <button
+              #acceptBtn
+              type="button"
+              class="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-neutral-900 hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white"
+              (click)="close.emit()"
+            >
+              Accept
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AuthErrorModalComponent {
+  isOpen = input(false);
+  title = input("Could not sign in");
+  message = input("An unexpected error occurred.");
+  close = output<void>();
+
+  acceptBtn = viewChild<ElementRef<HTMLButtonElement>>("acceptBtn");
+
+  private uid = Math.random().toString(36).slice(2, 9);
+  titleId = `auth-error-title-${this.uid}`;
+  descId  = `auth-error-desc-${this.uid}`;
+
+  constructor() {
+    effect(() => {
+      if (this.isOpen()) {
+        setTimeout(() => this.acceptBtn()?.nativeElement?.focus(), 0);
+      }
+    });
+  }
+
+  @HostListener("document:keydown.escape")
+  onEsc() {
+    if (this.isOpen()) this.close.emit();
+  }
+}

@@ -81,11 +81,13 @@ public class UserController {
         return ResponseEntity.ok(userMapper.userToResponseUserDTO(updatedUser));
     }
 
+    @PreAuthorize("permitAll()")
     @GetMapping("/check-username/{username}")
     public ResponseEntity<Boolean> checkUsernameExists(@PathVariable String username) {
         return ResponseEntity.ok(userRepository.findUserEntityByUsername(username).isPresent());
     }
 
+    @PreAuthorize("permitAll()")
     @GetMapping("/check-email/{email}")
     public ResponseEntity<Boolean> checkEmailExists(@PathVariable String email) {
         return ResponseEntity.ok(userRepository.findByEmail(email).isPresent());

@@ -39,4 +39,6 @@ public class RequestProjectDTO {
 
     private Set<Long> studentIds;
 
+    private String projectTagName;
+
 }

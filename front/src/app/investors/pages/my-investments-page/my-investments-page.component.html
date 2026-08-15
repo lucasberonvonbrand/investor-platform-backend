@@ -1,0 +1,143 @@
+<p-toast></p-toast>
+<div class="px-4 py-6 md:px-8 max-w-7xl mx-auto space-y-8 min-h-screen text-white">
+  
+  <!-- Header Banner -->
+  <div class="relative rounded-3xl bg-gradient-to-r from-[#0d1527] via-[#121c33] to-[#0d1527] border border-[#1e293b] p-6 sm:p-8 shadow-2xl overflow-hidden space-y-6">
+    <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#7c3aed]/15 border border-[#7c3aed]/30 text-xs font-bold text-[#a78bfa] mb-2">
+          <i class="pi pi-briefcase"></i> Portafolio del Inversor
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight">Mis Inversiones</h1>
+        <p class="text-slate-300 text-sm mt-1">Gestión y seguimiento en tiempo real de tu portafolio de proyectos académicos.</p>
+      </div>
+      
+      <!-- Search Input (Without view mode toggle buttons) -->
+      <div class="relative w-full md:w-80">
+        <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input type="text" placeholder="Buscar por proyecto o categoría..."
+               [ngModel]="q()" (ngModelChange)="q.set($event)"
+               class="w-full bg-[#090f1d] border border-[#1e293b] text-white text-sm rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/40 transition-all placeholder-slate-500">
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs Grid (Meaningful Investor Metrics) -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    
+    <!-- Capital Invertido -->
+    <div class="bg-[#0d1527] border border-[#1e293b] p-5 rounded-2xl shadow-md flex flex-col items-center text-center space-y-2 hover:border-emerald-500/50 transition-all">
+      <div class="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 rounded-2xl flex items-center justify-center">
+        <i class="pi pi-dollar text-xl"></i>
+      </div>
+      <span class="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">{{ kpis().totalAmount | currency:'USD':'symbol':'1.0-0' }}</span>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Capital Invertido</span>
+    </div>
+    
+    <!-- Proyectos Invertidos -->
+    <div class="bg-[#0d1527] border border-[#1e293b] p-5 rounded-2xl shadow-md flex flex-col items-center text-center space-y-2 hover:border-[#7c3aed]/50 transition-all">
+      <div class="w-12 h-12 bg-[#7c3aed]/20 border border-[#7c3aed]/30 text-[#a78bfa] rounded-2xl flex items-center justify-center">
+        <i class="pi pi-briefcase text-xl"></i>
+      </div>
+      <span class="text-2xl sm:text-3xl font-black text-white tracking-tight">{{ kpis().totalCount }}</span>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Proyectos Financados</span>
+    </div>
+
+    <!-- Inversiones Activas -->
+    <div class="bg-[#0d1527] border border-[#1e293b] p-5 rounded-2xl shadow-md flex flex-col items-center text-center space-y-2 hover:border-blue-500/50 transition-all">
+      <div class="w-12 h-12 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-2xl flex items-center justify-center">
+        <i class="pi pi-check-circle text-xl"></i>
+      </div>
+      <span class="text-2xl sm:text-3xl font-black text-white tracking-tight">{{ kpis().activeCount }}</span>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Inversiones Activas</span>
+    </div>
+
+    <!-- Pendientes -->
+    <div class="bg-[#0d1527] border border-[#1e293b] p-5 rounded-2xl shadow-md flex flex-col items-center text-center space-y-2 hover:border-amber-500/50 transition-all">
+      <div class="w-12 h-12 bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center">
+        <i class="pi pi-clock text-xl"></i>
+      </div>
+      <span class="text-2xl sm:text-3xl font-black text-white tracking-tight">{{ kpis().pendingCount }}</span>
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Pendientes de Firma</span>
+    </div>
+
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading()" class="py-20 flex flex-col items-center justify-center space-y-3">
+    <i class="pi pi-spin pi-spinner text-3xl text-[#a78bfa]"></i>
+    <p class="text-slate-400 text-sm font-semibold">Cargando tus inversiones...</p>
+  </div>
+
+  <!-- Content (Cards Grid Only) -->
+  <ng-container *ngIf="!loading()">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let inv of filtered()" 
+           class="bg-[#0d1527] rounded-2xl shadow-lg border border-[#1e293b] overflow-hidden hover:border-[#7c3aed]/80 transition-all duration-300 flex flex-col justify-between group">
+        
+        <!-- Header -->
+        <div class="p-5 border-b border-[#1e293b] bg-[#090f1d]/80 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span *ngIf="inv.project.university" class="text-[11px] font-bold text-[#a78bfa] uppercase tracking-wider flex items-center gap-1 min-w-0">
+              <i class="pi pi-building text-[10px] flex-shrink-0"></i>
+              <span class="truncate">{{ inv.project.university }}</span>
+            </span>
+            <p-tag [value]="getInvestmentStatusLabel(inv.status)" [severity]="getInvestmentStatusSeverity(inv.status)"></p-tag>
+          </div>
+          
+          <h3 class="text-lg font-extrabold text-white group-hover:text-[#a78bfa] transition-colors leading-snug">
+            {{ inv.project.title }}
+          </h3>
+        </div>
+
+        <!-- Body -->
+        <div class="p-5 space-y-4 flex-1 flex flex-col justify-between">
+          <p class="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
+            {{ inv.project.summary || 'Sin descripción provista.' }}
+          </p>
+
+          <!-- Category tag -->
+          <div *ngIf="inv.project.category" class="flex flex-wrap gap-1.5">
+            <span class="px-2.5 py-1 rounded-md text-xs font-semibold" [ngStyle]="tagStyle(inv.project.category, 0)">
+              {{ inv.project.category }}
+            </span>
+          </div>
+
+          <!-- Investment Detail Sub-card (Dark #121c33) -->
+          <div class="bg-[#121c33] p-4 rounded-xl border border-[#1e293b] space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Mi Inversión</span>
+              <span class="text-lg font-black text-emerald-400">
+                {{ inv.amount | currency:inv.currency:'symbol':'1.0-0' }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center pt-1 border-t border-[#1e293b]/60 text-xs">
+              <span class="text-slate-400">Fecha de Contrato</span>
+              <span class="font-bold text-white">
+                {{ inv.createdAt | date:'dd/MM/yyyy' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="p-5 pt-0">
+          <button (click)="openDetail(inv)" 
+                  class="btn border-none bg-[#7c3aed] hover:bg-[#6d28d9] text-white w-full rounded-xl font-bold py-2.5 text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30">
+            <span>Ver Detalles</span> <i class="pi pi-arrow-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filtered().length === 0" class="text-center py-20 bg-[#0d1527] rounded-2xl shadow-xl border border-[#1e293b] space-y-4">
+      <div class="w-16 h-16 bg-[#090f1d] border border-[#1e293b] rounded-2xl flex items-center justify-center mx-auto text-slate-400 text-2xl">
+        <i class="pi pi-inbox"></i>
+      </div>
+      <h3 class="text-xl font-black text-white">No se encontraron inversiones</h3>
+      <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">Intenta ajustar tu búsqueda o explora nuevos proyectos en el catálogo universitario.</p>
+    </div>
+
+  </ng-container>
+</div>

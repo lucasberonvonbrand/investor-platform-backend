@@ -1,0 +1,35 @@
+# Node.js & Angular
+node_modules/
+**/node_modules/
+.angular/
+**/.angular/
+dist/
+**/dist/
+.npm
+.yarn
+
+# Maven & Java
+target/
+**/target/
+*.jar
+*.war
+*.ear
+
+# Environment & Security Secrets
+.env
+*.env
+.env.local
+
+# IDEs & System Files
+.idea/
+**/.idea/
+*.iml
+.vscode/
+**/.vscode/
+.DS_Store
+Thumbs.db
+
+# Uploaded Files & Temporary Storage
+uploads/
+**/uploads/
+*.log

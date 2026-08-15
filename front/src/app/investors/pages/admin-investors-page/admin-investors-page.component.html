@@ -1,0 +1,369 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<p-card
+  styleClass="shadow-sm border-none bg-white dark:bg-slate-800"
+  header="Manage Investors"
+>
+  <p-toolbar styleClass="mb-4 border-none bg-transparent p-0">
+    <div class="p-toolbar-group-left flex flex-wrap gap-3 w-full md:w-auto">
+      <p-selectButton
+        [options]="filterStatusOptions"
+        [(ngModel)]="currentFilter"
+        (onChange)="onFilterChange()"
+      ></p-selectButton>
+    </div>
+    <div class="p-toolbar-group-right mt-3 md:mt-0 flex gap-2">
+      <p-button
+        label="Refresh"
+        icon="pi pi-refresh"
+        severity="secondary"
+        (click)="reload()"
+        [disabled]="loading()"
+      ></p-button>
+      <p-button
+        label="New Investor"
+        icon="pi pi-plus"
+        (click)="openNew()"
+      ></p-button>
+    </div>
+  </p-toolbar>
+
+  <p-table
+    [value]="filteredInvestors()"
+    [loading]="loading()"
+    dataKey="id"
+    [rowHover]="true"
+    [paginator]="true"
+    [rows]="10"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    styleClass="p-datatable-sm"
+    responsiveLayout="scroll"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width: 80px">ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Contact Person</th>
+        <th>Status</th>
+        <th style="width: 140px; text-align: center">Actions</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td class="font-semibold text-slate-900 dark:text-white">
+          #{{ row.id }}
+        </td>
+        <td class="font-medium text-slate-900 dark:text-white">
+          {{ row.username }}
+        </td>
+        <td>{{ row.email }}</td>
+        <td>{{ row.contactPerson || "—" }}</td>
+        <td>
+          <p-tag
+            [value]="row.enabled ? 'Enabled' : 'Disabled'"
+            [severity]="row.enabled ? 'success' : 'danger'"
+          ></p-tag>
+        </td>
+        <td class="text-center whitespace-nowrap">
+          <p-button
+            icon="pi pi-eye"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            pTooltip="View Details"
+            (click)="onView(row)"
+          ></p-button>
+          <p-button
+            icon="pi pi-pencil"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            severity="warn"
+            pTooltip="Edit Investor"
+            (click)="edit(row)"
+          ></p-button>
+          <p-button
+            [icon]="row.enabled ? 'pi pi-times-circle' : 'pi pi-check-circle'"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            [severity]="row.enabled ? 'danger' : 'success'"
+            [pTooltip]="row.enabled ? 'Deactivate' : 'Activate'"
+            (click)="toggleActive(row, !row.enabled)"
+          ></p-button>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td
+          colspan="6"
+          class="text-center p-8 text-slate-500 dark:text-slate-400"
+        >
+          <i class="pi pi-users text-3xl mb-2 opacity-50"></i>
+          <p>No investors found.</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-card>
+
+<!-- VIEW DIALOG -->
+<p-dialog
+  [(visible)]="showDetail"
+  [modal]="true"
+  [style]="{ width: '600px' }"
+  [breakpoints]="{ '960px': '85vw', '640px': '95vw' }"
+  header="Investor Details"
+>
+  <ng-container *ngIf="selected()">
+    <div class="grid grid-cols-2 gap-4 text-slate-900 dark:text-white mt-2">
+      <div
+        class="col-span-2 text-xl font-bold border-b border-slate-200 dark:border-slate-700 pb-2 flex justify-between items-center"
+      >
+        <span>{{ selected()!.username }}</span>
+        <p-tag
+          [value]="selected()!.enabled ? 'Enabled' : 'Disabled'"
+          [severity]="selected()!.enabled ? 'success' : 'danger'"
+        ></p-tag>
+      </div>
+      <div><strong>Email:</strong> {{ selected()!.email }}</div>
+      <div>
+        <strong>Contact Person:</strong> {{ selected()!.contactPerson || "—" }}
+      </div>
+      <div><strong>CUIT:</strong> {{ selected()!.cuit || "—" }}</div>
+      <div><strong>Phone:</strong> {{ selected()!.phone || "—" }}</div>
+      <div><strong>Website:</strong> {{ selected()!.webSite || "—" }}</div>
+      <div><strong>LinkedIn:</strong> {{ selected()!.linkedinUrl || "—" }}</div>
+
+      <div
+        class="col-span-2 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700"
+      >
+        <strong>Address:</strong>
+        <p class="mt-1" *ngIf="selected()!.address?.street">
+          {{ selected()!.address!.street }} {{ selected()!.address!.number
+          }}<br />
+          {{ selected()!.address!.city }}, {{ selected()!.address!.province
+          }}<br />
+          CP: {{ selected()!.address!.postalCode }}
+        </p>
+        <p class="mt-1 text-slate-500" *ngIf="!selected()!.address?.street">
+          No address information.
+        </p>
+      </div>
+
+      <div class="col-span-2 mt-2" *ngIf="selected()!.description">
+        <strong>Description:</strong>
+        <p class="mt-1 text-slate-600 dark:text-slate-400">
+          {{ selected()!.description }}
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</p-dialog>
+
+<!-- EDIT/CREATE DIALOG -->
+<p-dialog
+  [(visible)]="showDialog"
+  [modal]="true"
+  [style]="{ width: '700px' }"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [header]="isEdit() ? 'Edit Investor' : 'New Investor'"
+  (onHide)="onDialogHide()"
+>
+  <form
+    #f="ngForm"
+    class="mt-2 text-slate-900 dark:text-white"
+    (ngSubmit)="save(f)"
+  >
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="field">
+        <label for="username" class="font-medium"
+          >Username <span class="text-red-500">*</span></label
+        >
+        <input
+          id="username"
+          name="username"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.username"
+          required
+          #uname="ngModel"
+        />
+        <small class="text-red-500" *ngIf="uname.invalid && uname.touched"
+          >Username is required.</small
+        >
+      </div>
+
+      <div class="field">
+        <label for="email" class="font-medium"
+          >Email <span class="text-red-500">*</span></label
+        >
+        <input
+          id="email"
+          name="email"
+          type="email"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.email"
+          required
+          email
+          #uemail="ngModel"
+        />
+        <small class="text-red-500" *ngIf="uemail.invalid && uemail.touched"
+          >Valid email is required.</small
+        >
+      </div>
+
+      <div class="field">
+        <label for="pwd" class="font-medium"
+          >Password {{ isEdit() ? "(Leave blank to keep)" : "*" }}</label
+        >
+        <p-password
+          id="pwd"
+          name="password"
+          [(ngModel)]="formModel.password"
+          [toggleMask]="true"
+          styleClass="w-full"
+          inputStyleClass="w-full mt-1"
+          [required]="!isEdit()"
+        ></p-password>
+      </div>
+
+      <div class="field">
+        <label for="cuit" class="font-medium"
+          >Tax ID (CUIT) <span class="text-red-500">*</span></label
+        >
+        <input
+          id="cuit"
+          name="cuit"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.cuit"
+          required
+        />
+      </div>
+
+      <div class="field">
+        <label for="contactPerson" class="font-medium">Contact Person</label>
+        <input
+          id="contactPerson"
+          name="contactPerson"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.contactPerson"
+        />
+      </div>
+
+      <div class="field">
+        <label for="phone" class="font-medium">Phone</label>
+        <input
+          id="phone"
+          name="phone"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.phone"
+        />
+      </div>
+    </div>
+
+    <!-- Address Section -->
+    <h3
+      class="text-lg font-semibold border-b border-slate-200 dark:border-slate-700 pb-2 mb-4 mt-6"
+    >
+      Address
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="field">
+        <label
+          for="street"
+          class="font-medium text-slate-700 dark:text-slate-300"
+          >Street</label
+        >
+        <input
+          id="street"
+          name="street"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.address!.street"
+        />
+      </div>
+      <div>
+        <label
+          for="number"
+          class="font-medium text-slate-700 dark:text-slate-300"
+          >Number</label
+        >
+        <input
+          id="number"
+          name="number"
+          type="number"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.address!.number"
+        />
+      </div>
+      <div>
+        <label for="city" class="font-medium text-slate-700 dark:text-slate-300"
+          >City</label
+        >
+        <input
+          id="city"
+          name="city"
+          type="text"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.address!.city"
+        />
+      </div>
+      <div>
+        <label
+          for="postalCode"
+          class="font-medium text-slate-700 dark:text-slate-300"
+          >Postal Code</label
+        >
+        <input
+          id="postalCode"
+          name="postalCode"
+          type="number"
+          pInputText
+          class="w-full mt-1"
+          [(ngModel)]="formModel.address!.postalCode"
+        />
+      </div>
+    </div>
+
+    <div class="field flex items-center gap-2 mt-6">
+      <p-checkbox
+        id="enabled"
+        name="enabled"
+        [(ngModel)]="formModel.enabled"
+        [binary]="true"
+      ></p-checkbox>
+      <label for="enabled" class="font-medium cursor-pointer"
+        >Account Enabled</label
+      >
+    </div>
+
+    <div
+      class="flex justify-end gap-3 mt-8 pt-4 border-t border-slate-200 dark:border-slate-700"
+    >
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [text]="true"
+        (click)="onDialogHide()"
+      ></p-button>
+      <p-button label="Save" type="submit" [disabled]="loading()"></p-button>
+    </div>
+  </form>
+</p-dialog>

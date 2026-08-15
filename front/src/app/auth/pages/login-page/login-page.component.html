@@ -1,0 +1,95 @@
+<!-- Error Modal -->
+<app-auth-error-modal
+  [isOpen]="!!serverError()"
+  [title]="'Error de Autenticación'"
+  [message]="messageFor(serverError()!)"
+  (close)="serverError.set(null)">
+</app-auth-error-modal>
+
+<main class="min-h-screen flex bg-[#030712] text-white">
+    <div class="flex flex-col md:flex-row w-full min-h-screen">
+        <!-- Left Pane: Form -->
+        <div class="flex flex-col justify-center p-8 md:p-16 lg:p-24 w-full md:w-1/2 bg-[#090f1d]">
+            <div class="max-w-md w-full mx-auto text-left">
+                <a class="inline-block mb-8 hover:opacity-90 transition-opacity" routerLink="/landing">
+                    <!-- Proy+ Logo with forced light filter to look clean on dark BG -->
+                    <img src="assets/images/ProyplusTransparente.png" alt="Proy+" class="h-16 w-auto invert object-contain" />
+                </a>
+                
+                <h1 class="text-4xl font-bold text-white mb-2 tracking-tight">Iniciar Sesión</h1>
+                <p class="text-slate-400 mb-8">¡Hola, bienvenido de nuevo!</p>
+                
+                <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+                    <div class="flex flex-col gap-6">
+                        <!-- Username Input -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-slate-300" for="username">Nombre de usuario</label>
+                            <input class="input input-bordered w-full rounded-xl bg-[#0d1527] border-[#1e293b] text-white focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed] transition" 
+                                   id="username" 
+                                   type="text" 
+                                   formControlName="username" 
+                                   required="required" 
+                                   autocomplete="username" 
+                                   autofocus="autofocus"
+                                   placeholder="Ingresa tu usuario"
+                                   [class.input-error]="showError('username')"/>
+                            <p *ngIf="showError('username')" class="mt-1 text-xs text-red-500">Por favor ingresa tu nombre de usuario.</p>
+                        </div>
+                        
+                        <!-- Password Input -->
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-slate-300 flex justify-between items-center w-full" for="password">
+                              <span>Contraseña</span>
+                              <a routerLink="/auth/forgot-password" class="text-xs font-semibold text-[#a78bfa] hover:underline">¿Olvidaste tu contraseña?</a>
+                            </label>
+                            <div class="relative w-full">
+                                <input class="input input-bordered w-full pr-16 rounded-xl bg-[#0d1527] border-[#1e293b] text-white focus:border-[#7c3aed] focus:ring-1 focus:ring-[#7c3aed] transition" 
+                                       id="password" 
+                                       [type]="masked() ? 'password' : 'text'" 
+                                       formControlName="password" 
+                                       required="required" 
+                                       autocomplete="current-password"
+                                       placeholder="Ingresa tu contraseña"
+                                       [class.input-error]="showError('password')"/>
+                                <button type="button"
+                                        (click)="toggleMask()"
+                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-xs font-bold text-[#a78bfa] hover:text-[#c084fc] uppercase">
+                                  {{ masked() ? 'Ver' : 'Ocultar' }}
+                                </button>
+                            </div>
+                            <p *ngIf="showError('password')" class="mt-1 text-xs text-red-500">La contraseña debe tener al menos 6 caracteres.</p>
+                        </div>
+                        
+                        <!-- Remember me -->
+                        <div class="flex items-center gap-2">
+                            <input class="checkbox checkbox-primary checkbox-xs rounded border-[#2e3c51] bg-[#0d1527]" id="remember" type="checkbox" name="remember"/>
+                            <label class="text-sm text-slate-400 cursor-pointer" for="remember">Recordarme</label>
+                        </div>
+                        
+                        <!-- Submit button -->
+                        <div class="mt-2">
+                            <button class="btn border-none bg-[#7c3aed] hover:bg-[#6d28d9] text-white w-full rounded-xl normal-case font-bold py-3.5 shadow-lg shadow-purple-600/20 transition-all duration-200" type="submit" [disabled]="form.invalid || loading()">
+                                <span *ngIf="!loading()">Ingresar</span>
+                                <span *ngIf="loading()">Ingresando...</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-12 text-sm text-slate-400">
+                <p>¿No tienes una cuenta? <a routerLink="/auth/register" class="font-bold text-[#a78bfa] hover:underline ml-1">Regístrate</a></p>
+            </div>
+        </div>
+        
+        <!-- Right Pane: Geometric Blue Pattern -->
+        <div class="hidden md:block w-1/2 relative bg-[#090f1d] overflow-hidden">
+          <div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 hover:scale-105" 
+               style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80')">
+          </div>
+          <!-- Semi-overlay grid patterns to make it feel more geometric -->
+          <div class="absolute inset-0 bg-gradient-to-r from-[#090f1d] via-transparent to-transparent"></div>
+        </div>
+    </div>
+</main>

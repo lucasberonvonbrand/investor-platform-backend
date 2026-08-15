@@ -1,0 +1,123 @@
+<p-toast></p-toast>
+
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-white">Mis Proyectos</h1>
+      <p class="text-slate-400 text-sm mt-1">Gestión y seguimiento de tus iniciativas y proyectos creados</p>
+    </div>
+    <a routerLink="/projects/create" class="btn btn-primary rounded-xl font-semibold">
+      <i class="pi pi-plus"></i> Crear Proyecto
+    </a>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="showEmptyState()" class="card bg-[#0d1527] border border-[#1e293b] shadow-xl text-center p-8 sm:p-12 rounded-3xl" @fadeInOut>
+    <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 text-primary flex items-center justify-center text-4xl mb-4">
+      <i class="pi pi-folder-open"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-white">Aún no tienes proyectos creados</h2>
+    <p class="text-slate-400 mt-2 max-w-md mx-auto">¡Es momento de dar el primer paso! Publica tu idea para conectar con potenciales inversores.</p>
+    <div class="mt-6">
+      <a routerLink="/projects/create" class="btn btn-primary rounded-xl px-6">
+        <i class="pi pi-plus"></i> Crear mi Primer Proyecto
+      </a>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!showEmptyState()" class="space-y-6" @fadeInOut>
+
+    <!-- Stats Bar -->
+    <div class="stats stats-vertical lg:stats-horizontal shadow-xl bg-[#0d1527] border border-[#1e293b] rounded-2xl w-full">
+      
+      <div class="stat">
+        <div class="stat-figure text-primary">
+          <i class="pi pi-folder text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Mis Proyectos</div>
+        <div class="stat-value text-primary text-3xl font-black">{{ kpis().total }}</div>
+        <div class="stat-desc text-slate-400">Registrados en total</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-warning">
+          <i class="pi pi-bolt text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Activos</div>
+        <div class="stat-value text-warning text-3xl font-black">{{ kpis().active }}</div>
+        <div class="stat-desc text-slate-400">En etapa de desarrollo</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-success">
+          <i class="pi pi-clock text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Recientes (30 días)</div>
+        <div class="stat-value text-success text-3xl font-black">{{ kpis().recent }}</div>
+        <div class="stat-desc text-slate-400">Actualizados este mes</div>
+      </div>
+      
+      <div class="stat">
+        <div class="stat-figure text-info">
+          <i class="pi pi-chart-line text-3xl"></i>
+        </div>
+        <div class="stat-title text-slate-400 font-medium uppercase text-xs">Financiados</div>
+        <div class="stat-value text-info text-3xl font-black">{{ kpis().funded }}</div>
+        <div class="stat-desc text-slate-400">Con meta presupuestaria</div>
+      </div>
+
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let row of filtered()" 
+           class="card bg-[#0d1527] shadow-xl hover:shadow-2xl border border-[#1e293b] transition-all duration-300 rounded-2xl overflow-hidden flex flex-col">
+        
+        <!-- Decorative Header Bar -->
+        <div class="h-2 bg-gradient-to-r from-primary to-accent"></div>
+
+        <div class="card-body p-6 flex flex-col flex-1">
+          <!-- Category & Status -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <span class="badge badge-primary badge-sm font-bold uppercase tracking-wider">
+              {{ getCategoryLabel(row.category) }}
+            </span>
+            <span class="badge badge-outline badge-sm font-semibold text-slate-300 border-[#1e293b]">
+              {{ getProjectStatusLabel(row.status) }}
+            </span>
+          </div>
+
+          <!-- Title & Summary -->
+          <h3 class="card-title text-xl font-bold text-white hover:text-primary transition-colors cursor-pointer" (click)="openDetail(row)">
+            {{ row.title }}
+          </h3>
+          <p class="text-slate-400 text-sm line-clamp-3 my-2 flex-1">
+            {{ row.summary || 'Sin descripción disponible.' }}
+          </p>
+
+          <!-- Extra Info: University -->
+          <div *ngIf="row.university" class="flex items-center gap-2 text-xs text-slate-400 my-2">
+            <i class="pi pi-building text-primary"></i>
+            <span>{{ row.university }}</span>
+          </div>
+
+          <!-- Card Action Button -->
+          <div class="card-actions justify-end mt-4 pt-3 border-t border-[#1e293b]">
+            <button type="button" class="btn btn-primary btn-outline btn-block rounded-xl gap-2 font-semibold" (click)="openDetail(row)">
+              <span>Ver Detalles</span>
+              <i class="pi pi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+

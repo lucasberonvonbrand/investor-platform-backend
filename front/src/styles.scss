@@ -1,0 +1,599 @@
+/* Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== TEMA GLOBAL DE LA APLICACIÓN (Spruce CSS Dark Theme) ===== */
+:root {
+  --primary-color: #7c3aed;
+  --primary-color-text: #ffffff;
+
+  --surface-ground: #090f1d;
+  --surface-section: #0d1527;
+  --surface-card: #0d1527;
+  --surface-hover: #131b2e;
+  --surface-border: #1e293b;
+
+  --text-color: #f8fafc;
+  --text-color-secondary: #94a3b8;
+
+  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+}
+
+/* Base global */
+html, body { 
+  height: 100%; 
+}
+body {
+  margin: 0;
+  font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #090f1d !important;
+  color: #f8fafc !important;
+}
+
+/* Custom Dark Scrollbars (Spruce CSS Dark Theme) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090f1d;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
+}
+
+/* Estilo global para tarjetas y diálogos de PrimeNG */
+p-card .p-card, .p-card {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-radius: 1rem;
+  border: 1px solid #1e293b !important;
+}
+
+.p-dialog .p-dialog-header,
+.p-dialog .p-dialog-content,
+.p-dialog .p-dialog-footer {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+.p-dialog {
+  border: 1px solid #1e293b !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden;
+}
+
+.p-datatable .p-datatable-header,
+.p-datatable .p-datatable-footer {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+.p-datatable .p-datatable-thead > tr > th {
+  background-color: #131b2e !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+.p-datatable .p-datatable-tbody > tr {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+.p-datatable .p-datatable-tbody > tr > td {
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+.p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #131b2e !important;
+}
+.p-paginator {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0 0 1rem 1rem !important;
+}
+.p-paginator .p-paginator-page, 
+.p-paginator .p-paginator-next, 
+.p-paginator .p-paginator-last, 
+.p-paginator .p-paginator-first, 
+.p-paginator .p-paginator-prev {
+  color: #94a3b8 !important;
+  background-color: #121c33 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0.75rem !important;
+  margin: 0 0.2rem !important;
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  transition: all 0.2s ease !important;
+}
+.p-paginator .p-paginator-page:hover,
+.p-paginator .p-paginator-next:hover,
+.p-paginator .p-paginator-prev:hover {
+  background-color: #1a253e !important;
+  color: #ffffff !important;
+  border-color: #7c3aed !important;
+}
+.p-paginator .p-paginator-page.p-highlight {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  border-color: #7c3aed !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.4) !important;
+}
+
+/* PrimeNG Steps Dark Override */
+.p-steps .p-steps-item {
+  background-color: transparent !important;
+}
+.p-steps .p-steps-item .p-menuitem-link {
+  background-color: transparent !important;
+}
+.p-steps .p-steps-item .p-steps-number {
+  background-color: #121c33 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #1e293b !important;
+  font-weight: 700 !important;
+}
+.p-steps .p-steps-item.p-highlight .p-steps-number {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  border-color: #7c3aed !important;
+}
+.p-steps .p-steps-item .p-steps-title {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+.p-steps .p-steps-item.p-highlight .p-steps-title {
+  color: #a78bfa !important;
+  font-weight: 700 !important;
+}
+.p-steps:before {
+  border-top-color: #1e293b !important;
+}
+
+/* PrimeNG FileUpload Dark Theme Override */
+.p-fileupload {
+  background-color: transparent !important;
+  border: none !important;
+}
+.p-fileupload .p-fileupload-header {
+  background-color: #0d1527 !important;
+  border: 1px solid #1e293b !important;
+  border-bottom: none !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  padding: 0.75rem 1rem !important;
+}
+.p-fileupload .p-fileupload-header .p-button {
+  background-color: #7c3aed !important;
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+  border-radius: 0.75rem !important;
+  font-weight: 700 !important;
+}
+.p-fileupload .p-fileupload-header .p-button:hover {
+  background-color: #6d28d9 !important;
+  border-color: #6d28d9 !important;
+}
+.p-fileupload .p-fileupload-content {
+  background-color: #0d1527 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0 0 0.75rem 0.75rem !important;
+  color: #f8fafc !important;
+  padding: 1rem !important;
+}
+.p-fileupload .p-progressbar {
+  background-color: #121c33 !important;
+  height: 0.35rem !important;
+}
+.p-fileupload .p-progressbar .p-progressbar-value {
+  background-color: #7c3aed !important;
+}
+
+/* ==========================================================================
+   ULTRA-HIGH SPECIFICITY PRIMENG AUTOCOMPLETE DARK THEME OVERRIDES
+   ========================================================================== */
+
+/* 1. INPUT CONTAINER & INLINE INPUTS */
+html body .p-autocomplete,
+html body .p-autocomplete-multiple-container,
+html body ul.p-autocomplete-multiple-container,
+html body ul.p-autocomplete-multiple-container.p-component,
+html body ul.p-autocomplete-multiple-container.p-inputtext,
+html body ul.p-autocomplete-multiple-container.p-focus,
+html body ul.p-autocomplete-multiple-container:focus,
+html body ul.p-autocomplete-multiple-container:focus-within {
+  background-color: #121c33 !important;
+  background: #121c33 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0.75rem !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html body ul.p-autocomplete-multiple-container.p-focus,
+html body ul.p-autocomplete-multiple-container:focus-within {
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 1px #7c3aed !important;
+}
+
+html body .p-autocomplete-multiple-container .p-autocomplete-input-token,
+html body .p-autocomplete-multiple-container .p-autocomplete-input-token input,
+html body .p-autocomplete-multiple-container .p-autocomplete-input-token input:focus,
+html body .p-autocomplete-multiple-container .p-autocomplete-input-token input:active {
+  background-color: transparent !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html body .p-autocomplete-multiple-container .p-autocomplete-token {
+  background-color: #7c3aed !important;
+  background: #7c3aed !important;
+  color: #ffffff !important;
+  border: 1px solid #7c3aed !important;
+  border-radius: 9999px !important;
+}
+
+html body .p-autocomplete-multiple-container .p-autocomplete-token .p-autocomplete-token-label,
+html body .p-autocomplete-multiple-container .p-autocomplete-token .p-autocomplete-token-icon {
+  color: #ffffff !important;
+}
+
+html body .p-autocomplete-dropdown,
+html body button.p-autocomplete-dropdown {
+  background-color: #121c33 !important;
+  background: #121c33 !important;
+  border: 1px solid #1e293b !important;
+  color: #a78bfa !important;
+  border-radius: 0 0.75rem 0.75rem 0 !important;
+}
+
+/* 2. DROPDOWN POPUP OVERLAY PANEL */
+html body .p-autocomplete-panel,
+html body div.p-autocomplete-panel,
+html body .dark-autocomplete-panel,
+html body div.dark-autocomplete-panel {
+  background-color: #0d1527 !important;
+  background: #0d1527 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9) !important;
+  overflow: hidden !important;
+}
+
+html body .p-autocomplete-panel .p-autocomplete-items,
+html body div.p-autocomplete-panel .p-autocomplete-items,
+html body .dark-autocomplete-panel .p-autocomplete-items {
+  background-color: #0d1527 !important;
+  background: #0d1527 !important;
+  padding: 0.35rem !important;
+}
+
+/* 3. LIST ITEMS (UNHOVERED) */
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item,
+html body .dark-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+  background-color: #0d1527 !important;
+  background: #0d1527 !important;
+  color: #f8fafc !important;
+  padding: 0.6rem 1rem !important;
+  border-radius: 0.5rem !important;
+  margin: 0.15rem 0 !important;
+}
+
+/* 4. HOVERED, HIGHLIGHTED, OR FOCUSED ITEM (THE WHITE HOVER BAR FIX) */
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover,
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight,
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-focus,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item:hover,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item.p-highlight,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item.p-focus,
+html body .dark-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover,
+html body .dark-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight,
+html body .dark-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-focus {
+  background-color: #7c3aed !important;
+  background: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover *,
+html body .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight *,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item:hover *,
+html body div.p-autocomplete-panel ul li.p-autocomplete-item.p-highlight * {
+  color: #ffffff !important;
+}
+
+/* ===== SPRUCE CSS STEPPER & TIMELINE COMPONENT ===== */
+.spruce-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  margin: 0.5rem 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 2.25rem;
+    left: 4rem;
+    right: 4rem;
+    height: 3px;
+    background-color: #1e293b;
+    z-index: 1;
+  }
+
+  .spruce-step {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    text-align: center;
+
+    .spruce-step-badge {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+      background-color: #0d1527;
+      color: #64748b;
+      border: 2px solid #1e293b;
+      transition: all 0.3s ease;
+    }
+
+    .spruce-step-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #64748b;
+      transition: color 0.3s ease;
+    }
+
+    &.completed {
+      .spruce-step-badge {
+        background-color: #7c3aed;
+        color: #ffffff;
+        border-color: #7c3aed;
+        box-shadow: 0 0 12px rgba(124, 58, 237, 0.4);
+      }
+      .spruce-step-label {
+        color: #a78bfa;
+        font-weight: 600;
+      }
+    }
+
+    &.active {
+      .spruce-step-badge {
+        background-color: #7c3aed;
+        color: #ffffff;
+        border-color: #c4b5fd;
+        box-shadow: 0 0 18px rgba(124, 58, 237, 0.6);
+        transform: scale(1.1);
+      }
+      .spruce-step-label {
+        color: #ffffff;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+/* -------- (Opcional) helpers para tiles con Tailwind -------- */
+@layer components {
+  .tile {
+    @apply flex items-center gap-3 p-4 rounded-xl;
+  }
+  .tile-icon { @apply grid place-items-center rounded-xl w-9 h-9 text-white; }
+  .tile-value { @apply text-2xl font-bold; }
+}
+
+/* ====== (Opcional) Tema SUAVE para tablas, óptico pero sin romper PrimeNG ======
+   Usalo sólo si querés un hover un poco más suave que el default.
+   Para aplicarlo, envolvé tu tabla/p-table con <div class="pp-table">...</div>
+*/
+.pp-table {
+  /* Tablas nativas */
+  table { width: 100%; border-collapse: collapse; }
+  thead th { font-weight: 600; }
+
+  /* PrimeNG p-table: apenas ajustamos hover/alt rows sin tocar colores del theme */
+  .p-datatable .p-datatable-tbody > tr:nth-child(even) { 
+    background: color-mix(in oklab, var(--surface-card, #fff), #000 3%);
+  }
+  .p-datatable .p-datatable-tbody > tr:hover {
+    background: color-mix(in oklab, var(--surface-card, #fff), #000 5%) !important;
+  }
+  .p-datatable .p-datatable-tbody > tr.p-highlight:hover {
+    background: inherit !important; /* mantiene el seleccionado del theme */
+  }
+}
+/* ===== Hover animado para filas (nativas + PrimeNG) ===== */
+/* Funciona sin romper el tema y sin tocar colores del theme */
+.pp-table {
+  /* Nativas */
+  tbody tr > td {
+    position: relative;               /* para la barrita */
+    transition: background .18s ease, box-shadow .18s ease;
+    will-change: background, box-shadow;
+  }
+
+  /* color de hover muy sutil; ajusta el 5% si querés más/menos */
+  tbody tr:hover > td {
+    background: color-mix(in oklab, var(--surface-card, #fff), #000 5%);
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(0,0,0,.05);
+    z-index: 1;                        /* eleva visualmente la fila */
+  }
+
+  /* barrita izquierda de acento en la 1ra celda */
+  tbody tr:hover > td:first-child::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--primary-color, #2d86ff);
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+  }
+
+  /* PrimeNG p-table */
+  .p-datatable .p-datatable-tbody > tr > td {
+    position: relative;
+    transition: background .18s ease, box-shadow .18s ease;
+    will-change: background, box-shadow;
+  }
+  .p-datatable .p-datatable-tbody > tr:hover > td {
+    background: color-mix(in oklab, var(--surface-card, #fff), #000 5%) !important;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.05), inset 0 -1px 0 rgba(0,0,0,.05);
+    z-index: 1;
+  }
+  .p-datatable .p-datatable-tbody > tr:hover > td:first-child::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--primary-color, #2d86ff);
+    border-top-left-radius: 2px;
+    border-bottom-left-radius: 2px;
+  }
+
+  /* Mantiene el color del seleccionado del theme, pero suma el énfasis */
+  .p-datatable .p-datatable-tbody > tr.p-highlight:hover > td {
+    background: inherit !important;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.08), inset 0 -1px 0 rgba(0,0,0,.08);
+  }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .pp-table tbody tr > td,
+  .pp-table .p-datatable .p-datatable-tbody > tr > td {
+    transition: none !important;
+  }
+}
+
+/* ===== Colores de Foco para Formularios de Registro ===== */
+/* Estudiantes (azul) */
+app-student-form .p-inputtext:focus {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+/* Inversores (púrpura) */
+app-investor-form .p-inputtext:focus {
+  border-color: #a855f7; /* purple-500 */
+  box-shadow: 0 0 0 1px #a855f7;
+}
+
+/* ===== Dark Modal Styling for PrimeNG Dialog ===== */
+html body .p-dialog.dark-modal,
+html body div.p-dialog.dark-modal {
+  background-color: #0d1527 !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+  overflow: hidden !important;
+
+  .p-dialog-header {
+    background-color: #090f1d !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid #1e293b !important;
+    padding: 1.25rem 1.5rem !important;
+    .p-dialog-title {
+      color: #ffffff !important;
+      font-weight: 800 !important;
+    }
+    .p-dialog-header-icon {
+      color: #94a3b8 !important;
+      &:hover {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
+      }
+    }
+  }
+
+  .p-dialog-content {
+    background-color: #0d1527 !important;
+    color: #f8fafc !important;
+    padding: 1.5rem !important;
+  }
+}
+
+/* ===== PRIMENG QUILL EDITOR DARK THEME OVERRIDES (SPRUCE CSS) ===== */
+html body .p-editor-container,
+html body div.p-editor-container,
+html body p-editor {
+  background-color: #121c33 !important;
+  border-radius: 0.75rem !important;
+
+  .p-editor-toolbar,
+  .ql-toolbar,
+  .ql-toolbar.ql-snow {
+    background-color: #0d1527 !important;
+    background: #0d1527 !important;
+    border-color: #1e293b !important;
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+
+    .ql-stroke {
+      stroke: #a78bfa !important;
+    }
+    .ql-fill {
+      fill: #a78bfa !important;
+    }
+    .ql-picker-label,
+    .ql-picker-item {
+      color: #e2e8f0 !important;
+    }
+    button:hover .ql-stroke,
+    button.ql-active .ql-stroke {
+      stroke: #ffffff !important;
+    }
+    button:hover .ql-fill,
+    button.ql-active .ql-fill {
+      fill: #ffffff !important;
+    }
+  }
+
+  .p-editor-content,
+  .ql-container,
+  .ql-container.ql-snow {
+    background-color: #121c33 !important;
+    background: #121c33 !important;
+    border-color: #1e293b !important;
+    color: #ffffff !important;
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+
+    .ql-editor {
+      background-color: #121c33 !important;
+      background: #121c33 !important;
+      color: #ffffff !important;
+      min-height: 200px !important;
+
+      &.ql-blank::before {
+        color: #64748b !important;
+        font-style: italic !important;
+      }
+
+      p, div, span, h1, h2, h3, h4, h5, h6, li, ul, ol, strong, em, u, b, i {
+        color: #ffffff !important;
+      }
+    }
+  }
+}

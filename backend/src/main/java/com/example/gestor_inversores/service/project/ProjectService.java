@@ -74,7 +74,8 @@ public class ProjectService implements IProjectService {
 
         if (projectDTO.getStudentIds() != null) {
             for (Long studentId : projectDTO.getStudentIds()) {
-                if (studentId.equals(owner.getId())) continue;
+                if (studentId.equals(owner.getId()))
+                    continue;
 
                 Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new StudentNotFoundException(
@@ -85,11 +86,22 @@ public class ProjectService implements IProjectService {
             }
         }
 
-        String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription())).toUpperCase();
-        String cleanedTag = selectedTag.trim();
-        System.out.println("Esta es la etiqueta limpia: " + cleanedTag);
-        ProjectTag tag = projectTagService.getTagByName(cleanedTag);
-        project.setProjectTag(tag);
+        String tagNameToUse = projectDTO.getProjectTagName();
+        if (tagNameToUse != null && !tagNameToUse.trim().isEmpty()) {
+            ProjectTag tag = projectTagService.getTagByName(tagNameToUse.trim());
+            project.setProjectTag(tag);
+        } else {
+            try {
+                String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(project.getDescription()))
+                        .toUpperCase().trim();
+                ProjectTag tag = projectTagService.getTagByName(selectedTag);
+                project.setProjectTag(tag);
+            } catch (Exception ex) {
+                System.err.println("Advertencia: No se pudo usar Gemini IA para categorizar. Asignando etiqueta OTROS: " + ex.getMessage());
+                ProjectTag tag = projectTagService.getTagByName("OTROS");
+                project.setProjectTag(tag);
+            }
+        }
 
         Project savedProject;
         try {
@@ -108,11 +120,13 @@ public class ProjectService implements IProjectService {
                 .orElseThrow(() -> new ProjectNotFoundException("The project was not found"));
 
         if (searchedProject.getStatus() != ProjectStatus.PENDING_FUNDING) {
-            throw new BusinessException("El proyecto solo puede ser modificado si su estado es 'Pendiente de Financiación' (PENDING_FUNDING).");
+            throw new BusinessException(
+                    "El proyecto solo puede ser modificado si su estado es 'Pendiente de Financiación' (PENDING_FUNDING).");
         }
 
         if (searchedProject.getCurrentGoal().compareTo(BigDecimal.ZERO) > 0) {
-            throw new BusinessException("El proyecto no puede ser modificado porque ya ha comenzado a recibir inversiones.");
+            throw new BusinessException(
+                    "El proyecto no puede ser modificado porque ya ha comenzado a recibir inversiones.");
         }
 
         if (!projectDTO.getName().equals(searchedProject.getName()) &&
@@ -124,12 +138,18 @@ public class ProjectService implements IProjectService {
             throw new InvalidProjectException("Estimated end date cannot be before start date");
         }
 
-        if (!projectDTO.getDescription().equals(searchedProject.getDescription())) {
-            String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(projectDTO.getDescription())).toUpperCase();
-            String cleanedTag = selectedTag.trim();
-            System.out.println("Etiqueta re-evaluada por cambio en descripción: " + cleanedTag);
-            ProjectTag tag = projectTagService.getTagByName(cleanedTag);
+        if (projectDTO.getProjectTagName() != null && !projectDTO.getProjectTagName().trim().isEmpty()) {
+            ProjectTag tag = projectTagService.getTagByName(projectDTO.getProjectTagName().trim());
             searchedProject.setProjectTag(tag);
+        } else if (!projectDTO.getDescription().equals(searchedProject.getDescription())) {
+            try {
+                String selectedTag = geminiService.askGemini(this.promptToGenerateTagSelection(projectDTO.getDescription()))
+                        .toUpperCase().trim();
+                ProjectTag tag = projectTagService.getTagByName(selectedTag);
+                searchedProject.setProjectTag(tag);
+            } catch (Exception ex) {
+                System.err.println("Advertencia: No se pudo re-evaluar la categoría con Gemini IA: " + ex.getMessage());
+            }
         }
 
         Project updatedProject = ProjectMapper.requestProjectUpdateToProject(projectDTO, searchedProject);
@@ -289,11 +309,10 @@ public class ProjectService implements IProjectService {
         }
 
         List<Contract> contracts = contractRepository.findByProject_IdProject(projectId);
-        boolean allContractsFinalized = contracts.stream().allMatch(contract ->
-                contract.getStatus() == ContractStatus.CLOSED ||
+        boolean allContractsFinalized = contracts.stream()
+                .allMatch(contract -> contract.getStatus() == ContractStatus.CLOSED ||
                         contract.getStatus() == ContractStatus.CANCELLED ||
-                        contract.getStatus() == ContractStatus.REFUNDED
-        );
+                        contract.getStatus() == ContractStatus.REFUNDED);
 
         if (!allContractsFinalized) {
             throw new BusinessException("No se puede completar el proyecto. Aún hay contratos activos o pendientes.");
@@ -310,11 +329,11 @@ public class ProjectService implements IProjectService {
         String ownerSubject = String.format("¡Tu proyecto '%s' ha sido completado!", savedProject.getName());
         String ownerBody = String.format(
                 "Hola %s,\n\n¡Felicidades! Has marcado tu proyecto '%s' como completado.\n\n" +
-                        "Gracias por tu esfuerzo y dedicación. El ciclo de este proyecto en nuestra plataforma ha finalizado exitosamente.\n\n" +
+                        "Gracias por tu esfuerzo y dedicación. El ciclo de este proyecto en nuestra plataforma ha finalizado exitosamente.\n\n"
+                        +
                         "Saludos,\nEl equipo de ProyPlus",
                 owner.getFirstName(),
-                savedProject.getName()
-        );
+                savedProject.getName());
         mailService.sendEmail(toOwner, ownerSubject, ownerBody);
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
@@ -349,15 +368,16 @@ public class ProjectService implements IProjectService {
             String to = investor.getEmail();
             String subject = String.format("Cancelación del Proyecto: '%s'", project.getName());
             String body = String.format(
-                    "Hola %s,\n\nTe informamos que el proyecto '%s' ha sido cancelado por el estudiante responsable.\n\n" +
+                    "Hola %s,\n\nTe informamos que el proyecto '%s' ha sido cancelado por el estudiante responsable.\n\n"
+                            +
                             "El siguiente paso es la devolución de %s.\n\n" + // Usamos el string construido
-                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante si tienes alguna duda.\n\n" +
+                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante si tienes alguna duda.\n\n"
+                            +
                             "Lamentamos los inconvenientes.\n\n" +
                             "Saludos,\nEl equipo de ProyPlus",
                     investor.getUsername(),
                     project.getName(),
-                    investmentDetails
-            );
+                    investmentDetails);
             mailService.sendEmail(to, subject, body);
         }
 
@@ -376,7 +396,8 @@ public class ProjectService implements IProjectService {
         }
 
         if (project.getStatus() != ProjectStatus.PENDING_FUNDING) {
-            throw new BusinessException("El proyecto solo puede marcarse como no financiado si está en estado 'PENDING_FUNDING'.");
+            throw new BusinessException(
+                    "El proyecto solo puede marcarse como no financiado si está en estado 'PENDING_FUNDING'.");
         }
 
         project.setStatus(ProjectStatus.NOT_FUNDED);
@@ -394,15 +415,16 @@ public class ProjectService implements IProjectService {
             String to = investor.getEmail();
             String subject = String.format("Proyecto no financiado: '%s'", project.getName());
             String body = String.format(
-                    "Hola %s,\n\nTe informamos que el proyecto '%s' no alcanzó su meta de financiación y ha sido marcado como no financiado.\n\n" +
+                    "Hola %s,\n\nTe informamos que el proyecto '%s' no alcanzó su meta de financiación y ha sido marcado como no financiado.\n\n"
+                            +
                             "El siguiente paso es la devolución de %s.\n\n" +
-                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante para coordinar la devolución.\n\n" +
+                            "Por favor, mantente atento a las notificaciones en la plataforma y contacta al estudiante para coordinar la devolución.\n\n"
+                            +
                             "Lamentamos los inconvenientes.\n\n" +
                             "Saludos,\nEl equipo de ProyPlus",
                     investor.getUsername(),
                     project.getName(),
-                    investmentDetails
-            );
+                    investmentDetails);
             mailService.sendEmail(to, subject, body);
         }
 
@@ -412,13 +434,13 @@ public class ProjectService implements IProjectService {
         String toOwner = owner.getEmail();
         String ownerSubject = String.format("Tu proyecto '%s' no ha alcanzado la financiación", savedProject.getName());
         String ownerBody = String.format(
-                "Hola %s,\n\nEl período de financiación para tu proyecto '%s' ha finalizado sin alcanzar el objetivo.\n\n" +
+                "Hola %s,\n\nEl período de financiación para tu proyecto '%s' ha finalizado sin alcanzar el objetivo.\n\n"
+                        +
                         "Ahora debes iniciar el proceso de devolución de las inversiones a cada participante.\n\n" +
                         "Puedes gestionar la devolución desde la sección de contratos de tu proyecto.\n\n" +
                         "Saludos,\nEl equipo de ProyPlus",
                 owner.getFirstName(),
-                savedProject.getName()
-        );
+                savedProject.getName());
         mailService.sendEmail(toOwner, ownerSubject, ownerBody);
 
         return ProjectMapper.projectToResponseProjectDTO(savedProject);
@@ -432,7 +454,8 @@ public class ProjectService implements IProjectService {
         Student owner = project.getOwner();
         String ownerEmail = owner.getEmail();
 
-        String subject = String.format("Mensaje sobre tu proyecto '%s': %s", project.getName(), contactOwnerDTO.getSubject());
+        String subject = String.format("Mensaje sobre tu proyecto '%s': %s", project.getName(),
+                contactOwnerDTO.getSubject());
         String body = String.format(
                 "Hola %s,\n\nHas recibido un mensaje de '%s' sobre tu proyecto '%s'.\n\n" +
                         "--------------------------------------------------\n" +
@@ -443,8 +466,7 @@ public class ProjectService implements IProjectService {
                 owner.getFirstName(),
                 contactOwnerDTO.getFromName(),
                 project.getName(),
-                contactOwnerDTO.getMessage()
-        );
+                contactOwnerDTO.getMessage());
 
         mailService.sendEmail(ownerEmail, subject, body, contactOwnerDTO.getFromEmail());
     }
@@ -463,7 +485,8 @@ public class ProjectService implements IProjectService {
     @Override
     public List<ResponseProjectDTO> getProjectsByInvestorId(Long investorId) {
         Set<Project> projects = investmentRepository.findDistinctProjectsByInvestorId(investorId)
-                .orElseThrow(() -> new ProjectNotFoundException("No se encontraron proyectos para el inversor con ID: " + investorId));
+                .orElseThrow(() -> new ProjectNotFoundException(
+                        "No se encontraron proyectos para el inversor con ID: " + investorId));
 
         return projects.stream()
                 .map(ProjectMapper::projectToResponseProjectDTO)
@@ -480,8 +503,7 @@ public class ProjectService implements IProjectService {
         Map<String, BigDecimal> sumsByCurrency = investorSpecificInvestments.stream()
                 .collect(Collectors.groupingBy(
                         inv -> inv.getCurrency().name(),
-                        Collectors.reducing(BigDecimal.ZERO, Investment::getAmount, BigDecimal::add)
-                ));
+                        Collectors.reducing(BigDecimal.ZERO, Investment::getAmount, BigDecimal::add)));
 
         String totalInvestedString = sumsByCurrency.entrySet().stream()
                 .map(entry -> String.format("%.2f %s", entry.getValue(), entry.getKey()))
@@ -491,7 +513,8 @@ public class ProjectService implements IProjectService {
         if (investmentCount == 1) {
             investmentDetails = String.format("tu inversión de %s", totalInvestedString);
         } else {
-            investmentDetails = String.format("tus %d inversiones, que suman un total de %s", investmentCount, totalInvestedString);
+            investmentDetails = String.format("tus %d inversiones, que suman un total de %s", investmentCount,
+                    totalInvestedString);
         }
 
         return investmentDetails;
@@ -501,38 +524,39 @@ public class ProjectService implements IProjectService {
         return """
                 ERES UN CLASIFICADOR DE PROYECTOS EXPERTO.
                 Tu **ÚNICA** tarea es analizar la 'Descripción del proyecto' y **responder ÚNICA Y EXCLUSIVAMENTE** con una sola palabra, que debe ser una de las etiquetas enumeradas.
-                
+
                 REGLAS EXTREMADAMENTE OBLIGATORIAS:
                 1. **DEBES** elegir una de las etiquetas exactas.
                 2. **NO PUEDES** responder con ninguna explicación, saludo, frase, punto, coma, o carácter adicional.
                 3. Si la descripción no encaja perfectamente, elige la etiqueta **MÁS** cercana.
                 4. Tu respuesta debe ser **SOLO LA ETIQUETA EN MAYÚSCULAS**.
-                
+
                 TECNOLOGÍA
-                
+
                 EDUCACIÓN
-                
+
                 SALUD Y BIENESTAR
-                
+
                 SOSTENIBILIDAD Y MEDIO AMBIENTE
-                
+
                 ARTE Y CULTURA
-                
+
                 FINANCIERO
-                
+
                 COMERCIO ELECTRÓNICO
-                
+
                 ALIMENTOS Y BEBIDAS
-                
+
                 SERVICIOS PROFESIONALES
-                
+
                 IMPACTO SOCIAL
-                
+
                 OTROS
-                
+
                 Descripción del proyecto:
-                """ + description + """
-                
-                Respuesta de la etiqueta única:""";
+                """
+                + description + """
+
+                        Respuesta de la etiqueta única:""";
     }
 }

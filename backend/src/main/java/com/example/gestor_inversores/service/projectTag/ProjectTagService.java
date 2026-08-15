@@ -14,8 +14,13 @@ public class ProjectTagService implements IProjectTagService {
 
     @Override
     public ProjectTag getTagByName(String tag) {
-
-        return projectTagRepository.findByName(tag.toUpperCase())
-                .orElseThrow(() -> new ProjectTagException("La etiqueta no existe"));
+        if (tag == null || tag.trim().isEmpty()) {
+            tag = "OTROS";
+        }
+        String cleanTag = tag.trim().toUpperCase();
+        return projectTagRepository.findByName(cleanTag)
+                .orElseGet(() -> projectTagRepository.findByName("OTROS")
+                .orElseGet(() -> projectTagRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> new ProjectTagException("La etiqueta no existe"))));
     }
 }

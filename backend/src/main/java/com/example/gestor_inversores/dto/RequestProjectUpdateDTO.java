@@ -44,4 +44,6 @@ public class RequestProjectUpdateDTO {
     private BigDecimal currentGoal;
 
     private Set<Long> studentIds;
+
+    private String projectTagName;
 }

@@ -44,8 +44,9 @@ public class MailService implements IMailService {
 
             mailSender.send(message);
 
-        } catch (MailException ex) {
-            throw new EmailSendException("Error al intentar enviar el correo a " + to);
+        } catch (Exception ex) {
+            // Se captura la excepción para no bloquear el flujo de la aplicación (registro, contratos) si el servidor SMTP no está configurado o falla
+            System.err.println("[MailService] No se pudo enviar el correo a " + to + ": " + ex.getMessage());
         }
     }
 }

@@ -46,9 +46,9 @@ public class ProjectDocumentService implements IProjectDocumentService {
                 Files.createDirectories(folderPath);
             }
 
-            String fileNameToSave = uploadFolder + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String fileNameToSave = System.currentTimeMillis() + "_" + file.getOriginalFilename();
             Path filePath = folderPath.resolve(fileNameToSave);
-            file.transferTo(filePath);
+            file.transferTo(filePath.toAbsolutePath().toFile());
 
             ProjectDocument document = new ProjectDocument();
             document.setFileName(file.getOriginalFilename());

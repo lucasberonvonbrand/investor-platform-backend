@@ -1,11 +1,12 @@
-# 🤖 Plataforma de Inversores - Backend
+# 🤖 ProyPlus - Plataforma de Inversores (Fullstack App)
 
-**ProyPlus** es una plataforma backend robusta diseñada para conectar a **estudiantes universitarios** con ideas innovadoras y a **inversores** que buscan potenciar el talento emergente. El sistema gestiona todo el ciclo de vida de un proyecto, desde su creación y financiación hasta la liquidación de ganancias, incorporando funcionalidades avanzadas de **Inteligencia Artificial** para el análisis de riesgos, la categorización de proyectos y el soporte al usuario.
+**ProyPlus** es una plataforma web fullstack (Spring Boot + Angular 19 + MySQL) diseñada para conectar a **estudiantes universitarios** con ideas innovadoras y a **inversores** que buscan potenciar el talento emergente. El sistema gestiona todo el ciclo de vida de un proyecto, desde su creación y financiación hasta la liquidación de ganancias, incorporando funcionalidades avanzadas de **Inteligencia Artificial** para el análisis de riesgos, la categorización automática de proyectos y el soporte al usuario mediante un chatbot inteligente.
+
+---
 
 ## 📋 Documentación Funcional
 
-Este proyecto incluye documentación funcional completa desarrollada 
-bajo metodología Scrum:
+Este proyecto incluye documentación funcional completa desarrollada bajo metodología Scrum:
 
 - ✔️ Visual Story Mapping
 - ✔️ Product Backlog con más de 35 historias de usuario y estimación en Story Points
@@ -17,629 +18,336 @@ bajo metodología Scrum:
 
 📄 [Ver documentación completa](https://drive.google.com/file/d/1bcMB-g117ibh29tEvLWR5scpI_qBaEl6/view?usp=sharing)
 
+---
+
 ## 💡 Decisiones de Diseño y Justificaciones Técnicas
 
-Esta sección detalla las decisiones clave de arquitectura y tecnología tomadas durante el desarrollo, demostrando un enfoque pragmático y orientado a resultados.
+Esta sección detalla las decisiones clave de arquitectura y tecnología tomadas durante el desarrollo del Frontend y Backend, demostrando un enfoque moderno, pragmático y orientado a resultados.
 
-#### ¿Por qué una Arquitectura Monolítica en Capas?
-Frente a una arquitectura de microservicios, se optó por un enfoque monolítico en capas por razones estratégicas. Dado el plazo de desarrollo de tres meses y la naturaleza del proyecto, esta decisión permitió:
-- **Agilizar el Desarrollo**: Al tener una única base de código y un solo artefacto a desplegar, se redujo la complejidad operativa y se aceleró la implementación de nuevas funcionalidades.
+#### ¿Por qué Angular 19, Standalone Components y Signals en el Frontend?
+Para la interfaz de usuario se seleccionó la última versión de **Angular (v19)** por sus notables ventajas de rendimiento y mantenibilidad:
+- **Componentes Standalone (Sin NgModules)**: Simplifican radicalmente la arquitectura al eliminar los pesados módulos tradicionales. Cada componente es autosuficiente y declara explícitamente sus dependencias.
+- **Estado Reactivo con Signals**: Se sustituyó el modelo tradicional de *Change Detection* por **Angular Signals**, logrando una actualización fina (*fine-grained*) del DOM únicamente cuando los datos cambian, optimizando el rendimiento y la fluidez visual.
+- **Sintaxis Control Flow Moderna**: Se adoptó la nueva sintaxis declarativa (`@if`, `@for`, `@switch`), reduciendo la verbosidad de directivas estructurales antiguas (`*ngIf`, `*ngFor`) y mejorando la legibilidad de las plantillas.
+- **Carga Diferida por Dominios (Lazy Loading)**: El enrutamiento se estructuró modularmente por dominios de negocio (`admin`, `auth`, `investors`, `projects`, `students`, `home`), descargando únicamente los paquetes JS necesarios bajo demanda.
+
+#### ¿Por qué una Arquitectura Monolítica en Capas en el Backend?
+Frente a una arquitectura de microservicios, se optó por un enfoque monolítico en capas por razones estratégicas:
+- **Agilitar el Desarrollo**: Al tener una única base de código y un solo artefacto a desplegar, se redujo la complejidad operativa y se aceleró la implementación de nuevas funcionalidades.
 - **Reducir la Complejidad Inicial**: Se evitaron los desafíos inherentes a los microservicios, como la comunicación entre servicios, el descubrimiento de servicios y la gestión de transacciones distribuidas.
 - **Mantenibilidad Centralizada**: La estructura en capas (`controller`, `service`, `repository`) garantiza una separación de responsabilidades clara dentro del monolito, facilitando su mantenimiento y escalabilidad futura.
 
 #### ¿Por qué JWT para la Seguridad?
-La elección de **JSON Web Tokens (JWT)** para la gestión de sesiones fue deliberada para construir una API **stateless**.
-- **Escalabilidad y Simplicidad**: Al no depender de una sesión en el servidor, la API puede escalar horizontalmente sin problemas. Una vez que el módulo de seguridad fue implementado, el resto del desarrollo pudo centrarse en la lógica de negocio sin preocuparse por la gestión de estado de las sesiones.
-- **Independencia del Cliente**: Permite que cualquier tipo de cliente (web, móvil) interactúe con la API de forma estandarizada, simplemente incluyendo el token en las cabeceras.
+La elección de **JSON Web Tokens (JWT)** para la gestión de sesiones fue deliberada para construir una API **stateless**:
+- **Escalabilidad y Simplicidad**: Al no depender de una sesión en el servidor, la API puede escalar horizontalmente sin problemas.
+- **Independencia del Cliente**: Permite que el frontend en Angular (o cualquier cliente móvil) interactúe con la API de forma estandarizada mediante la cabecera HTTP `Authorization: Bearer <token>`.
 
 #### ¿Por qué combinar Weka y Google Gemini?
-Se reconoció que no existe una única herramienta de IA para todos los problemas, por lo que se adoptó un enfoque híbrido:
-- **Weka para Análisis de Riesgo**: Para el análisis de riesgo, se necesitaba un modelo de Machine Learning clásico que pudiera ser entrenado con datos estructurados y numéricos. La librería **Weka** de Java, con su implementación de **Random Forest**, fue ideal. El diseño de la base de datos se realizó desde el inicio pensando en capturar las características necesarias para este modelo. El entrenamiento se realizó sobre un dataset de 5,000 registros ficticios (generados con un script de Python) que emulaban escenarios realistas, permitiendo al modelo aprender patrones complejos.
-- **Google Gemini para Tareas de NLP**: Para el **etiquetado de proyectos** y el **chatbot**, se requerían capacidades avanzadas de procesamiento de lenguaje natural (NLP). Entrenar un modelo propio para estas tareas habría requerido enormes cantidades de datos y tiempo. **Google Gemini** permitió delegar esta complejidad, logrando resultados de alta calidad con un esfuerzo de implementación mínimo a través de *prompt engineering*.
+Se adoptó un enfoque híbrido de Inteligencia Artificial para resolver cada problema con la herramienta óptima:
+- **Weka para Análisis de Riesgo**: Para evaluar el riesgo financiero de un contrato propuesta, se utilizó un modelo de Machine Learning clásico (**Random Forest**) entrenado sobre un dataset de 5,000 escenarios estructurados. La librería **Weka** integrada nativamente en Java ejecuta predicciones instantáneas y deterministas.
+- **Google Gemini para Tareas de NLP**: Para el **etiquetado automático de proyectos** por categoría y el **chatbot conversacional (Proy+ Bot)**, se delegó la complejidad a **Google Gemini** mediante *prompt engineering* avanzado.
 
-#### ¿Por qué usar DTOs y el Patrón Mapper?
-Inicialmente, la aplicación no utilizaba DTOs, pero se adoptó este patrón para mejorar la robustez y flexibilidad del código.
-- **Desacoplamiento y Seguridad**: El uso de **Data Transfer Objects (DTOs)** y mappers (con MapStruct) crea una capa de abstracción entre la API y el modelo de datos interno. Esto evita exponer directamente las entidades JPA y previene problemas de seguridad y acoplamiento.
-- **Flexibilidad de la API**: Permitió crear múltiples "vistas" de un mismo modelo de datos, adaptadas a las necesidades específicas de cada endpoint. Como se puede observar en el paquete `dto`, existen numerosas variantes de DTOs que surgieron para satisfacer requisitos concretos, algo que habría sido inviable utilizando únicamente las entidades del dominio.
+#### ¿Por me usar DTOs y el Patrón Mapper?
+- **Desacoplamiento y Seguridad**: El uso de **Data Transfer Objects (DTOs)** y mappers con MapStruct crea una capa de abstracción entre la API y el modelo de datos interno, evitando exponer entidades JPA directamente.
+- **Flexibilidad de la API**: Permite moldear la estructura exacta requerida por las pantallas del Frontend sin sobrecargar el tráfico de red.
 
-#### ¿Por qué un Enfoque de Testing Mixto (Manual y Automatizado)?
-Para garantizar la calidad y robustez del código en diferentes etapas del desarrollo, se implementó una estrategia de testing exhaustiva:
-- **Testing Manual con Postman**: Durante todo el ciclo de desarrollo, se construyó y documentó una colección completa de Postman. Esto permitió realizar pruebas exploratorias rápidas, validar el diseño de los endpoints desde la perspectiva del cliente, y verificar escenarios de integración complejos "end-to-end" de forma interactiva.
-- **Tests Unitarios con Mockito**: Se introdujeron para aislar y validar la lógica de negocio más crítica y compleja dentro de los servicios (ej. `ProjectService`). Esto asegura que las reglas de negocio, el manejo de excepciones y los efectos secundarios (como el envío de correos) funcionen impecablemente, sin la interferencia de la base de datos.
-- **Tests de Integración con Spring Boot Test**: Se aplicaron para verificar los flujos completos desde la capa web (`@SpringBootTest` y `MockMvc`), validando la recepción de peticiones HTTP, validaciones de DTOs, y la correcta persistencia en una base de datos en memoria (H2). Esto confirma que todas las capas de la aplicación se comunican correctamente.
-- **Perfiles de Spring (`@ActiveProfiles("test")`)**: Se configuró un entorno de pruebas dedicado mediante perfiles de Spring, separando completamente la configuración de producción (MySQL, credenciales reales) de la configuración de test (H2, claves dummy), garantizando ejecuciones de prueba aisladas y seguras.
+---
+
+## 🏛️ Arquitectura del Sistema
+
+![Diagrama de Arquitectura](images/Diagrama%20de%20arquitectura.png)
+
+---
 
 ## 🛡️ Consideraciones de Seguridad
 
-La seguridad fue un pilar fundamental desde el inicio del desarrollo, implementando múltiples capas de protección:
+- **Autenticación y Autorización con Spring Security**: Control de acceso granular a través de tokens JWT.
+- **Hashing de Contraseñas**: Encriptación estricta con algoritmo **BCrypt** (`BCryptPasswordEncoder`).
+- **Protección a Nivel de Método**: Anotaciones `@PreAuthorize` para restringir endpoints según el rol del usuario (`ADMIN`, `STUDENT`, `INVESTOR`).
+- **Validación de Datos**: Uso de `@Valid` en DTOs para prevenir datos inconsistentes.
+- **Intercepción HTTP en Frontend**: El frontend adjunta el token JWT automáticamente en cada petición HTTP mediante un `HttpInterceptor` y gestiona el flujo de desautenticación en caso de token expirado (HTTP 401/403).
 
-- **Autenticación y Autorización con Spring Security**: Se utilizó Spring Security como framework principal. Aunque se evaluó Keycloak, se optó por Spring Security por la familiaridad con la tecnología y su capacidad para integrarse rápidamente.
-- **Hashing de Contraseñas**: Todas las contraseñas de los usuarios se almacenan hasheadas utilizando el algoritmo **BCrypt**, implementado fácilmente a través de `BCryptPasswordEncoder`.
-- **Protección de Endpoints a Nivel de Método**: Se utiliza la anotación `@PreAuthorize` para un control de acceso granular basado en roles (`ADMIN`, `STUDENT`, `INVESTOR`). Esto asegura que solo los usuarios con los privilegios adecuados puedan acceder a las funcionalidades.
-- **Validación de Datos de Entrada**: Se emplea la anotación `@Valid` en los DTOs de los controladores para validar los datos de entrada. Esto protege la base de datos de información corrupta y previene vulnerabilidades básicas de inyección.
-- **Manejo de Secretos**: Se asume que todas las credenciales sensibles (como claves de API y contraseñas de base de datos) deben ser gestionadas a través de variables de entorno o un sistema de gestión de secretos en un entorno de producción, y no deben estar hardcodeadas en el código.
-
-## ✨ Buenas Prácticas y Patrones Aplicados
-
-- **Manejo Centralizado de Excepciones**: Se implementó un `ControllerHandler` (`@RestControllerAdvice`) para interceptar todas las excepciones lanzadas por la aplicación. Esto permite centralizar la lógica de manejo de errores y devolver respuestas HTTP consistentes y bien formateadas, mejorando la experiencia del desarrollador del cliente. Además, se creó un conjunto de **excepciones de negocio personalizadas** (ej. `ProjectNotFoundException`, `UnauthorizedOperationException`) para un control de errores más semántico y legible.
-- **Tareas Programadas (Scheduled Tasks)**: Se utilizó `@Scheduled` de Spring para crear tareas automáticas, como el `ProjectFundingScheduler`. Este componente se encarga de verificar periódicamente los proyectos cuya fecha límite de financiación ha expirado y no han alcanzado su meta, cambiando su estado a `NOT_FUNDED` de forma automática. Esto demuestra la capacidad de implementar lógica de negocio asíncrona y automatizada.
-- **Gestión Multi-Moneda**: El sistema está diseñado para operar con múltiples divisas (ARS, EUR, USD, CNY). Para mantener la coherencia, todos los objetivos de financiación de los proyectos (`budgetGoal` y `currentGoal`) se almacenan y calculan en **USD**. Sin embargo, las inversiones y ganancias pueden realizarse en cualquiera de las monedas soportadas. El `CurrencyConversionService` se encarga de realizar las conversiones necesarias en tiempo real para actualizar el progreso de financiación de un proyecto de manera precisa, sin importar la moneda de la transacción.
-
-## 🏛️ Arquitectura en Capas
-
-El proyecto sigue una arquitectura multicapa clásica, lo que garantiza una clara separación de responsabilidades, alta cohesión y bajo acoplamiento entre los componentes.
-
-- **Capa de Controladores (`controller`)**:
-  - **Responsabilidad**: Es el punto de entrada de la aplicación. Recibe las peticiones HTTP, valida y deserializa los datos de entrada (DTOs), y delega la lógica de negocio a la capa de servicios.
-  - **Flujo**: Mapea los endpoints (ej. `/api/projects`) a métodos específicos. Una vez que el servicio completa su trabajo, el controlador se encarga de serializar la respuesta y devolverla al cliente con el código de estado HTTP adecuado.
-
-- **Capa de Servicios (`service`)**:
-  - **Responsabilidad**: Contiene toda la lógica de negocio de la aplicación. Orquesta las operaciones, interactúa con múltiples repositorios si es necesario y realiza los cálculos o transformaciones de datos. Aquí residen los flujos de trabajo complejos, como la firma de un contrato o el análisis de riesgo.
-  - **Flujo**: Un método de servicio (ej. `createContract`) recibe datos del controlador, interactúa con los repositorios para persistir o recuperar entidades, y puede llamar a otros servicios (ej. `MailService` para enviar notificaciones).
-
-- **Capa de Repositorios (`repository`)**:
-  - **Responsabilidad**: Es la capa de acceso a datos (DAO). Define las interfaces (extendiendo de `JpaRepository`) que Spring Data JPA implementa automáticamente para realizar operaciones CRUD (Crear, Leer, Actualizar, Borrar) sobre las entidades de la base de datos.
-  - **Flujo**: Los servicios inyectan estas interfaces para interactuar con la base de datos de forma abstracta, sin necesidad de escribir consultas SQL manualmente para operaciones comunes.
-
-- **Capa de Dominio/Modelo (`model`)**:
-  - **Responsabilidad**: Contiene las entidades JPA que representan las tablas de la base de datos (ej. `Project`, `User`, `Contract`). Define la estructura de los datos, sus relaciones (`@OneToMany`, `@ManyToOne`, etc.) y restricciones.
-
-- **Componentes Transversales**:
-  - **Seguridad (`security`)**: Intercepta las peticiones para validar tokens JWT y aplicar reglas de autorización basadas en roles y permisos antes de que lleguen a los controladores.
-  - **Mapeadores (`mapper`)**: Utiliza `MapStruct` para convertir de forma segura y automática entre DTOs (usados en la capa de controladores) y Entidades (usadas en la capa de servicios y repositorios).
-  - **DTOs (`dto`)**: Data Transfer Objects que definen la "forma" de los datos que se envían y reciben a través de la API, actuando como un contrato con el cliente.
-  - **Excepciones (`exception`)**: Clases personalizadas para manejar errores de negocio específicos (ej. `ProjectNotFoundException`), permitiendo un control de errores centralizado y respuestas HTTP claras.
-
-## 🧱 Arquitectura y Tecnologías
-
-- ✅ **Framework**: Spring Boot 3 (Java 17)
-- ✅ **Base de Datos**: MySQL
-- ✅ **Seguridad**: Spring Security, JWT
-- ✅ **Testing Automático**: JUnit 5, Mockito, Spring Boot Test, H2 Database
-- ✅ **Testing Manual y API Docs**: Postman
-- ✅ **Machine Learning**: Weka (RandomForest)
-- ✅ **IA Generativa**: Google Gemini
-- ✅ **Gestión de Dependencias**: Maven
+---
 
 ## ✨ Funcionalidades Destacadas con IA
 
 ### 1. Análisis de Riesgo de Inversión (Weka)
-
-Antes de comprometer fondos, un inversor puede solicitar un análisis de riesgo para una propuesta de contrato. El sistema utiliza un modelo de **Random Forest** entrenado con datos históricos para predecir el nivel de riesgo (`BAJO`, `MEDIO`, `ALTO`).
-
-#### ¿Cómo funciona?
-
-1.  **Entrada de Datos**: El inversor proporciona el monto, la moneda y los porcentajes de rentabilidad que desea proponer.
-2.  **Cálculo de Métricas Clave**: El servicio `RiskPredictionService` calcula en tiempo real un conjunto de características (features) para alimentar el modelo:
-    - **Progreso del Proyecto**: Porcentaje de la meta de financiación ya alcanzado.
-    - **Impacto de la Inversión**: Qué porcentaje de la meta total (o de lo que falta por financiar) representa la inversión propuesta.
-    - **Ratio de Rentabilidad**: Compara la rentabilidad ofrecida con un promedio del mercado (8% anual).
-    - **Ritmo de Financiación (Funding Pace)**: Mide si el proyecto está recaudando fondos más rápido o más lento de lo esperado en función del tiempo transcurrido.
-3.  **Predicción del Modelo**: Estas métricas se introducen en el modelo de Weka, que devuelve una categoría de riesgo y un **puntaje de confianza**.
-4.  **Informe Detallado**: Se genera un informe completo que incluye:
-    - La categoría de riesgo y su confianza.
-    - Un desglose de los **factores de análisis**, explicando cuáles son positivos o negativos y su **importancia relativa** en la predicción.
-    - **Proyecciones de ganancias** a 1, 2 y 3 años.
-    - Gráficos para visualizar la composición del riesgo.
+Evalúa propuestas de contratos utilizando el modelo de **Random Forest**, calculando el nivel de riesgo (`BAJO`, `MEDIO`, `ALTO`), porcentaje de confianza, proyecciones de ganancias a 3 años y desglose de factores de análisis.
 
 ### 2. Etiquetado Automático de Proyectos (Google Gemini)
+Analiza la descripción ingresada por un estudiante al crear un proyecto y le asigna automáticamente la categoría más adecuada (ej. `TECNOLOGÍA`, `FINTECH`, `SALUD Y BIENESTAR`, `EDUCACIÓN`).
 
-Cuando un estudiante crea un proyecto, la descripción proporcionada es analizada por la IA para asignarle automáticamente una categoría.
+### 3. Chatbot de Soporte - Proy+ Bot (Google Gemini)
+Asistente virtual inteligente que responde preguntas frecuentes y guía a los usuarios basándose en la base de conocimientos oficial de la plataforma.
 
-#### ¿Cómo funciona?
-
-1.  **Prompt Engineering**: El servicio `ProjectService` construye un *prompt* específico que instruye a Google Gemini para que actúe como un clasificador experto.
-2.  **Contexto y Reglas**: El prompt contiene una lista cerrada de categorías (ej. `TECNOLOGÍA`, `SALUD Y BIENESTAR`, `IMPACTO SOCIAL`) y reglas estrictas para que la IA responda **únicamente** con una de las etiquetas de la lista.
-3.  **Inferencia del Modelo**: Se envía la descripción del proyecto a Gemini, que devuelve la etiqueta más apropiada.
-4.  **Asignación**: La etiqueta es asignada al proyecto, mejorando su visibilidad y capacidad de ser descubierto por inversores interesados en áreas específicas.
-
-### 3. Chatbot de Soporte (Google Gemini)
-
-La plataforma incluye un chatbot, **Proy+ Bot**, que responde a las preguntas frecuentes de los usuarios.
-
-#### ¿Cómo funciona?
-
-1.  **Base de Conocimiento**: El servicio `GeminiService` carga una base de conocimiento interna que contiene información detallada sobre el funcionamiento de la plataforma, los flujos de negocio y las políticas.
-2.  **Instrucción de Sistema (System Instruction)**: Se crea un prompt de sistema que define la "personalidad" y las reglas del chatbot:
-    - Debe presentarse como **Proy+ Bot**.
-    - Debe responder basándose **exclusivamente** en la base de conocimiento proporcionada.
-    - Tiene prohibido revelar que es un modelo de IA o que sigue instrucciones.
-    - Si no conoce la respuesta, debe indicarlo de forma amable y profesional.
-3.  **Interacción**: Cuando un usuario envía una consulta, esta se combina con la instrucción de sistema y se envía a Gemini, que genera una respuesta coherente y contextualizada.
+---
 
 ## 🔄 Flujos de Negocio Detallados
 
 ![Diagrama de Flujo Principal](images/Diagrama%20de%20flujo.png)
 
 ### 1. Flujo de Creación y Financiación de un Proyecto
-
-1.  **Creación (Estudiante)**: Un estudiante registra un proyecto, proporcionando detalles como nombre, descripción, meta de financiación y fechas. La IA le asigna una etiqueta. El proyecto inicia en estado `PENDING_FUNDING`.
-2.  **Propuesta de Contrato (Inversor)**: Un inversor interesado crea un contrato (`DRAFT`), especificando monto, moneda y rentabilidades.
-3.  **Negociación**: Ambas partes pueden editar los términos del contrato mientras esté en estado `DRAFT`.
-4.  **Acuerdo y Bloqueo**: Cualquiera de las dos partes puede "dar el visto bueno" a los términos. Esto cambia el estado del contrato a `PARTIALLY_SIGNED` y lo **bloquea**, impidiendo futuras modificaciones. Este paso no es una firma, sino un acuerdo sobre los términos finales.
-5.  **Ratificación del Contrato**:
-    - Una vez bloqueado, ambas partes deben ratificar su acuerdo a través de la plataforma.
-    - Cuando la primera parte confirma, el sistema lo registra.
-    - Cuando la segunda parte confirma, el contrato cambia su estado a `SIGNED`.
-6.  **Creación de la Inversión**: Al pasar a `SIGNED`, se crea automáticamente una **inversión** asociada en estado `IN_PROGRESS`, y se notifica al inversor para que realice la transferencia.
-7.  **Transferencia y Confirmación**:
-    - El inversor envía los fondos (fuera de la plataforma) y lo notifica en el sistema (`PENDING_CONFIRMATION`).
-    - El estudiante verifica la recepción y confirma en la plataforma (`RECEIVED`). El `currentGoal` del proyecto se actualiza (convirtiendo el monto a USD si es necesario).
-8.  **Cierre del Ciclo de Financiación**:
-    - Si el proyecto alcanza su `budgetGoal`, pasa a `IN_PROGRESS`.
-    - Si el tiempo de financiación expira sin alcanzar la meta, pasa a `NOT_FUNDED`, y se debe iniciar la devolución de los fondos.
+1. **Creación (Estudiante)**: Un estudiante registra un proyecto. La IA le asigna una etiqueta automáticamente (`PENDING_FUNDING`).
+2. **Propuesta de Contrato (Inversor)**: Un inversor crea una propuesta (`DRAFT`).
+3. **Negociación y Visto Bueno**: Ambas partes acuerdan términos y bloquean el contrato (`PARTIALLY_SIGNED`).
+4. **Ratificación y Firma**: Ambas partes confirman digitalmente (`SIGNED`), creando automáticamente la inversión (`IN_PROGRESS`).
+5. **Transferencia y Confirmación**: El inversor envía fondos fuera de la plataforma y el estudiante confirma su recepción (`RECEIVED`), actualizando el avance financiero.
 
 ### 2. Flujo de Cierre de Contrato y Generación de Ganancias
+1. **Cierre de Contrato**: El estudiante cierra el contrato al completar el proyecto (`CLOSED`).
+2. **Cálculo de Ganancias**: El sistema genera automáticamente el registro de ganancias (`Earning`).
+3. **Pago y Confirmación**: El estudiante transfiere el retorno al inversor y este confirma la recepción (`RECEIVED`).
 
-1.  **Cierre del Contrato (Estudiante)**: Una vez que el proyecto ha finalizado y la inversión ha cumplido su ciclo, el estudiante cierra el contrato (`CLOSED`).
-2.  **Cálculo y Creación de Ganancia**: Al cerrar el contrato, el sistema calcula automáticamente la ganancia (`Earning`) para el inversor, basándose en el tiempo transcurrido y las tasas de rentabilidad pactadas. La ganancia se crea en estado `IN_PROGRESS`.
-3.  **Pago de Ganancia (Estudiante)**: El estudiante transfiere la ganancia al inversor y lo notifica en la plataforma (`PENDING_CONFIRMATION`).
-4.  **Confirmación de Ganancia (Inversor)**: El inversor confirma la recepción de los fondos, y la ganancia pasa a `RECEIVED`, completando el ciclo.
+---
 
-### 3. Flujo de Cancelación y Devolución
+## 🗄️ Diagrama Entidad-Relación (DER)
 
-- **Cancelación de Contrato**:
-    - Un contrato en `DRAFT` o `PARTIALLY_SIGNED` puede ser cancelado por cualquiera de las partes.
-    - Un contrato `SIGNED` puede ser cancelado por el estudiante, lo que también cancela la inversión asociada.
-- **Cancelación de Proyecto**:
-    - Si un estudiante cancela un proyecto en `IN_PROGRESS`, se notifica a los inversores para iniciar la devolución de fondos.
-- **Proceso de Devolución (`PENDING_REFUND`)**:
-    - El estudiante inicia el proceso de devolución para los contratos de proyectos cancelados o no financiados.
-    - Notifica el envío de la devolución (`PENDING_CONFIRMATION`).
-    - El inversor confirma la recepción (`REFUNDED`).
+![Diagrama Entidad-Relación (DER)](images/DER.jpg)
 
-## ⚙️ Cómo Ejecutar el Proyecto
+---
 
-### Requisitos
+## ⚙️ Cómo Ejecutar el Proyecto con Docker Compose
 
-- Java 17
-- Maven 3.9+
-- MySQL
-- Postman (opcional)
+La forma recomendada y más sencilla de ejecutar toda la plataforma (Frontend, Backend y Base de Datos con datos iniciales) es utilizando **Docker Compose**.
 
-### Paso a Paso
+### Requisitos Previos
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución.
 
-1️⃣ **Clonar el repositorio**:
+### Comando Único de Despliegue
+
+1️⃣ **Clonar el repositorio y levantar todos los servicios**:
 
 ```bash
 git clone <URL-DEL-REPOSITORIO>
 cd investor-platform-backend
+docker compose up -d --build
 ```
 
-2️⃣ **Configurar la base de datos MySQL**:
+Docker construirá e iniciará automáticamente:
+- **Base de Datos MySQL 8.0**: Inicializa las tablas e inserta los permisos, roles (`STUDENT`, `INVESTOR`, `ADMIN`) y etiquetas iniciales mediante `docker-init/01-init.sql`.
+- **Backend Spring Boot 3**: Compila el proyecto con Maven y levanta la API REST en Java 17.
+- **Frontend Angular 19**: Instala las dependencias y sirve la aplicación web responsiva.
 
-```sql
-CREATE DATABASE IF NOT EXISTS `investor-platform`;
-```
+---
 
-Use el siguiente comando para importar los datos iniciales:
-```bash
-mysql -u <tu_usuario> -p investor-platform < ./db/investor-platform-backend-dump.sql
-```
+### 🌐 Servicios Disponibles
 
-3️⃣ **Configurar variables de entorno**:
-Deberás configurar las credenciales de la base de datos y las claves de API (como la de Google Gemini) en el archivo `src/main/resources/application.properties`.
+| Servicio | URL / Puerto | Descripción |
+| :--- | :--- | :--- |
+| **Frontend Web** | `http://localhost:4200` | Interfaz de Usuario (Angular 19) |
+| **Backend REST API** | `http://localhost:8080` | API REST (Spring Boot 3) |
+| **Base de Datos** | `localhost:3307` | MySQL 8.0 (Mapeado a puerto host `3307`) |
 
-4️⃣ **Levantar la aplicación**:
+---
 
-```bash
-cd backend
-mvn spring-boot:run
-```
+### 🛠️ Comandos Útiles de Docker
 
-La aplicación estará disponible en `http://localhost:8080`.
+* **Ver estado de los contenedores**: `docker compose ps`
+* **Ver logs del Backend**: `docker logs proyplus-backend -f`
+* **Ver logs del Frontend**: `docker logs proyplus-frontend -f`
+* **Detener la aplicación**: `docker compose down`
 
-### 🧪 Ejecutar los Tests
-
-El proyecto cuenta con una suite de tests unitarios y de integración (asegurando el correcto funcionamiento de las lógicas de negocio, la seguridad y la persistencia en H2). Para ejecutarlos, utiliza el siguiente comando desde el directorio `backend`:
-
-```bash
-mvn clean test
-```
-
-## 🔐 Endpoints
-
-### Autenticación
-- `POST /auth/login`: Inicia sesión y obtiene un token JWT.
-- `POST /auth/forgot-password`: Inicia el proceso de reseteo de contraseña.
-- `POST /auth/reset-password`: Resetea la contraseña usando un token.
-
-### Inversores
-- `GET /api/investors`: Obtiene todos los inversores (ADMIN).
-- `GET /api/investors/{id}`: Obtiene un inversor por ID (INVESTOR, ADMIN).
-- `POST /api/investors`: Crea un nuevo inversor.
-- `PUT /api/investors/update-by-admin/{id}`: Actualiza un inversor (ADMIN).
-- `PATCH /api/investors/{id}`: Actualiza parcialmente un inversor (INVESTOR).
-- `PATCH /api/investors/activate/{id}`: Activa un inversor (INVESTOR, ADMIN).
-- `PATCH /api/investors/desactivate/{id}`: Desactiva un inversor (INVESTOR, ADMIN).
-- `GET /api/investors/check-cuit/{cuit}`: Verifica si existe un CUIT.
-
-### Análisis de Riesgo
-- `POST /api/analysis/risk`: Analiza el riesgo de una inversión (INVESTOR).
-
-### ChatBot
-- `POST /api/chatbot`: Envía una pregunta al chatbot.
-
-### Documentos de Proyecto
-- `POST /api/project-documents/upload`: Sube un documento a un proyecto (STUDENT, ADMIN).
-- `GET /api/project-documents/project/{projectId}`: Obtiene todos los documentos de un proyecto (STUDENT, INVESTOR, ADMIN).
-- `DELETE /api/project-documents/{id}`: Elimina un documento (STUDENT, ADMIN).
-- `GET /api/project-documents/download/{id}`: Descarga un documento (STUDENT, INVESTOR, ADMIN).
-
-### Administrador
-- `PUT /api/admin/projects/{id}`: Actualiza un proyecto (ADMIN).
-- `PUT /api/admin/contracts/{id}`: Actualiza un contrato (ADMIN).
-- `PUT /api/admin/earnings/{id}/status`: Actualiza el estado de una ganancia (ADMIN).
-- `PUT /api/admin/investments/{id}`: Actualiza una inversión (ADMIN).
-
-### Estudiantes
-- `GET /api/students`: Obtiene todos los estudiantes (ADMIN).
-- `GET /api/students/{id}`: Obtiene un estudiante por ID (STUDENT, ADMIN).
-- `GET /api/students/projects/{id}`: Obtiene los proyectos de un estudiante (STUDENT, ADMIN).
-- `GET /api/students/names`: Obtiene los nombres de todos los estudiantes (STUDENT).
-- `POST /api/students`: Crea un nuevo estudiante.
-- `PUT /api/students/update-by-admin/{id}`: Actualiza un estudiante (ADMIN).
-- `PATCH /api/students/{id}`: Actualiza parcialmente un estudiante (STUDENT).
-- `PATCH /api/students/activate/{id}`: Activa un estudiante (ADMIN).
-- `PATCH /api/students/desactivate/{id}`: Desactiva un estudiante (STUDENT, ADMIN).
-- `GET /api/students/by-username`: Obtiene un estudiante por nombre de usuario (STUDENT, INVESTOR, ADMIN).
-- `GET /api/students/check-username/{username}`: Verifica si existe un nombre de usuario.
-- `GET /api/students/check-email/{email}`: Verifica si existe un email.
-- `GET /api/students/check-dni/{dni}`: Verifica si existe un DNI.
-
-### Ganancias
-- `PUT /api/earnings/confirm-payment-sent/{id}`: Confirma el envío de un pago (STUDENT).
-- `PUT /api/earnings/confirm-receipt/{id}`: Confirma la recepción de un pago (INVESTOR).
-- `PUT /api/earnings/mark-not-received/{id}`: Marca un pago como no recibido (INVESTOR).
-- `GET /api/earnings`: Obtiene todas las ganancias (ADMIN).
-- `GET /api/earnings/project/{projectId}`: Obtiene las ganancias de un proyecto (STUDENT, INVESTOR, ADMIN).
-- `GET /api/earnings/investor/{investorId}`: Obtiene las ganancias de un inversor (INVESTOR, ADMIN).
-- `GET /api/earnings/student/{studentId}`: Obtiene las ganancias de un estudiante (STUDENT, ADMIN).
-- `GET /api/earnings/summary`: Obtiene un resumen de las ganancias (ADMIN).
-- `GET /api/earnings/by-project/{projectId}`: Obtiene las ganancias por ID de proyecto (STUDENT, INVESTOR, ADMIN).
-- `GET /api/earnings/by-contract/{contractId}`: Obtiene las ganancias por ID de contrato (STUDENT, INVESTOR, ADMIN).
-
-### Usuarios
-- `GET /api/users`: Obtiene todos los usuarios (ADMIN).
-- `GET /api/users/{id}`: Obtiene un usuario por ID (ADMIN).
-- `POST /api/users`: Crea un nuevo usuario (ADMIN).
-- `PATCH /api/users/{id}`: Actualiza parcialmente un usuario (ADMIN).
-- `PATCH /api/users/activate/{id}`: Activa un usuario (ADMIN).
-- `PATCH /api/users/desactivate/{id}`: Desactiva un usuario (ADMIN).
-- `GET /api/users/check-username/{username}`: Verifica si existe un nombre de usuario (ADMIN).
-- `GET /api/users/check-email/{email}`: Verifica si existe un email (ADMIN).
-
-### Moneda
-- `GET /api/currency/convert`: Obtiene la tasa de conversión o convierte un monto.
-
-### Roles
-- `GET /api/roles`: Obtiene todos los roles (ADMIN).
-- `GET /api/roles/{id}`: Obtiene un rol por ID (ADMIN).
-- `POST /api/roles`: Crea un nuevo rol (ADMIN).
-- `PATCH /api/roles/{id}`: Actualiza los permisos de un rol (ADMIN).
-- `DELETE /api/roles/{id}`: Elimina un rol (ADMIN).
-
-### Inversiones
-- `PUT /api/investments/confirm-receipt/{id}`: Confirma la recepción de una inversión (STUDENT).
-- `PUT /api/investments/mark-not-received/{id}`: Marca una inversión como no recibida (STUDENT).
-- `PUT /api/investments/reject-overfunded/{id}`: Rechaza una inversión por exceso de fondos (STUDENT).
-- `PUT /api/investments/confirm-refund-sent/{id}`: Confirma el envío de un reembolso (STUDENT).
-- `PUT /api/investments/confirm-payment-sent/{id}`: Confirma el envío de un pago (INVESTOR).
-- `PUT /api/investments/cancel/{id}`: Cancela una inversión (INVESTOR).
-- `PUT /api/investments/confirm-refund/{id}`: Confirma la recepción de un reembolso (INVESTOR).
-- `PUT /api/investments/mark-refund-not-received/{id}`: Marca un reembolso como no recibido (INVESTOR).
-- `GET /api/investments/{id}`: Obtiene una inversión por ID (STUDENT, INVESTOR, ADMIN).
-- `GET /api/investments`: Obtiene todas las inversiones (STUDENT, INVESTOR, ADMIN).
-- `GET /api/investments/actives`: Obtiene las inversiones activas para estudiantes (STUDENT, INVESTOR, ADMIN).
-- `GET /api/investments/investments-by-project/{projectId}`: Obtiene las inversiones activas de un proyecto (STUDENT, INVESTOR, ADMIN).
-- `GET /api/investments/by-investor/{investorId}`: Obtiene las inversiones de un inversor (STUDENT, INVESTOR, ADMIN).
-- `DELETE /api/investments/{id}`: Elimina una inversión (ADMIN).
-
-### Permisos
-- `GET /api/permissions`: Obtiene todos los permisos (ADMIN).
-- `GET /api/permissions/{id}`: Obtiene un permiso por ID (ADMIN).
-- `POST /api/permissions`: Crea un nuevo permiso (ADMIN).
-- `PUT /api/permissions/{id}`: Actualiza un permiso (ADMIN).
-- `DELETE /api/permissions/{id}`: Elimina un permiso (ADMIN).
-
-### Contratos
-- `POST /api/contracts`: Crea un nuevo contrato (INVESTOR).
-- `PUT /api/contracts/update-by-investor/{id}`: Actualiza un contrato (INVESTOR).
-- `PUT /api/contracts/update-by-student/{id}`: Actualiza un contrato (STUDENT).
-- `PUT /api/contracts/agree-by-student/{id}`: Acepta un contrato (STUDENT).
-- `PUT /api/contracts/agree-by-investor/{id}`: Acepta un contrato (INVESTOR).
-- `PUT /api/contracts/sign-by-student/{id}`: Firma un contrato (STUDENT).
-- `PUT /api/contracts/sign-by-investor/{id}`: Firma un contrato (INVESTOR).
-- `PUT /api/contracts/close/{id}`: Cierra un contrato (STUDENT).
-- `PUT /api/contracts/cancel-by-student/{id}`: Cancela un contrato (STUDENT).
-- `PUT /api/contracts/refund/{id}`: Reembolsa un contrato (STUDENT).
-- `PUT /api/contracts/cancel-by-investor/{id}`: Cancela un contrato (INVESTOR).
-- `GET /api/contracts/by-project/{projectId}`: Obtiene los contratos de un proyecto (STUDENT).
-- `GET /api/contracts/by-investor/{investorId}`: Obtiene los contratos de un inversor (INVESTOR).
-- `GET /api/contracts/by-owner/{studentId}`: Obtiene los contratos de un estudiante (STUDENT).
-- `GET /api/contracts/investor/{investorId}/project/{projectId}`: Obtiene los contratos de un inversor para un proyecto (INVESTOR).
-- `GET /api/contracts/exists`: Verifica si existe un contrato.
-
-### Proyectos
-- `POST /api/projects`: Crea un nuevo proyecto (STUDENT).
-- `PUT /api/projects/{id}`: Actualiza un proyecto (STUDENT, ADMIN).
-- `DELETE /api/projects/{id}`: Elimina un proyecto (ADMIN).
-- `GET /api/projects/{id}`: Obtiene un proyecto por ID (STUDENT, INVESTOR, ADMIN).
-- `GET /api/projects/{id}/students`: Obtiene los estudiantes de un proyecto (STUDENT, INVESTOR, ADMIN).
-- `GET /api/projects`: Obtiene todos los proyectos (STUDENT, INVESTOR, ADMIN).
-- `GET /api/projects/dashboard-admin/projects`: Obtiene todos los proyectos para el dashboard de admin (ADMIN).
-- `GET /api/projects/by-owner/{ownerId}`: Obtiene los proyectos de un estudiante (STUDENT, ADMIN).
-- `PUT /api/projects/activate/{id}`: Activa un proyecto (ADMIN).
-- `PUT /api/projects/complete/{projectId}`: Marca un proyecto como completado (STUDENT).
-- `PUT /api/projects/cancel/{id}`: Cancela un proyecto (STUDENT).
-- `GET /api/projects/tag/{tag}`: Obtiene proyectos por etiqueta (STUDENT, INVESTOR, ADMIN).
-- `GET /api/projects/by-investment/{investorId}`: Obtiene proyectos por ID de inversión (INVESTOR, ADMIN).
-- `POST /api/projects/{projectId}/contact`: Contacta al dueño de un proyecto (INVESTOR).
-
-## 📬 Colección Postman
-
-- **Archivo**: `postman/investor-platform-backend.postman_collection`
-- **Instrucciones**: Abrir Postman → Importar archivo → Ejecutar requests.
-
-## 🗄️ Base de Datos MySQL
-
-- **Archivo**: `db/investor-platform-backend-dump.sql`
-- **Instrucciones**: Usar este archivo para crear y poblar la base de datos `investor-platform` antes de ejecutar la aplicación.
+---
 
 ## 📁 Estructura del Proyecto
 
-![DER](images/DER.jpg)
-```
+```text
 investor-platform-backend/
-├── backend/
-│   ├── .gitattributes
-│   ├── .gitignore
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   ├── pom.xml
-│   └── src/
-│       ├── main/
-│       │   ├── java/
-│       │   │   └── com/
-│       │   │       └── example/
-│       │   │           └── gestor_inversores/
-│       │   │               ├── GestorInversoresApplication.java
-│       │   │               ├── config/
-│       │   │               │   ├── AppConfig.java
-│       │   │               │   └── GeminiConfiguration.java
-│       │   │               ├── controller/
-│       │   │               │   ├── AdminController.java
-│       │   │               │   ├── AuthenticationController.java
-│       │   │               │   ├── ChatBotController.java
-│       │   │               │   ├── ContractController.java
-│       │   │               │   ├── ControllerHandler.java
-│       │   │               │   ├── CurrencyController.java
-│       │   │               │   ├── EarningController.java
-│       │   │               │   ├── InvestmentController.java
-│       │   │               │   ├── InvestorController.java
-│       │   │               │   ├── PasswordResetController.java
-│       │   │               │   ├── PermissionController.java
-│       │   │               │   ├── ProjectController.java
-│       │   │               │   ├── ProjectDocumentController.java
-│       │   │               │   ├── RiskAnalysisController.java
-│       │   │               │   ├── RoleController.java
-│       │   │               │   ├── StudentController.java
-│       │   │               │   └── UserController.java
-│       │   │               ├── dto/
-│       │   │               │   ├── AddressDTO.java
-│       │   │               │   ├── AuthLoginRequestDTO.java
-│       │   │               │   ├── AuthLoginResponseDTO.java
-│       │   │               │   ├── ContactOwnerDTO.java
-│       │   │               │   ├── ContractActionDTO.java
-│       │   │               │   ├── CurrencyConversionDTO.java
-│       │   │               │   ├── EarningsSummaryDTO.java
-│       │   │               │   ├── PasswordResetRequestDTO.java
-│       │   │               │   ├── PasswordResetRequestEmailDTO.java
-│       │   │               │   ├── PasswordResetResponseDTO.java
-│       │   │               │   ├── ProjectDTO.java
-│       │   │               │   ├── RequestAdminContractUpdateDTO.java
-│       │   │               │   ├── RequestAdminInvestmentUpdateDTO.java
-│       │   │               │   ├── RequestAdminProjectUpdateDTO.java
-│       │   │               │   ├── RequestAdminUpdateEarningStatusDTO.java
-│       │   │               │   ├── RequestContractActionByInvestorDTO.java
-│       │   │               │   ├── RequestContractActionByStudentDTO.java
-│       │   │               │   ├── RequestContractDTO.java
-│       │   │               │   ├── RequestContractUpdateByInvestorDTO.java
-│       │   │               │   ├── RequestContractUpdateByStudentDTO.java
-│       │   │               │   ├── RequestEarningActionByStudentDTO.java
-│       │   │               │   ├── RequestEarningActionDTO.java
-│       │   │               │   ├── RequestInvestmentActionByInvestorDTO.java
-│       │   │               │   ├── RequestInvestorDTO.java
-│       │   │               │   ├── RequestInvestorUpdateByAdminDTO.java
-│       │   │               │   ├── RequestInvestorUpdateDTO.java
-│       │   │               │   ├── RequestProjectCurrentGoalUpdateDTO.java
-│       │   │               │   ├── RequestProjectDTO.java
-│       │   │               │   ├── RequestProjectDocumentDTO.java
-│       │   │               │   ├── RequestProjectUpdateDTO.java
-│       │   │               │   ├── RequestRiskPredictionDTO.java
-│       │   │               │   ├── RequestStudentByUsernameDTO.java
-│       │   │               │   ├── RequestStudentDTO.java
-│       │   │               │   ├── RequestStudentUpdateByAdminDTO.java
-│       │   │               │   ├── RequestStudentUpdateDTO.java
-│       │   │               │   ├── RequestUserDTO.java
-│       │   │               │   ├── RequestUserUpdateDTO.java
-│       │   │               │   ├── ResponseContractDTO.java
-│       │   │               │   ├── ResponseEarningDTO.java
-│       │   │               │   ├── ResponseFile.java
-│       │   │               │   ├── ResponseInvestmentDTO.java
-│       │   │               │   ├── ResponseInvestorDTO.java
-│       │   │               │   ├── ResponseProjectByStudentDTO.java
-│       │   │               │   ├── ResponseProjectDTO.java
-│       │   │               │   ├── ResponseProjectDocumentDTO.java
-│       │   │               │   ├── ResponseProjectStudentDTO.java
-│       │   │               │   ├── ResponseRiskAnalysisDTO.java
-│       │   │               │   ├── ResponseRiskPredictionDTO.java
-│       │   │               │   ├── ResponseStudentDTO.java
-│       │   │               │   ├── ResponseStudentNameDTO.java
-│       │   │               │   ├── ResponseUserDTO.java
-│       │   │               │   └── RoleDTO.java
-│       │   │               ├── exception/
-│       │   │               │   ├── ApiError.java
-│       │   │               │   ├── BusinessException.java
-│       │   │               │   ├── ContractAlreadySignedException.java
-│       │   │               │   ├── ContractCannotBeModifiedException.java
-│       │   │               │   ├── ContractNotFoundException.java
-│       │   │               │   ├── CreateException.java
-│       │   │               │   ├── CuitAlreadyExistsException.java
-│       │   │               │   ├── CurrencyConversionException.java
-│       │   │               │   ├── DeleteException.java
-│       │   │               │   ├── DniAlreadyExistsException.java
-│       │   │               │   ├── DocumentFileException.java
-│       │   │               │   ├── DocumentFileNotFoundException.java
-│       │   │               │   ├── EarningNotFoundException.java
-│       │   │               │   ├── EmailAlreadyExistsException..java
-│       │   │               │   ├── EmailNotFoundException.java
-│       │   │               │   ├── EmailSendException.java
-│       │   │               │   ├── ExistingProjectException.java
-│       │   │               │   ├── ExpiredTokenException.java
-│       │   │               │   ├── InternalServerErrorException.java
-│       │   │               │   ├── InvalidContractOperationException.java
-│       │   │               │   ├── InvalidPasswordException.java
-│       │   │               │   ├── InvalidProjectException.java
-│       │   │               │   ├── InvalidTokenException.java
-│       │   │               │   ├── InvestmentNotFoundException.java
-│       │   │               │   ├── InvestorDesactivationException.java
-│       │   │               │   ├── InvestorNotFoundException.java
-│       │   │               │   ├── OwnerNotFoundException.java
-│       │   │               │   ├── PermissionAlreadyExistsException.java
-│       │   │               │   ├── PermissionNotFoundException.java
-│       │   │               │   ├── ProjectNotFoundException.java
-│       │   │               │   ├── ProjectTagException.java
-│       │   │               │   ├── RoleAlreadyExistsException.java
-│       │   │               │   ├── RoleNotFoundException.java
-│       │   │               │   ├── StudentDesactivationException.java
-│       │   │               │   ├── StudentNotFoundException.java
-│       │   │               │   ├── UnauthorizedOperationException.java
-│       │   │               │   ├── UpdateException.java
-│       │   │               │   ├── UserNotFoundException.java
-│       │   │               │   ├── UsernameAlreadyExistsException.java
-│       │   │               │   └── ValidationExceptionHandler.java
-│       │   │               ├── mapper/
-│       │   │               │   ├── AddressMapper.java
-│       │   │               │   ├── AdminMapper.java
-│       │   │               │   ├── ContractActionMapper.java
-│       │   │               │   ├── ContractMapper.java
-│       │   │               │   ├── EarningMapper.java
-│       │   │               │   ├── InvestmentMapper.java
-│       │   │               │   ├── InvestorMapper.java
-│       │   │               │   ├── ProjectMapper.java
-│       │   │               │   ├── ProjectStudentMapper.java
-│       │   │               │   ├── StudentMapper.java
-│       │   │               │   └── UserMapper.java
-│       │   │               ├── model/
-│       │   │               │   ├── Address.java
-│       │   │               │   ├── Contract.java
-│       │   │               │   ├── ContractAction.java
-│       │   │               │   ├── Earning.java
-│       │   │               │   ├── Investment.java
-│       │   │               │   ├── Investor.java
-│       │   │               │   ├── PasswordResetToken.java
-│       │   │               │   ├── Permission.java
-│       │   │               │   ├── Project.java
-│       │   │               │   ├── ProjectDocument.java
-│       │   │               │   ├── ProjectTag.java
-│       │   │               │   ├── Role.java
-│       │   │               │   ├── Student.java
-│       │   │               │   ├── User.java
-│       │   │               │   └── enums/
-│       │   │               │       ├── ContractStatus.java
-│       │   │               │       ├── Currency.java
-│       │   │               │       ├── DegreeStatus.java
-│       │   │               │       ├── EarningStatus.java
-│       │   │               │       ├── InvestmentStatus.java
-│       │   │               │       ├── ProjectStatus.java
-│       │   │               │       ├── Province.java
-│       │   │               │       ├── RiskLevel.java
-│       │   │               │       └── University.java
-│       │   │               ├── repository/
-│       │   │               │   ├── IContractRepository.java
-│       │   │               │   ├── IEarningRepository.java
-│       │   │               │   ├── IInvestmentRepository.java
-│       │   │               │   ├── IInvestorRepository.java
-│       │   │               │   ├── IPasswordResetTokenRepository.java
-│       │   │               │   ├── IPermissionRepository.java
-│       │   │               │   ├── IProjectDocumentRepository.java
-│       │   │               │   ├── IProjectRepository.java
-│       │   │               │   ├── IProjectTagRepository.java
-│       │   │               │   ├── IRoleRepository.java
-│       │   │               │   ├── IStudentRepository.java
-│       │   │               │   └── IUserRepository.java
-│       │   │               ├── security/
-│       │   │               │   └── config/
-│       │   │               │       ├── SecurityConfig.java
-│       │   │               │       └── filter/
-│       │   │               │           └── JwtTokenValidator.java
-│       │   │               ├── service/
-│       │   │               │   ├── admin/
-│       │   │               │   │   ├── AdminService.java
-│       │   │               │   │   └── IAdminService.java
-│       │   │               │   ├── analysis/
-│       │   │               │   │   ├── IRiskPredictionService.java
-│       │   │               │   │   └── RiskPredictionService.java
-│       │   │               │   ├── auth/
-│       │   │               │   │   ├── IPasswordResetService.java
-│       │   │               │   │   ├── PasswordResetService.java
-│       │   │               │   │   └── UserDetailsServiceImp.java
-│       │   │               │   ├── contract/
-│       │   │               │   │   ├── ContractService.java
-│       │   │               │   │   └── IContractService.java
-│       │   │               │   ├── currency/
-│       │   │               │   │   └── CurrencyConversionService.java
-│       │   │               │   ├── earning/
-│       │   │               │   │   ├── EarningService.java
-│       │   │               │   │   └── IEarningService.java
-│       │   │               │   ├── ia/
-│       │   │               │   │   ├── GeminiService.java
-│       │   │               │   │   └── IGeminiService.java
-│       │   │               │   ├── investment/
-│       │   │               │   │   ├── IInvestmentService.java
-│       │   │               │   │   └── InvestmentService.java
-│       │   │               │   ├── investor/
-│       │   │               │   │   ├── IInvestorService.java
-│       │   │               │   │   └── InvestorService.java
-│       │   │               │   ├── mail/
-│       │   │               │   │   ├── IMailService.java
-│       │   │               │   │   └── MailService.java
-│       │   │               │   ├── permission/
-│       │   │               │   │   ├── IPermissionService.java
-│       │   │               │   │   └── PermissionService.java
-│       │   │               │   ├── project/
-│       │   │               │   │   ├── IProjectService.java
-│       │   │               │   │   └── ProjectService.java
-│       │   │               │   ├── projectDocument/
-│       │   │               │   │   ├── IProjectDocumentService.java
-│       │   │               │   │   └── ProjectDocumentService.java
-│       │   │               │   ├── projectTag/
-│       │   │               │   │   ├── IProjectTagService.java
-│       │   │               │   │   └── ProjectTagService.java
-│       │   │               │   ├── role/
-│       │   │               │   │   ├── IRoleService.java
-│       │   │               │   │   └── RoleService.java
-│       │   │               │   ├── scheduler/
-│       │   │               │   │   └── ProjectFundingScheduler.java
-│       │   │               │   ├── student/
-│       │   │               │   │   ├── IStudentService.java
-│       │   │               │   │   └── StudentService.java
-│       │   │               │   └── user/
-│       │   │               │       ├── IUserService.java
-│       │   │               │       └── UserService.java
-│       │   │               └── utils/
-│       │   │                   └── JwtUtils.java
-│       │   └── resources/
-│       │       ├── application.properties
-│       │       └── risk_dataset.csv
-│       └── test/
-├── db/
-│   └── investor-platform-backend-dump.sql
-├── postman/
-│   └── investor-platform-backend.postman_collection
-└── README.md
+├── 📁 backend/                # Código fuente del Backend (Spring Boot 3)
+│   ├── Dockerfile             # Multi-stage Dockerfile para Maven & JDK 17
+│   ├── pom.xml                # Dependencias Maven (Spring Boot, Weka, MapStruct, MySQL)
+│   └── src/main/java/com/example/gestor_inversores/
+│       ├── config/            # Configuraciones globales (Security, Gemini, CORS)
+│       ├── controller/        # Controladores REST por Dominio
+│       ├── dto/               # Data Transfer Objects
+│       ├── model/             # Entidades JPA y Enums de Dominio
+│       ├── repository/        # Repositorios Spring Data JPA
+│       ├── security/          # Filtros JWT y UserDetailsService
+│       ├── service/           # Lógica de Negocio, Weka IA y Gemini NLP
+│       └── exception/         # Manejo centralizado de Excepciones
+│
+├── 📁 front/                  # Código fuente del Frontend (Angular 19)
+│   ├── Dockerfile             # Multi-stage Dockerfile para Angular
+│   ├── package.json           # Dependencias del proyecto (Angular CLI, RxJS, Chart.js)
+│   └── src/app/
+│       ├── admin/             # Módulo de Administración (Dashboard y Permisos)
+│       ├── auth/              # Módulo de Autenticación (Login, Registro, Password Reset)
+│       ├── home/              # Landing page pública y noticias
+│       ├── investors/         # Pánel de Inversores y Detalles de Inversión
+│       ├── projects/          # Catálogo de Proyectos, Contratos e IA de Riesgo
+│       ├── students/          # Pánel de Estudiantes
+│       ├── core/              # Interceptores JWT y Servicios globales
+│       ├── layout/            # Shell principal (Navbar, Sidebar responsivo)
+│       └── shared/            # Componentes reutilizables (Chatbot IA, Legal, Pipes)
+│
+├── 📁 docker-init/            # Scripts SQL de inicialización para MySQL
+│   └── 01-init.sql            # Creación de esquemas y seeding inicial
+├── docker-compose.yml         # Orquestación de contenedores (MySQL, Backend, Frontend)
+└── README.md                  # Documentación del proyecto
 ```
+
+---
+
+## 🔗 Endpoints de la API
+
+### 🔐 Autenticación (`/auth`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/auth/login` | Inicia sesión y obtiene un token JWT | Público |
+| `POST` | `/auth/forgot-password` | Inicia el proceso de reseteo de contraseña | Público |
+| `POST` | `/auth/reset-password` | Resetea la contraseña utilizando un token enviado por email | Público |
+
+### 💼 Inversores (`/api/investors`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/investors` | Lista todos los inversores registrados | `ADMIN` |
+| `GET` | `/api/investors/{id}` | Obtiene el perfil completo de un inversor por ID | `INVESTOR`, `ADMIN` |
+| `POST` | `/api/investors` | Registra un nuevo perfil de inversor | Público |
+| `PUT` | `/api/investors/update-by-admin/{id}` | Actualiza datos de un inversor | `ADMIN` |
+| `PATCH` | `/api/investors/{id}` | Actualiza parcialmente el propio perfil | `INVESTOR` |
+| `PATCH` | `/api/investors/activate/{id}` | Activa el estado de un inversor | `INVESTOR`, `ADMIN` |
+| `PATCH` | `/api/investors/desactivate/{id}` | Desactiva el estado de un inversor | `INVESTOR`, `ADMIN` |
+| `GET` | `/api/investors/check-cuit/{cuit}` | Verifica la disponibilidad de un CUIT | Público |
+
+### 🎓 Estudiantes (`/api/students`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/students` | Lista todos los estudiantes registrados | `ADMIN` |
+| `GET` | `/api/students/{id}` | Obtiene un estudiante por ID | `STUDENT`, `ADMIN` |
+| `GET` | `/api/students/projects/{id}` | Obtiene los proyectos pertenecientes a un estudiante | `STUDENT`, `ADMIN` |
+| `GET` | `/api/students/names` | Obtiene el listado de nombres de estudiantes | `STUDENT` |
+| `POST` | `/api/students` | Registra un nuevo estudiante | Público |
+| `PUT` | `/api/students/update-by-admin/{id}` | Actualiza la información de un estudiante | `ADMIN` |
+| `PATCH` | `/api/students/{id}` | Actualiza parcialmente el propio perfil | `STUDENT` |
+| `PATCH` | `/api/students/activate/{id}` | Activa la cuenta de un estudiante | `ADMIN` |
+| `PATCH` | `/api/students/desactivate/{id}` | Desactiva la cuenta de un estudiante | `STUDENT`, `ADMIN` |
+| `GET` | `/api/students/by-username` | Obtiene datos de estudiante mediante username | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/students/check-username/{username}` | Verifica disponibilidad de un nombre de usuario | Público |
+| `GET` | `/api/students/check-email/{email}` | Verifica disponibilidad de un email | Público |
+| `GET` | `/api/students/check-dni/{dni}` | Verifica disponibilidad de un DNI | Público |
+
+### 🚀 Proyectos (`/api/projects`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/projects` | Registra un nuevo proyecto (etiquetado automático por IA) | `STUDENT` |
+| `GET` | `/api/projects` | Lista el catálogo general de proyectos | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/projects/{id}` | Obtiene la información detallada de un proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/projects/{id}/students` | Obtiene el equipo de estudiantes asignado a un proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/projects/by-owner/{ownerId}` | Lista los proyectos creados por un estudiante específico | `STUDENT`, `ADMIN` |
+| `GET` | `/api/projects/tag/{tag}` | Filtra los proyectos según su etiqueta temática | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/projects/by-investment/{investorId}` | Lista proyectos donde ha participado un inversor | `INVESTOR`, `ADMIN` |
+| `GET` | `/api/projects/dashboard-admin/projects` | Obtiene métricas globales para el panel de administración | `ADMIN` |
+| `PUT` | `/api/projects/{id}` | Actualiza los datos de un proyecto | `STUDENT`, `ADMIN` |
+| `PUT` | `/api/projects/activate/{id}` | Activa manualmente un proyecto en revisión | `ADMIN` |
+| `PUT` | `/api/projects/complete/{projectId}` | Marca un proyecto finalizado exitosamente | `STUDENT` |
+| `PUT` | `/api/projects/cancel/{id}` | Cancela un proyecto en curso | `STUDENT` |
+| `POST` | `/api/projects/{projectId}/contact` | Envía un mensaje directo al fundador del proyecto | `INVESTOR` |
+| `DELETE` | `/api/projects/{id}` | Elimina un proyecto de la base de datos | `ADMIN` |
+
+### 📄 Contratos (`/api/contracts`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/contracts` | Crea una propuesta de contrato inicial (`DRAFT`) | `INVESTOR` |
+| `PUT` | `/api/contracts/update-by-investor/{id}` | Modifica los términos propuestos por el inversor | `INVESTOR` |
+| `PUT` | `/api/contracts/update-by-student/{id}` | Modifica la contrapropuesta enviada por el estudiante | `STUDENT` |
+| `PUT` | `/api/contracts/agree-by-student/{id}` | Otorga visto bueno al contrato (`PARTIALLY_SIGNED`) | `STUDENT` |
+| `PUT` | `/api/contracts/agree-by-investor/{id}` | Otorga visto bueno al contrato (`PARTIALLY_SIGNED`) | `INVESTOR` |
+| `PUT` | `/api/contracts/sign-by-student/{id}` | Firma y ratifica formalmente el contrato | `STUDENT` |
+| `PUT` | `/api/contracts/sign-by-investor/{id}` | Firma y ratifica formalmente el contrato (`SIGNED`) | `INVESTOR` |
+| `PUT` | `/api/contracts/close/{id}` | Cierra el contrato al completar el proyecto (`CLOSED`) | `STUDENT` |
+| `PUT` | `/api/contracts/cancel-by-student/{id}` | Cancela el proceso de contratación | `STUDENT` |
+| `PUT` | `/api/contracts/cancel-by-investor/{id}` | Cancela la propuesta de contrato | `INVESTOR` |
+| `PUT` | `/api/contracts/refund/{id}` | Inicia el proceso de devolución de inversión | `STUDENT` |
+| `GET` | `/api/contracts/by-project/{projectId}` | Lista contratos asociados a un proyecto | `STUDENT` |
+| `GET` | `/api/contracts/by-investor/{investorId}` | Lista contratos iniciados por un inversor | `INVESTOR` |
+| `GET` | `/api/contracts/by-owner/{studentId}` | Lista contratos recibidos por un estudiante | `STUDENT` |
+| `GET` | `/api/contracts/investor/{investorId}/project/{projectId}` | Busca la propuesta específica entre partes | `INVESTOR` |
+| `GET` | `/api/contracts/exists` | Verifica si ya existe un acuerdo activo | `STUDENT`, `INVESTOR` |
+
+### 💰 Inversiones (`/api/investments`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/investments` | Lista todas las inversiones registradas | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/investments/{id}` | Obtiene el detalle de una inversión por ID | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/investments/actives` | Obtiene el listado de inversiones activas | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/investments/investments-by-project/{projectId}` | Obtiene inversiones recibidas por un proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/investments/by-investor/{investorId}` | Obtiene el historial de aportes de un inversor | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `PUT` | `/api/investments/confirm-payment-sent/{id}` | Notifica la transferencia realizada por el inversor | `INVESTOR` |
+| `PUT` | `/api/investments/confirm-receipt/{id}` | Confirma la acreditación bancaria recibida | `STUDENT` |
+| `PUT` | `/api/investments/mark-not-received/{id}` | Notifica un imprevisto en la acreditación del pago | `STUDENT` |
+| `PUT` | `/api/investments/reject-overfunded/{id}` | Rechaza la inversión por superación del presupuesto | `STUDENT` |
+| `PUT` | `/api/investments/confirm-refund-sent/{id}` | Confirma el envío del reembolso al inversor | `STUDENT` |
+| `PUT` | `/api/investments/confirm-refund/{id}` | Confirma la recepción del reembolso enviado | `INVESTOR` |
+| `PUT` | `/api/investments/mark-refund-not-received/{id}` | Marca reembolso como pendiente de acreditación | `INVESTOR` |
+| `PUT` | `/api/investments/cancel/{id}` | Solicita la cancelación formal de la inversión | `INVESTOR` |
+| `DELETE` | `/api/investments/{id}` | Remueve un registro de inversión | `ADMIN` |
+
+### 📈 Ganancias (`/api/earnings`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/earnings` | Lista todas las liquidaciones de retorno generadas | `ADMIN` |
+| `GET` | `/api/earnings/summary` | Genera un reporte consolidador de rendimientos | `ADMIN` |
+| `GET` | `/api/earnings/project/{projectId}` | Obtiene las ganancias liquidadas de un proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/earnings/investor/{investorId}` | Lista las ganancias obtenidas por un inversor | `INVESTOR`, `ADMIN` |
+| `GET` | `/api/earnings/student/{studentId}` | Lista los retornos liquidados por un estudiante | `STUDENT`, `ADMIN` |
+| `GET` | `/api/earnings/by-project/{projectId}` | Desglosa los retornos por identificador de proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/earnings/by-contract/{contractId}` | Muestra el retorno calculado asociado a un contrato | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `PUT` | `/api/earnings/confirm-payment-sent/{id}` | Notifica la transferencia de ganancia al inversor | `STUDENT` |
+| `PUT` | `/api/earnings/confirm-receipt/{id}` | Confirma la recepción conforme de la ganancia | `INVESTOR` |
+| `PUT` | `/api/earnings/mark-not-received/{id}` | Reporta discrepancias en la acreditación del retorno | `INVESTOR` |
+
+### 🧠 Inteligencia Artificial y Chatbot (`/api/analysis`, `/api/chatbot`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/analysis/risk` | Ejecuta la predicción de riesgo mediante **Weka Random Forest** | `INVESTOR` |
+| `POST` | `/api/chatbot` | Procesa consultas conversacionales usando **Google Gemini NLP** | Autenticado / Público |
+
+### 📎 Documentos de Proyecto (`/api/project-documents`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `POST` | `/api/project-documents/upload` | Adjunta un documento en formato PDF/imagen al proyecto | `STUDENT`, `ADMIN` |
+| `GET` | `/api/project-documents/project/{projectId}` | Lista los archivos adjuntos vinculados a un proyecto | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `GET` | `/api/project-documents/download/{id}` | Descarga un documento almacenado | `STUDENT`, `INVESTOR`, `ADMIN` |
+| `DELETE` | `/api/project-documents/{id}` | Elimina un archivo adjunto del servidor | `STUDENT`, `ADMIN` |
+
+### 💱 Conversión de Divisas (`/api/currency`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/currency/convert` | Consulta cotizaciones y convierte montos en tiempo real (ARS, USD, EUR, CNY) | Autenticado |
+
+### 🛡️ Usuarios, Roles y Permisos (`/api/users`, `/api/roles`, `/api/permissions`)
+
+| Método | Endpoint | Descripción | Acceso |
+| :---: | :--- | :--- | :--- |
+| `GET` | `/api/users` | Lista todos los usuarios de la plataforma | `ADMIN` |
+| `GET` | `/api/users/{id}` | Obtiene los detalles de un usuario específico | `ADMIN` |
+| `POST` | `/api/users` | Crea un usuario con credenciales de administración | `ADMIN` |
+| `PATCH` | `/api/users/{id}` | Modifica datos de un usuario | `ADMIN` |
+| `PATCH` | `/api/users/activate/{id}` | Habilita el acceso a un usuario deshabilitado | `ADMIN` |
+| `PATCH` | `/api/users/desactivate/{id}` | Inhabilita temporalmente a un usuario | `ADMIN` |
+| `GET` | `/api/roles` | Lista los roles registrados (`STUDENT`, `INVESTOR`, `ADMIN`) | `ADMIN` |
+| `GET` | `/api/roles/{id}` | Obtiene la configuración de un rol | `ADMIN` |
+| `POST` | `/api/roles` | Crea una nueva entidad de rol | `ADMIN` |
+| `PATCH` | `/api/roles/{id}` | Actualiza la matriz de permisos asignada a un rol | `ADMIN` |
+| `DELETE` | `/api/roles/{id}` | Elimina un rol existente | `ADMIN` |
+| `GET` | `/api/permissions` | Lista los permisos del sistema (`CREATE`, `READ`, `UPDATE`, `DELETE`) | `ADMIN` |
+| `GET` | `/api/permissions/{id}` | Obtiene un permiso por ID | `ADMIN` |
+| `POST` | `/api/permissions` | Registra un nuevo permiso | `ADMIN` |
+| `PUT` | `/api/permissions/{id}` | Modifica la definición de un permiso | `ADMIN` |
+| `DELETE` | `/api/permissions/{id}` | Elimina un permiso | `ADMIN` |
+
+---
+
 ## 👨‍🎓 Autores y Contexto Académico
 
 ### Equipo de Desarrollo
@@ -649,4 +357,4 @@ investor-platform-backend/
 - Maximiliano Ortiz
 - Lucas Beron Von Brand
 
-Este proyecto fue desarrollado como el **Trabajo Práctico Final** para la materia "Trabajo Final" de la **Licenciatura en Gestión de Tecnología** en la Universidad Nacional de La Matanza (UNLaM).
+Este proyecto fue desarrollado como el **Trabajo Práctico Final** para la materia "Proyecto Final" de la **Licenciatura en Gestión de Tecnología** en la **Universidad Nacional de La Matanza (UNLaM)**.
